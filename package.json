@@ -1,0 +1,14 @@
+{
+  "name": "trade-citizen",
+  "version": "0.0.0",
+  "description": "Crowd Source Reputation Based commodity price tracking for Star Citizen",
+  "main": ".",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "fmt": "prettier --write scripts/* styles/*"
+  },
+  "author": "",
+  "devDependencies": {
+    "prettier": "^1.5.3"
+  }
+}
