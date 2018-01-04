@@ -8,12 +8,12 @@ TradeCitizen.prototype.initTemplates = function() {
 };
 
 TradeCitizen.prototype.viewHome = function() {
-  this.getAllRestaurants();
+  this.getAllStations();
 };
 
 TradeCitizen.prototype.viewList = function(filters, filter_description) {
   if (!filter_description) {
-    filter_description = 'any type of food with any price in any city.';
+    filter_description = 'any station at any anchor sorted by anchor.';
   }
 
   const mainEl = this.renderTemplate('main-adjusted');
@@ -56,26 +56,24 @@ TradeCitizen.prototype.viewList = function(filters, filter_description) {
     }
     const data = doc.data();
     data['.id'] = doc.id;
-    data['go_to_restaurant'] = () => {
-      this.router.navigate(`/restaurants/${doc.id}`);
+    data['go_to_station'] = () => {
+      this.router.navigate(`/stations/${doc.id}`);
     };
 
-    const el = this.renderTemplate('restaurant-card', data);
-    el.querySelector('.rating').append(this.renderRating(data.avgRating));
-    el.querySelector('.price').append(this.renderPrice(data.price));
+    const el = this.renderTemplate('station-card', data);
 
     mainEl.querySelector('#cards').append(el);
   };
 
-  if (filters.city || filters.category || filters.price || filters.sort !== 'Rating' ) {
-    this.getFilteredRestaurants({
-     city: filters.city || 'Any',
-     category: filters.category || 'Any',
+  if (filters.anchor || filters.anchorType || filters.price || filters.sort !== 'Anchor' ) {
+    this.getFilteredStations({
+     anchor: filters.anchor || 'Any',
+     anchorType: filters.anchorType || 'Any',
      price: filters.price || 'Any',
      sort: filters.sort
     }, renderResults);
   } else {
-    this.getAllRestaurants(renderResults);
+    this.getAllStations(renderResults);
   }
 
   const toolbar = mdc.toolbar.MDCToolbar.attachTo(document.querySelector('.mdc-toolbar'));
@@ -135,13 +133,13 @@ TradeCitizen.prototype.initFilterDialog = function() {
   const pages = dialog.querySelectorAll('.page');
 
   this.replaceElement(
-    dialog.querySelector('#category-list'),
-      this.renderTemplate('item-list', { items: ['Any'].concat(this.data.categories) })
+    dialog.querySelector('#anchorType-list'),
+      this.renderTemplate('item-list', { items: ['Any'].concat(this.data.anchorTypes) })
   );
 
   this.replaceElement(
-      dialog.querySelector('#city-list'),
-      this.renderTemplate('item-list', { items: ['Any'].concat(this.data.cities) })
+      dialog.querySelector('#anchor-list'),
+      this.renderTemplate('item-list', { items: ['Any'].concat(this.data.anchors) })
   );
 
   const renderAllList = () => {
@@ -193,38 +191,40 @@ TradeCitizen.prototype.initFilterDialog = function() {
 };
 
 TradeCitizen.prototype.updateQuery = function(filters) {
-  let query_description = '';
+  let query_description = 'any station';
 
-  if (filters.category !== '') {
-    query_description += `${filters.category} places`;
+  if (filters.anchor !== '') {
+    query_description += ` at ${filters.anchor}`;
   } else {
-    query_description += 'any restaurant';
+    query_description += ' at any anchor';
   }
 
-  if (filters.city !== '') {
-    query_description += ` in ${filters.city}`;
+  if (filters.anchorType !== '') {
+    query_description += ` at any ${filters.anchorType} anchor type`;
   } else {
-    query_description += ' located anywhere';
+    query_description += ' at any anchor type';
   }
 
+  /*
   if (filters.price !== '') {
     query_description += ` with a price of ${filters.price}`;
   } else {
     query_description += ' with any price';
   }
+  */
 
-  if (filters.sort === 'Rating') {
-    query_description += ' sorted by rating';
-  } else if (filters.sort === 'Reviews') {
-    query_description += ' sorted by # of reviews';
+  if (filters.sort === 'Anchor') {
+    query_description += ' sorted by anchor';
+  } else if (filters.sort === 'Anchor Type') {
+    query_description += ' sorted by anchor type';
   }
 
   this.viewList(filters, query_description);
 };
 
-TradeCitizen.prototype.viewRestaurant = function(id) {
+TradeCitizen.prototype.viewStation = function(id) {
   let sectionHeaderEl;
-  return this.getRestaurant(id)
+  return this.getStation(id)
     .then(doc => {
       const data = doc.data();
       const dialog =  this.dialogs.add_review;
@@ -233,7 +233,9 @@ TradeCitizen.prototype.viewRestaurant = function(id) {
         dialog.show();
       };
 
-      sectionHeaderEl = this.renderTemplate('restaurant-header', data);
+      sectionHeaderEl = this.renderTemplate('station-header', data);
+
+      /*
       sectionHeaderEl
         .querySelector('.rating')
         .append(this.renderRating(data.avgRating));
@@ -241,6 +243,8 @@ TradeCitizen.prototype.viewRestaurant = function(id) {
       sectionHeaderEl
         .querySelector('.price')
         .append(this.renderPrice(data.price));
+      */
+
       return doc.ref.collection('ratings').orderBy('timestamp', 'desc').get();
     })
     .then(ratings => {
@@ -386,6 +390,7 @@ TradeCitizen.prototype.getDeepItem = function(obj, path) {
   return obj;
 };
 
+/*
 TradeCitizen.prototype.renderRating = function(rating) {
   const el = this.renderTemplate('rating', {});
   for (let r = 0; r < 5; r += 1) {
@@ -407,6 +412,7 @@ TradeCitizen.prototype.renderPrice = function(price) {
   }
   return el;
 };
+*/
 
 TradeCitizen.prototype.replaceElement = function(parent, content) {
   parent.innerHTML = '';

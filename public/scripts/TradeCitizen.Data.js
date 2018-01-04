@@ -1,20 +1,21 @@
 'use strict';
 
-TradeCitizen.prototype.addRestaurant = function(data) {
-  const collection = firebase.firestore().collection('restaurants');
+TradeCitizen.prototype.addStation = function(data) {
+  const collection = firebase.firestore().collection('stations');
   return collection.add(data);
 };
 
-TradeCitizen.prototype.getAllRestaurants = function(render) {
+TradeCitizen.prototype.getAllStations = function(render) {
   const query = firebase.firestore()
-      .collection('restaurants')
-      .orderBy('avgRating', 'desc')
+      .collection('stations')
+      .orderBy('anchor', 'desc')
       .limit(50);
   this.getDocumentsInQuery(query, render);
 };
 
 TradeCitizen.prototype.getDocumentsInQuery = function(query, render) {
   query.onSnapshot(snapshot => {
+    //console.log("snapshot.size:" + snapshot.size);
     if (!snapshot.size) return render();
 
     snapshot.docChanges.forEach(change => {
@@ -25,36 +26,39 @@ TradeCitizen.prototype.getDocumentsInQuery = function(query, render) {
   });
 };
 
-TradeCitizen.prototype.getRestaurant = function(id) {
-  return firebase.firestore().collection('restaurants').doc(id).get();
+TradeCitizen.prototype.getStation = function(id) {
+  return firebase.firestore().collection('stations').doc(id).get();
 };
 
-TradeCitizen.prototype.getFilteredRestaurants = function(filters, render) {
-  let query = firebase.firestore().collection('restaurants');
+TradeCitizen.prototype.getFilteredStations = function(filters, render) {
+  let query = firebase.firestore().collection('stations');
 
-  if (filters.category !== 'Any') {
-    query = query.where('category', '==', filters.category);
+  if (filters.anchorType !== 'Any') {
+    query = query.where('anchorType', '==', filters.anchorType);
   }
 
-  if (filters.city !== 'Any') {
-    query = query.where('city', '==', filters.city);
+  if (filters.anchor !== 'Any') {
+    query = query.where('anchor', '==', filters.anchor);
   }
 
+  /*
   if (filters.price !== 'Any') {
     query = query.where('price', '==', filters.price.length);
   }
+  */
 
-  if (filters.sort === 'Rating') {
-    query = query.orderBy('avgRating', 'desc');
-  } else if (filters.sort === 'Reviews') {
+  if (filters.sort === 'Anchor') {
+    query = query.orderBy('anchor', 'desc');
+  } else if (filters.sort === 'Anchor Type') {
   }
 
   this.getDocumentsInQuery(query, render);
 };
 
-TradeCitizen.prototype.addRating = function(restaurantID, rating) {
-  const collection = firebase.firestore().collection('restaurants');
-  const document = collection.doc(restaurantID);
+/*
+TradeCitizen.prototype.addRating = function(stationID, rating) {
+  const collection = firebase.firestore().collection('stations');
+  const document = collection.doc(stationID);
 
   return document.collection('ratings').add(rating).then(() => {
     return firebase.firestore().runTransaction(transaction => {
@@ -73,3 +77,4 @@ TradeCitizen.prototype.addRating = function(restaurantID, rating) {
     });
   });
 };
+*/
