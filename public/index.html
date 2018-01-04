@@ -29,18 +29,25 @@
   <!-- <meta name="msapplication-TileColor" content="#3372DF">
   <meta name="msapplication-navbutton-color" content="#303F9F"> -->
 
+  <!--
+  https://github.com/material-components/material-components-web
+  https://material-components-web.appspot.com/
+  -->
   <!-- Material Design Components -->
   <link rel="stylesheet" href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css">
+  <script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.js"></script>
 
-  <!-- App Styling -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:regular,bold,italic,thin,light,bolditalic,black,medium&amp;lang=en">
+
+  <!--
+  http://google.github.io/material-design-icons/#icon-font-for-the-web
+  -->
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
   <link rel="stylesheet" href="/styles/main.css">
 </head>
 <body>
 <div>
-  <script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.js"></script>
-
   <div class="header"></div>
 
   <main></main>
@@ -51,7 +58,7 @@
       <header id="site-header" class="mdc-toolbar mdc-toolbar--fixed">
         <div id="title" class="mdc-toolbar__row mdc-layout-grid">
           <section class="mdc-toolbar__section mdc-toolbar__section--align-start">
-            <span class="mdc-toolbar__icon--menu"><img src="images/icons/tradecitizen-28x28.png"/></span>
+            <span class="mdc-toolbar__icon--menu"><a href="/"><img src="/images/icons/tradecitizen-28x28.png"/></a></span>
             <span class="mdc-toolbar__title">Trade Citizen</span>
           </section>
         </div>
