@@ -259,33 +259,31 @@
 <main class="mdc-toolbar-fixed-adjust">
   <div class="mdc-theme--dark">
     <!--
-    <ul class="mdc-list my-bordered-list" data-demo-interactive-list style="padding-top:0px; padding-bottom:0px">
+    <ul class="mdc-list my-bordered-list" app-interactive-list style="padding-top:0px; padding-bottom:0px">
       <li class="mdc-list-item">
         <i class="material-icons mdc-list-item__start-detail" aria-hidden="true" data-mdc-auto-init="MDCRipple">
           network_wifi
         </i>
-        Wi-Fi
+        Port Olisar
       </li>
       <li class="mdc-list-item">
         <i class="material-icons mdc-list-item__start-detail" aria-hidden="true" data-mdc-auto-init="MDCRipple">
           bluetooth
         </i>
-        Bluetooth
+        Levski
       </li>
       <li class="mdc-list-item">
         <i class="material-icons mdc-list-item__start-detail" aria-hidden="true" data-mdc-auto-init="MDCRipple">
           data_usage
         </i>
-        Data Usage
+        Grim Hex
       </li>
     </ul>
     -->
   </div>
 
-  <button class="mdc-fab material-icons app-fab--absolute" aria-label="Favorite" data-mdc-auto-init="MDCRipple">
-    <span class="mdc-fab__icon">
-      add
-    </span>
+  <button class="mdc-fab material-icons app-fab--absolute" aria-label="Add" data-mdc-auto-init="MDCRipple">
+    <span class="mdc-fab__icon">add</span>
   </button>
 
 </main>
@@ -306,21 +304,6 @@
   });
   //$(window).resize(function(){ $('#demo-input').trigger('autogrow'); });
 
-  // TODO:(pv) Not needed if list href isn't '#'?...
-  function initInteractiveLists() {
-    var interactiveListItems = document.querySelectorAll(
-      '[data-demo-interactive-list] .mdc-list-item, .hero .mdc-list-item'
-    );
-    for (var i = 0, li; li = interactiveListItems[i]; i++) {
-      mdc.ripple.MDCRipple.attachTo(li);
-      // Prevent link clicks from jumping demo to the top of the page
-      li.addEventListener('click', function(evt) {
-        evt.preventDefault();
-      });
-    }
-  }
-  setTimeout(initInteractiveLists, 250);
-
   $(document).ready(function() {
     var hiddenDivs = document.querySelectorAll(
       'div.hidden'
@@ -328,6 +311,18 @@
     //console.log(hiddenDivs);
     for (var i = 0, li; li = hiddenDivs[i]; i++) {
       $(li).removeClass("hidden");
+    }
+
+    // TODO:(pv) Not needed if list href isn't '#'?...
+    var interactiveListItems = document.querySelectorAll(
+      '[app-interactive-list] .mdc-list-item'
+    );
+    for (var i = 0, li; li = interactiveListItems[i]; i++) {
+      mdc.ripple.MDCRipple.attachTo(li);
+      // Prevent link clicks from jumping demo to the top of the page
+      li.addEventListener('click', function(evt) {
+        evt.preventDefault();
+      });
     }
   });
 
