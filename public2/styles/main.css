@@ -1,0 +1,9 @@
+html,
+body {
+  font-family: 'Roboto', 'Helvetica', sans-serif;
+  margin: 0px;
+  padding: 0px;
+  background-color: #202020;
+}
+
+body > div > i {display: none !important;}

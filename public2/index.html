@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html class="mdc-typography">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="description" content="Crowd Source Reputation Based commodity price tracking for Star Citizen">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trade Citizen</title>
+  <link rel="icon" href="images/favicon.ico">
+
+  <!-- Disable tap highlight on IE -->
+  <meta name="msapplication-tap-highlight" content="no">
+
+  <!-- Web Application Manifest -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Add to homescreen for Chrome on Android -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="TradeCitizen">
+  <meta name="theme-color" content="#303F9F">
+
+  <!-- Add to homescreen for Safari on iOS -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TradeCitizen">
+  <meta name="apple-mobile-web-app-status-bar-style" content="#303F9F">
+
+  <!-- Tile icon for Win8 -->
+  <meta name="msapplication-TileColor" content="#3372DF">
+  <meta name="msapplication-navbutton-color" content="#303F9F">
+
+  <!--
+  TODO:(pv) Learn how to use material-icons:
+  http://google.github.io/material-design-icons/#icon-font-for-the-web
+  https://docs.flutter.io/flutter/material/Icons-class.html
+  -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <!--
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:regular,bold,italic,thin,light,bolditalic,black,medium&amp;lang=en">
+  -->
+
+  <!--
+  Per https://materialdesignicons.com/bootstrap
+  https://materialdesignicons.com/getting-started
+  -->
+  <link rel="stylesheet" href="https://cdn.materialdesignicons.com/2.1.19/css/materialdesignicons.min.css">
+  <style>
+    .mdi::before {
+        font-size: 24px;
+        line-height: 14px;
+    }
+    .btn .mdi::before {
+        position: relative;
+        top: 4px;
+    }
+    .btn-xs .mdi::before {
+        font-size: 18px;
+        top: 3px;
+    }
+    .btn-sm .mdi::before {
+        font-size: 18px;
+        top: 3px;
+    }
+    .dropdown-menu .mdi {
+        width: 18px;
+    }
+    .dropdown-menu .mdi::before {
+        position: relative;
+        top: 4px;
+        left: -8px;
+    }
+    .nav .mdi::before {
+        position: relative;
+        top: 4px;
+    }
+    .navbar .navbar-toggle .mdi::before {
+        position: relative;
+        top: 4px;
+        color: #FFF;
+    }
+    .breadcrumb .mdi::before {
+        position: relative;
+        top: 4px;
+    }
+    .breadcrumb a:hover {
+        text-decoration: none;
+    }
+    .breadcrumb a:hover span {
+        text-decoration: underline;
+    }
+    .alert .mdi::before {
+        position: relative;
+        top: 4px;
+        margin-right: 2px;
+    }
+    .input-group-addon .mdi::before {
+        position: relative;
+        top: 3px;
+    }
+    .navbar-brand .mdi::before {
+        position: relative;
+        top: 2px;
+        margin-right: 2px;
+    }
+    .list-group-item .mdi::before {
+        position: relative;
+        top: 3px;
+        left: -3px
+    }
+  </style>
+
+  <!--
+  TODO:(pv) Learn how to use material-components:
+  https://github.com/material-components/material-components-web
+  https://material-components-web.appspot.com/
+  -->
+  <!-- Material Design Components -->
+  <link rel="stylesheet" href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css">
+
+  <link rel="stylesheet" href="/styles/main.css">
+
+  <style>
+  /*
+    .cards {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    .element-card {
+      width: 16em;
+      margin: 16px;
+    }
+
+    .element-card > .mdc-card__media {
+      height: 9em;
+    }
+
+    #demo-absolute-fab {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      z-index: 1;
+    }
+  */
+
+  div.hidden
+  {
+     display: none
+  }
+
+  .app-fab--absolute {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+  }
+
+  @media(min-width: 1024px) {
+     .app-fab--absolute {
+      bottom: 1.5rem;
+      right: 1.5rem;
+    }
+  }
+
+  /*
+  .search-filter
+  {
+    width: 70%;
+    box-sizing: border-box;
+  }
+  */
+
+  .search-filter-label {
+    /*
+    color: #B4886B;
+    width: 150px;
+    font-weight: bold;
+    display: block;
+    float: left;
+    */
+    font-size: 1.25rem;
+    color: white;
+    padding: 16px 0px;
+    align-self: center;
+  }
+
+  .search-filter-input {
+    font-size:1.25rem;
+    padding:0px;
+    color:white;
+  }
+
+  input::-webkit-input-placeholder {
+  color: gray !important;
+  }
+
+  input:-moz-placeholder { /* Firefox 18- */
+  color: gray !important;
+  }
+
+  input::-moz-placeholder {  /* Firefox 19+ */
+  color: gray !important;
+  }
+
+  input:-ms-input-placeholder {
+  color: gray !important;
+  }
+
+  .my-bordered-list {
+    /* remove the side padding. we'll be placing it around the item instead. */
+    /*
+    padding-right: 0;
+    padding-left: 0;
+    */
+  }
+  .my-bordered-list .mdc-list-item {
+    /* Add the list side padding padding to the list item. */
+    /*
+    padding: 0 16px;
+    */
+    /* Add a border around each element. */
+    border: 1px solid rgba(255, 255, 255, .12);
+  }
+  /* Ensure adjacent borders don't collide with one another. */
+  .my-bordered-list .mdc-list-item:not(:first-child) {
+    border-top: none;
+  }
+
+  </style>
+</head>
+
+<body>
+
+<header class="mdc-toolbar mdc-toolbar--fixed">
+  <div class="mdc-toolbar__row">
+    <section class="mdc-toolbar__section mdc-toolbar__section--align-start mdc-toolbar__section--shrink-to-fit">
+      <!--
+      TODO:(pv) Implement menu...
+      <a class="material-icons mdc-toolbar__menu-icon" href="#">menu</a>
+      -->
+      <span class="mdc-toolbar__title" style="margin-left:16px; margin-right:8px;">Trade Citizen</span>
+    </section>
+    <section class="mdc-toolbar__section mdc-toolbar__section--align-end">
+      <div id="search-filter-container"
+       class="hidden mdc-form-field mdc-form-field--align-end"
+       style="max-width:300px; position:relative; right:0;">
+          <div class="search-filter-label" style="padding:16px 0px;">Filter:</div>
+          <input class="search-filter-input mdc-text-field__input"
+          style="padding:0px 8px; margin:0px 8px;"
+          id="search-filter"
+          autofocus
+          type="text"
+          placeholder="None">
+      </div>
+    </section>
+  </div>
+</header>
+
+<main class="mdc-toolbar-fixed-adjust">
+  <div class="mdc-theme--dark">
+    <!--
+    <ul class="mdc-list my-bordered-list" data-demo-interactive-list style="padding-top:0px; padding-bottom:0px">
+      <li class="mdc-list-item">
+        <i class="material-icons mdc-list-item__start-detail" aria-hidden="true" data-mdc-auto-init="MDCRipple">
+          network_wifi
+        </i>
+        Wi-Fi
+      </li>
+      <li class="mdc-list-item">
+        <i class="material-icons mdc-list-item__start-detail" aria-hidden="true" data-mdc-auto-init="MDCRipple">
+          bluetooth
+        </i>
+        Bluetooth
+      </li>
+      <li class="mdc-list-item">
+        <i class="material-icons mdc-list-item__start-detail" aria-hidden="true" data-mdc-auto-init="MDCRipple">
+          data_usage
+        </i>
+        Data Usage
+      </li>
+    </ul>
+    -->
+  </div>
+
+  <button class="mdc-fab material-icons app-fab--absolute" aria-label="Favorite" data-mdc-auto-init="MDCRipple">
+    <span class="mdc-fab__icon">
+      add
+    </span>
+  </button>
+
+</main>
+
+<div class="dialogs"></div>
+
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+<script src="/scripts/jquery.auto-grow-input.min.js"></script>
+<script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.js"></script>
+<script>
+  mdc.autoInit();
+
+  var toolbar = mdc.toolbar.MDCToolbar.attachTo(document.querySelector('.mdc-toolbar'));
+  toolbar.fixedAdjustElement = document.querySelector('.mdc-toolbar-fixed-adjust');
+
+  $(function(){
+    $('#search-filter').autoGrowInput({ minWidth:6, maxWidth:function(){ return $('#search-filter-container').width()-10; }, comfortZone:0 });
+  });
+  //$(window).resize(function(){ $('#demo-input').trigger('autogrow'); });
+
+  // TODO:(pv) Not needed if list href isn't '#'?...
+  function initInteractiveLists() {
+    var interactiveListItems = document.querySelectorAll(
+      '[data-demo-interactive-list] .mdc-list-item, .hero .mdc-list-item'
+    );
+    for (var i = 0, li; li = interactiveListItems[i]; i++) {
+      mdc.ripple.MDCRipple.attachTo(li);
+      // Prevent link clicks from jumping demo to the top of the page
+      li.addEventListener('click', function(evt) {
+        evt.preventDefault();
+      });
+    }
+  }
+  setTimeout(initInteractiveLists, 250);
+
+  $(document).ready(function() {
+    var hiddenDivs = document.querySelectorAll(
+      'div.hidden'
+    );
+    //console.log(hiddenDivs);
+    for (var i = 0, li; li = hiddenDivs[i]; i++) {
+      $(li).removeClass("hidden");
+    }
+  });
+
+</script>
+
+<!--
+https://firebase.google.com/support/release-notes/js
+-->
+<script src="/__/firebase/4.8.1/firebase.js"></script>
+<script src="/__/firebase/4.8.1/firebase-firestore.js"></script>
+<script src="/__/firebase/init.js"></script>
+
+<!--
+<script src="//unpkg.com/navigo@6"></script>
+-->
+
+<script src="/scripts/main.js"></script>
+
+</body>
+
+</html>
