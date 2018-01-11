@@ -12,6 +12,7 @@ Vue.use(Vuetify)
 Vue.config.productionTip = false
 
 Vue.component('app-alert', AlertCmp)
+
 /* eslint-disable no-new */
 new Vue({
   el: '#app',
