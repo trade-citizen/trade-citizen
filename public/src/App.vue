@@ -1,5 +1,6 @@
 <template>
   <v-app dark>
+    <!--
     <v-navigation-drawer
       fixed
       :clipped="clipped"
@@ -25,13 +26,14 @@
         </v-list-tile>
       </v-list>
     </v-navigation-drawer>
+    -->
     <v-toolbar fixed app :clipped-left="clipped">
+      <!--
       <v-toolbar-side-icon
         @click.stop="sideNav = !sideNav"
         class="hidden-sm-and-up "></v-toolbar-side-icon>
-      <v-toolbar-title>
-        <router-link to="/" tag="span" style="cursor: pointer">Firebase Auth</router-link>
-      </v-toolbar-title>
+      -->
+      <v-toolbar-title v-text="title"></v-toolbar-title>
       <v-spacer></v-spacer>
       <v-toolbar-items class="hidden-xs-only">
         <v-btn
@@ -63,7 +65,8 @@
   export default {
     data () {
       return {
-        sideNav: false
+        sideNav: false,
+        title: 'Trade Citizen'
       }
     },
     computed: {
