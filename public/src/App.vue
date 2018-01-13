@@ -27,13 +27,16 @@
       </v-list>
     </v-navigation-drawer>
     -->
-    <v-toolbar fixed app :clipped-left="clipped">
+    <v-toolbar fixed app><!-- :clipped-left="clipped">-->
       <!--
       <v-toolbar-side-icon
         @click.stop="sideNav = !sideNav"
-        class="hidden-sm-and-up "></v-toolbar-side-icon>
+        class="hidden-sm-and-up ">
+      </v-toolbar-side-icon>
       -->
-      <v-toolbar-title v-text="title"></v-toolbar-title>
+      <v-toolbar-title>
+        <router-link to="/" tag="span" style="cursor: pointer">Trade Citizen</router-link>
+      </v-toolbar-title>
       <v-spacer></v-spacer>
       <v-toolbar-items class="hidden-xs-only">
         <v-btn
