@@ -1,6 +1,10 @@
 <template>
-  <v-app>
-    <v-navigation-drawer temporary v-model="sideNav">
+  <v-app dark>
+    <v-navigation-drawer
+      fixed
+      :clipped="clipped"
+      v-model="sideNav"
+      app>
       <v-list>
         <v-list-tile
           v-for="item in menuItems"
@@ -21,7 +25,7 @@
         </v-list-tile>
       </v-list>
     </v-navigation-drawer>
-    <v-toolbar dark class="primary">
+    <v-toolbar fixed app :clipped-left="clipped">
       <v-toolbar-side-icon
         @click.stop="sideNav = !sideNav"
         class="hidden-sm-and-up "></v-toolbar-side-icon>
@@ -35,7 +39,7 @@
           v-for="item in menuItems"
           :key="item.title"
           :to="item.link">
-          <v-icon left dark>{{ item.icon }}</v-icon>
+          <v-icon left>{{ item.icon }}</v-icon>
           {{ item.title }}
 
         </v-btn>
@@ -43,15 +47,15 @@
           v-if="userIsAuthenticated"
           flat
           @click="onLogout">
-          <v-icon left dark>exit_to_app</v-icon>
+          <v-icon left>exit_to_app</v-icon>
           Logout
 
         </v-btn>
       </v-toolbar-items>
     </v-toolbar>
-    <main>
+    <v-content>
       <router-view></router-view>
-    </main>
+    </v-content>
   </v-app>
 </template>
 
