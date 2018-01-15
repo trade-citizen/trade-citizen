@@ -47,20 +47,22 @@
         class="ml-2"
       >
       </v-text-field>
-      <v-btn
-        icon
-        v-for="item in menuItems"
-        :key="item.title"
-        :to="item.link">
-        <v-icon>{{ item.icon }}</v-icon>
-        {{ item.title }}
-      </v-btn>
-      <v-btn
-        icon
-        v-if="userIsAuthenticated"
-        @click="onLogout">
-        <v-icon>exit_to_app</v-icon>
-      </v-btn>
+      <div class="d-flex align-center mr-0">
+        <v-btn
+          icon
+          v-for="item in menuItems"
+          :key="item.title"
+          :to="item.link">
+          <v-icon>{{ item.icon }}</v-icon>
+          {{ item.title }}
+        </v-btn>
+        <v-btn
+          icon
+          v-if="userIsAuthenticated"
+          @click="onLogout">
+          <v-icon>exit_to_app</v-icon>
+        </v-btn>
+      </div>
     </v-toolbar>
     <v-content>
       <router-view></router-view>
