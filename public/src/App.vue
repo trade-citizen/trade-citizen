@@ -27,7 +27,10 @@
       </v-list>
     </v-navigation-drawer>
     -->
-    <v-toolbar fixed app><!-- :clipped-left="clipped">-->
+    <v-toolbar
+      app
+      fixed
+    >
       <!--
       <v-toolbar-side-icon
         @click.stop="sideNav = !sideNav"
@@ -35,28 +38,29 @@
       </v-toolbar-side-icon>
       -->
       <v-toolbar-title>
-        <router-link to="/" tag="span" style="cursor: pointer">Trade Citizen</router-link>
+        <router-link to="/" tag="span" style="cursor: pointer">{{ title }}</router-link>
       </v-toolbar-title>
-      <v-spacer></v-spacer>
-      <v-toolbar-items class="hidden-xs-only">
-        <v-btn
-          flat
-          v-for="item in menuItems"
-          :key="item.title"
-          :to="item.link">
-          <v-icon left>{{ item.icon }}</v-icon>
-          {{ item.title }}
-
-        </v-btn>
-        <v-btn
-          v-if="userIsAuthenticated"
-          flat
-          @click="onLogout">
-          <v-icon left>exit_to_app</v-icon>
-          Logout
-
-        </v-btn>
-      </v-toolbar-items>
+      <v-text-field
+        solo-inverted
+        append-icon="search"
+        placeholder="Search"
+        class="ml-2"
+      >
+      </v-text-field>
+      <v-btn
+        icon
+        v-for="item in menuItems"
+        :key="item.title"
+        :to="item.link">
+        <v-icon>{{ item.icon }}</v-icon>
+        {{ item.title }}
+      </v-btn>
+      <v-btn
+        icon
+        v-if="userIsAuthenticated"
+        @click="onLogout">
+        <v-icon>exit_to_app</v-icon>
+      </v-btn>
     </v-toolbar>
     <v-content>
       <router-view></router-view>
@@ -73,20 +77,22 @@
       }
     },
     computed: {
+      userIsAuthenticated () {
+        return this.$store.getters.user !== null &&
+          this.$store.getters.user !== undefined
+      },
       menuItems () {
-        let menuItems = [
-          {icon: 'face', title: 'Sign up', link: '/signup'},
-          {icon: 'lock_open', title: 'Sign in', link: '/signin'}
-        ]
+        let menuItems
         if (this.userIsAuthenticated) {
           menuItems = [
-            {icon: 'person', title: 'Profile', link: '/profile'}
+          ]
+        } else {
+          menuItems = [
+            {icon: 'face', title: 'Sign up', link: '/signup'},
+            {icon: 'lock_open', title: 'Sign in', link: '/signin'}
           ]
         }
         return menuItems
-      },
-      userIsAuthenticated () {
-        return this.$store.getters.user !== null && this.$store.getters.user !== undefined
       }
     },
     methods: {
