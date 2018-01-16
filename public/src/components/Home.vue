@@ -18,10 +18,31 @@
         v-for="commodity in commodities"
         :key="commodity.id"
       >
-        <v-card>
+        <v-card style="border:1px solid white; border-radius:6px; display:flex; flex-direction:column; justify-content:space-between;">
+          <!--
           <v-card-title>
-            {{ commodity.name }}
+            {{ commodity.name }} TODO...
           </v-card-title>
+          -->
+          <div style="display:flex;">
+            <img style="width:auto; height:86px; margin-left:4px; margin-top:4px;" src="images/1-1.jpg">
+            <div style="align-self:center; margin:4px; width:100%; height:100%; min-height:100%; display:flex; flex-direction:column; justify-content:space-between;">
+              <h1 class="mdc-card__title mdc-card__title--large" style="flex:1; align-items:stretch;">{{ commodity.name }}</h1>
+              <h2 class="mdc-card__subtitle">{ Type }</h2>
+            </div>
+          </div>
+          <div style="display:flex; margin:0px 4px 4px 4px;">
+            <div class="mdc-text-field" style="margin:0px 2px 0px 0px;">
+              <input id="price-buy-agricium" type="text" class="mdc-text-field__input">
+              <label for="price-buy-agricium" class="mdc-text-field__label">Buy Price</label>
+              <div class="mdc-text-field__bottom-line"></div>
+            </div>
+            <div class="mdc-text-field" style="margin:0px 0px 0px 2px;">
+              <input id="price-sell-agricium" type="text" class="mdc-text-field__input">
+              <label for="price-sell-agricium" class="mdc-text-field__label">Sell Price</label>
+              <div class="mdc-text-field__bottom-line"></div>
+            </div>
+          </div>
         </v-card>
       </v-flex>
     </v-layout>
