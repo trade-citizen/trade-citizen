@@ -4,6 +4,7 @@ import Vue from 'vue'
 import Vuetify from 'vuetify'
 import App from './App'
 import * as firebase from 'firebase'
+import 'firebase/firestore'
 import router from './router'
 import { store } from './store'
 import AlertCmp from './components/Shared/Alert.vue'
@@ -34,5 +35,6 @@ new Vue({
         this.$store.dispatch('autoSignIn', user)
       }
     })
+    this.$store.dispatch('loadTradeinfo')
   }
 })
