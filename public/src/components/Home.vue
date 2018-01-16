@@ -59,7 +59,6 @@
     data () {
       return {
         searchFilter: ''
-        // todo: 'Waiting...'
       }
     },
     computed: {
