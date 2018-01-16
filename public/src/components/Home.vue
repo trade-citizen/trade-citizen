@@ -1,8 +1,20 @@
 <template>
-  <v-container>
-    <!--
-    <p>{{ todo }}</p>
-    -->
+  <v-container
+    v-if="searchFilter.length == 0"
+  >
+    searchFilter.length = {{ searchFilter.length }}<br>
+    TODO:(pv) show trade margins sorted highest to lowest
+  </v-container>
+  <v-container
+    v-else-if="stationsFiltered.length == 1"
+  >
+    searchFilter.length = {{ searchFilter.length }}<br>
+    TODO:(pv) show single trade console prices for {{ stationsFiltered[0].name }}
+  </v-container>
+  <v-container
+    v-else
+  >
+    searchFilter.length = {{ searchFilter.length }}<br>
     <v-layout row>
       <v-flex xs12 sm6 offset-sm3>
         <v-card>
@@ -26,38 +38,23 @@
   export default {
     data () {
       return {
-        // searchFilter: '',
+        searchFilter: ''
         // todo: 'Waiting...'
-      }
-    },
-    methods: {
-      onNewSearchFilter (newSearchFilter) {
-        // console.log('Home searchFilter ' + newSearchFilter)
-        /*
-        var todo
-        if (newSearchFilter === '') {
-          todo = 'TODO:(pv) show trade margins sorted highest to lowest.'
-        } else {
-          todo = 'TODO:(pv) search for "' + newSearchFilter + '".' +
-          ' if ambiguous (result > 1) then show list of trade consoles.' +
-          ' if not ambiguous (result == 1) then show single trade console prices.'
-        }
-        this.todo = todo
-        */
       }
     },
     computed: {
       stationsFiltered () {
-        return this.$store.getters.stations
+        return this.$store.getters.stationsFiltered(this.searchFilter)
       }
     },
     mounted: function () {
       // console.log('Home mounted')
       var vm = this
       vm.$root.$on('newSearchFilter', function (newSearchFilter) {
-        vm.onNewSearchFilter(newSearchFilter)
+        // console.log('Home newSearchFilter ' + newSearchFilter)
+        vm.searchFilter = newSearchFilter
       })
-      this.onNewSearchFilter('')
+      vm.searchFilter = ''
     }
   }
 </script>

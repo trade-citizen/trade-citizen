@@ -34,10 +34,20 @@ export default {
     }
   },
   getters: {
-    stations (state) {
-      return state.stations.sort((stationA, stationB) => {
-        return stationA.name > stationB.name
-      })
+    stationsFiltered (state) {
+      return filter => {
+        // console.log(filter)
+        filter = filter.toLowerCase()
+        const stations = []
+        state.stations.forEach((station) => {
+          if (station.name.toLowerCase().indexOf(filter) !== -1) {
+            stations.push(station)
+          }
+        })
+        return stations.sort((stationA, stationB) => {
+          return stationA.name > stationB.name
+        })
+      }
     }
   }
 }
