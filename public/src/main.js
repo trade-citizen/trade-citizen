@@ -30,11 +30,18 @@ new Vue({
       storageBucket: 'trade-citizen.appspot.com',
       messagingSenderId: '676462601414'
     })
+    firebase.firestore().enablePersistence()
+      .then(function () {
+        console.log('enablePersistence success')
+      })
+      .catch(function (err) {
+        console.log('enablePersistence error ' + err.code)
+      })
     firebase.auth().onAuthStateChanged((user) => {
       if (user) {
         this.$store.dispatch('autoSignIn', user)
+        this.$store.dispatch('fetchTradeinfo')
       }
     })
-    this.$store.dispatch('loadStations')
   }
 })

@@ -40,6 +40,7 @@
       </v-toolbar-title>
       <v-text-field
         solo-inverted
+        autofocus
         append-icon="search"
         placeholder="Search"
         class="mx-2"
@@ -78,7 +79,7 @@
       return {
         drawer: false,
         title: 'Trade Citizen',
-        searchFilter: null
+        searchFilter: ''
       }
     },
     computed: {
