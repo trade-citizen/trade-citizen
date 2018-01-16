@@ -6,7 +6,7 @@
       v-model="drawer"
     >
       <v-list>
-        <v-list-tile @click="home">
+        <v-list-tile to="/">
           <v-list-tile-action>
             <v-icon>home</v-icon>
           </v-list-tile-action>
@@ -52,11 +52,16 @@
         <v-btn
           flat
           class="ml-0 mr-2"
-          v-for="item in menuItems"
-          :key="item.title"
-          :to="item.link">
-          <v-icon class="mx-1">{{ item.icon }}</v-icon>
-          {{ item.title }}
+          to="/signup">
+            <v-icon class="mx-1">face</v-icon>
+            Sign up
+        </v-btn>
+        <v-btn
+          flat
+          class="ml-0 mr-2"
+          to="/signin">
+            <v-icon class="mx-1">lock_open</v-icon>
+            Sign in
         </v-btn>
       </div>
     </v-toolbar>
@@ -78,19 +83,6 @@
       userIsAuthenticated () {
         return this.$store.getters.user !== null &&
           this.$store.getters.user !== undefined
-      },
-      menuItems () {
-        let menuItems
-        if (this.userIsAuthenticated) {
-          menuItems = [
-          ]
-        } else {
-          menuItems = [
-            {icon: 'face', title: 'Sign up', link: '/signup'},
-            {icon: 'lock_open', title: 'Sign in', link: '/signin'}
-          ]
-        }
-        return menuItems
       }
     },
     methods: {
