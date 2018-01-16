@@ -70,12 +70,24 @@ export default {
   getters: {
     stations (state) {
       return state.stations.sort((stationA, stationB) => {
-        return stationA.name > stationB.name
+        if (stationA.name < stationB.name) {
+          return -1
+        }
+        if (stationA.name > stationB.name) {
+          return 1
+        }
+        return 0
       })
     },
     commodities (state) {
       return state.commodities.sort((commodityA, commodityB) => {
-        return commodityA.name > commodityB.name
+        if (commodityA.name < commodityB.name) {
+          return -1
+        }
+        if (commodityA.name > commodityB.name) {
+          return 1
+        }
+        return 0
       })
     }
   }
