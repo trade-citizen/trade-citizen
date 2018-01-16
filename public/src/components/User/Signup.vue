@@ -47,16 +47,25 @@
                 <v-layout row>
                   <v-flex xs12>
                     <div class="text-xs-center">
-                    <v-btn round type="submit" :disabled="loading" :loading="loading">
-                      Sign up
-                      <v-icon right>lock_open</v-icon>
-                      <span slot="loader" class="custom-loader">
-                        <v-icon light>cached</v-icon>
-                       </span>
-                    </v-btn>
+                      <v-btn round type="submit" :disabled="loading" :loading="loading">
+                        Sign up
+                        <v-icon right>lock_open</v-icon>
+                        <span slot="loader" class="custom-loader">
+                          <v-icon light>cached</v-icon>
+                         </span>
+                      </v-btn>
                     </div>
                     <div class="text-xs-center">
-                      <v-btn round class="red" dark :disabled="loading" :loading="loading" @click.prevent="onSigninGoogle">Login with Google
+                      <v-btn round class="red" dark :disabled="loading" :loading="loading" @click.prevent="onSigninGoogle">Sign up with Google
+                        <v-icon right dark>lock_open</v-icon>
+                        <span slot="loader" class="custom-loader">
+                          <v-icon light>cached</v-icon>
+                       </span>
+                      </v-btn>
+                    </div>
+                    <!--
+                    <div class="text-xs-center">
+                      <v-btn round primary dark :disabled="loading" :loading="loading" @click.prevent="onSigninFacebook">Sign up with Facebook
                         <v-icon right dark>lock_open</v-icon>
                         <span slot="loader" class="custom-loader">
                         <v-icon light>cached</v-icon>
@@ -64,7 +73,7 @@
                       </v-btn>
                     </div>
                     <div class="text-xs-center">
-                      <v-btn round primary dark :disabled="loading" :loading="loading" @click.prevent="onSigninFacebook">Login with Facebook
+                      <v-btn round dark :disabled="loading" :loading="loading" @click.prevent="onSigninGithub">Sign up with Github
                         <v-icon right dark>lock_open</v-icon>
                         <span slot="loader" class="custom-loader">
                         <v-icon light>cached</v-icon>
@@ -72,21 +81,14 @@
                       </v-btn>
                     </div>
                     <div class="text-xs-center">
-                      <v-btn round dark :disabled="loading" :loading="loading" @click.prevent="onSigninGithub">Login with Github
+                      <v-btn round info dark :disabled="loading" :loading="loading" @click.prevent="onSigninTwitter">Sign up with Twitter
                         <v-icon right dark>lock_open</v-icon>
                         <span slot="loader" class="custom-loader">
                         <v-icon light>cached</v-icon>
                        </span>
                       </v-btn>
                     </div>
-                    <div class="text-xs-center">
-                      <v-btn round info dark :disabled="loading" :loading="loading" @click.prevent="onSigninTwitter">Login with Twitter
-                        <v-icon right dark>lock_open</v-icon>
-                        <span slot="loader" class="custom-loader">
-                        <v-icon light>cached</v-icon>
-                       </span>
-                      </v-btn>
-                    </div>
+                    -->
                   </v-flex>
                 </v-layout>
               </form>

@@ -1,66 +1,62 @@
 <template>
   <v-app dark>
-    <!--
     <v-navigation-drawer
+      app
       fixed
-      :clipped="clipped"
-      v-model="sideNav"
-      app>
+      v-model="drawer"
+    >
       <v-list>
-        <v-list-tile
-          v-for="item in menuItems"
-          :key="item.title"
-          :to="item.link">
+        <v-list-tile @click="home">
           <v-list-tile-action>
-            <v-icon>{{ item.icon }}</v-icon>
+            <v-icon>home</v-icon>
           </v-list-tile-action>
-          <v-list-tile-content>{{ item.title }}</v-list-tile-content>
+          <v-list-tile-content>
+            <v-list-tile-title>Home</v-list-tile-title>
+          </v-list-tile-content>
         </v-list-tile>
         <v-list-tile
           v-if="userIsAuthenticated"
-          @click="onLogout">
+          @click="signout">
           <v-list-tile-action>
             <v-icon>exit_to_app</v-icon>
           </v-list-tile-action>
-          <v-list-tile-content>Logout</v-list-tile-content>
+          <v-list-tile-content>Sign out</v-list-tile-content>
         </v-list-tile>
       </v-list>
     </v-navigation-drawer>
-    -->
     <v-toolbar
       app
       fixed
     >
-      <!--
       <v-toolbar-side-icon
-        @click.stop="sideNav = !sideNav"
-        class="hidden-sm-and-up ">
+        @click.stop="drawer = !drawer">
       </v-toolbar-side-icon>
-      -->
-      <v-toolbar-title>
-        <router-link to="/" tag="span" style="cursor: pointer">{{ title }}</router-link>
+      <v-toolbar-title
+        class="ml-0"
+        tag="span"
+        style="cursor: pointer"
+        @click="home">
+      {{ title }}
       </v-toolbar-title>
       <v-text-field
         solo-inverted
         append-icon="search"
         placeholder="Search"
-        class="ml-2"
+        class="mx-2"
       >
       </v-text-field>
-      <div class="d-flex align-center mr-0">
+      <div
+        class="d-flex align-center mx-0"
+        v-if="!userIsAuthenticated"
+      >
         <v-btn
-          icon
+          flat
+          class="ml-0 mr-2"
           v-for="item in menuItems"
           :key="item.title"
           :to="item.link">
-          <v-icon>{{ item.icon }}</v-icon>
+          <v-icon class="mx-1">{{ item.icon }}</v-icon>
           {{ item.title }}
-        </v-btn>
-        <v-btn
-          icon
-          v-if="userIsAuthenticated"
-          @click="onLogout">
-          <v-icon>exit_to_app</v-icon>
         </v-btn>
       </div>
     </v-toolbar>
@@ -74,7 +70,7 @@
   export default {
     data () {
       return {
-        sideNav: false,
+        drawer: false,
         title: 'Trade Citizen'
       }
     },
@@ -98,8 +94,11 @@
       }
     },
     methods: {
-      onLogout () {
+      signout () {
         this.$store.dispatch('logout')
+        this.home()
+      },
+      home () {
         this.$router.push('/')
       }
     }

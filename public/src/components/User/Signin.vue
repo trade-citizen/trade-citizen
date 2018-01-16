@@ -45,37 +45,39 @@
                     </v-btn>
                     </div>
                     <div class="text-xs-center">
-                      <v-btn round class="red" dark :disabled="loading" :loading="loading" @click.prevent="onSigninGoogle">Login with Google
+                      <v-btn round class="red" dark :disabled="loading" :loading="loading" @click.prevent="onSigninGoogle">Sign in with Google
                         <v-icon right dark>lock_open</v-icon>
-                        <span slot="loader" class="custom-loader">
+                          <span slot="loader" class="custom-loader">
+                        <v-icon light>cached</v-icon>
+                       </span>
+                      </v-btn>
+                    </div>
+                    <!--
+                    <div class="text-xs-center">
+                      <v-btn round primary dark :disabled="loading" :loading="loading" @click.prevent="onSigninFacebook">Sign in with Facebook
+                        <v-icon right dark>lock_open</v-icon>
+                          <span slot="loader" class="custom-loader">
                         <v-icon light>cached</v-icon>
                        </span>
                       </v-btn>
                     </div>
                     <div class="text-xs-center">
-                      <v-btn round primary dark :disabled="loading" :loading="loading" @click.prevent="onSigninFacebook">Login with Facebook
+                      <v-btn round dark :disabled="loading" :loading="loading" @click.prevent="onSigninGithub">Sign in with Github
                         <v-icon right dark>lock_open</v-icon>
-                        <span slot="loader" class="custom-loader">
+                          <span slot="loader" class="custom-loader">
                         <v-icon light>cached</v-icon>
                        </span>
                       </v-btn>
                     </div>
                     <div class="text-xs-center">
-                      <v-btn round dark :disabled="loading" :loading="loading" @click.prevent="onSigninGithub">Login with Github
+                      <v-btn round info dark :disabled="loading" :loading="loading" @click.prevent="onSigninTwitter">Sign in with Twitter
                         <v-icon right dark>lock_open</v-icon>
-                        <span slot="loader" class="custom-loader">
+                          <span slot="loader" class="custom-loader">
                         <v-icon light>cached</v-icon>
                        </span>
                       </v-btn>
                     </div>
-                    <div class="text-xs-center">
-                      <v-btn round info dark :disabled="loading" :loading="loading" @click.prevent="onSigninTwitter">Login with Twitter
-                        <v-icon right dark>lock_open</v-icon>
-                        <span slot="loader" class="custom-loader">
-                        <v-icon light>cached</v-icon>
-                       </span>
-                      </v-btn>
-                    </div>
+                    -->
                   </v-flex>
                 </v-layout>
               </form>
