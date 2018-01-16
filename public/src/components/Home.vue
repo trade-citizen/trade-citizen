@@ -1,24 +1,38 @@
 <template>
   <v-container>
-    <v-layout>
-      <v-flex xs12 sm6 offset-sm3>
-        <v-card>
-          <v-card-title primary-title>
-            <ul class="mx-2">
-              <li>Watch search text-field for changes:<br>
-              Example: https://vuejs.org/v2/guide/computed.html#Watchers
-              </li>
-              <li>if empty, then show trade margins sorted highest to lowest</li>
-              <li>if not empty
-                <ul>
-                  <li>if ambiguous (result > 1) then show list of trade consoles</li>
-                  <li>if not ambiguous (result == 1) then show single trade console prices</li>
-                </ul>
-              </li>
-            </ul>
-          </v-card-title>
-        </v-card>
-      </v-flex>
-    </v-layout>
+    <p>{{ todo }}</p>
   </v-container>
 </template>
+
+<script>
+  export default {
+    data () {
+      return {
+        // searchFilter: '',
+        todo: 'Waiting...'
+      }
+    },
+    methods: {
+      onNewSearchFilter (newSearchFilter) {
+        // console.log('Home searchFilter ' + newSearchFilter)
+        var todo
+        if (newSearchFilter === '') {
+          todo = 'TODO:(pv) show trade margins sorted highest to lowest.'
+        } else {
+          todo = 'TODO:(pv) search for "' + newSearchFilter + '".' +
+          ' if ambiguous (result > 1) then show list of trade consoles.' +
+          ' if not ambiguous (result == 1) then show single trade console prices.'
+        }
+        this.todo = todo
+      }
+    },
+    mounted: function () {
+      // console.log('Home mounted')
+      var vm = this
+      vm.$root.$on('newSearchFilter', function (newSearchFilter) {
+        vm.onNewSearchFilter(newSearchFilter)
+      })
+      this.onNewSearchFilter('')
+    }
+  }
+</script>

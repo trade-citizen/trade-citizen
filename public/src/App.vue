@@ -32,7 +32,7 @@
         @click.stop="drawer = !drawer">
       </v-toolbar-side-icon>
       <v-toolbar-title
-        class="ml-0"
+        class="ml-0 mr-2"
         tag="span"
         style="cursor: pointer"
         @click="home">
@@ -43,6 +43,7 @@
         append-icon="search"
         placeholder="Search"
         class="mx-2"
+        v-model="searchFilter"
       >
       </v-text-field>
       <div
@@ -76,7 +77,8 @@
     data () {
       return {
         drawer: false,
-        title: 'Trade Citizen'
+        title: 'Trade Citizen',
+        searchFilter: null
       }
     },
     computed: {
@@ -92,6 +94,12 @@
       },
       home () {
         this.$router.push('/')
+      }
+    },
+    watch: {
+      searchFilter: function (newSearchFilter, oldSearchFilter) {
+        // console.log('App newSearchFilter:' + newSearchFilter)
+        this.$root.$emit('newSearchFilter', newSearchFilter)
       }
     }
   }
