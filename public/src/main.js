@@ -35,6 +35,6 @@ new Vue({
         this.$store.dispatch('autoSignIn', user)
       }
     })
-    this.$store.dispatch('loadTradeinfo')
+    this.$store.dispatch('loadStations')
   }
 })
