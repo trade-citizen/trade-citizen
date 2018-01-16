@@ -68,19 +68,10 @@ export default {
     }
   },
   getters: {
-    stationsFiltered (state) {
-      return filter => {
-        filter = filter.toLowerCase()
-        const stations = []
-        state.stations.forEach((station) => {
-          if (station.name.toLowerCase().indexOf(filter) !== -1) {
-            stations.push(station)
-          }
-        })
-        return stations.sort((stationA, stationB) => {
-          return stationA.name > stationB.name
-        })
-      }
+    stations (state) {
+      return state.stations.sort((stationA, stationB) => {
+        return stationA.name > stationB.name
+      })
     },
     commodities (state) {
       return state.commodities.sort((commodityA, commodityB) => {

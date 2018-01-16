@@ -38,15 +38,19 @@
         @click="home">
       {{ title }}
       </v-toolbar-title>
-      <v-text-field
-        solo-inverted
-        autofocus
+      <v-select
+        class="mx-2"
         append-icon="search"
         placeholder="Search"
-        class="mx-2"
-        v-model="searchFilter"
+        autofocus
+        solo-inverted
+        autocomplete
+        v-model="station"
+        v-bind:items="stations()"
+        item-text="name"
+        item-value="id"
       >
-      </v-text-field>
+      </v-select>
       <div
         class="d-flex align-center mx-0"
         v-if="!userIsAuthenticated"
@@ -66,6 +70,24 @@
             Sign in
         </v-btn>
       </div>
+      <div
+        v-else-if="station !== null"
+      >
+        <v-btn
+          icon
+          class="ml-0 mr-2"
+          @click="clearSearch()"
+        >
+          <v-icon class="mx-1">clear</v-icon>
+        </v-btn>
+        <v-btn
+          icon
+          class="ml-0 mr-2"
+          @click="saveStation()"
+        >
+          <v-icon class="mx-1">save</v-icon>
+        </v-btn>
+      </div>
     </v-toolbar>
     <v-content>
       <router-view></router-view>
@@ -79,7 +101,7 @@
       return {
         drawer: false,
         title: 'Trade Citizen',
-        searchFilter: ''
+        station: null
       }
     },
     computed: {
@@ -95,12 +117,22 @@
       },
       home () {
         this.$router.push('/')
+      },
+      stations () {
+        return this.$store.getters.stations
+      },
+      clearSearch () {
+        this.station = null
+      },
+      saveStation () {
+        console.log('TODO:(pv) Save the station commodities to firebase firestore')
+        this.$root.$emit('saveStation') // stationId
       }
     },
     watch: {
-      searchFilter: function (newSearchFilter, oldSearchFilter) {
-        // console.log('App newSearchFilter:' + newSearchFilter)
-        this.$root.$emit('newSearchFilter', newSearchFilter)
+      station: function (newStation, oldStation) {
+        // console.log('App newStation ' + newStation)
+        this.$root.$emit('newStation', newStation)
       }
     }
   }

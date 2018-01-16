@@ -1,20 +1,16 @@
 <template>
   <v-container
-    v-if="searchFilter.length == 0 || stationsFiltered.length == 0"
+    v-if="station == null"
   >
-    TODO:(pv) show trade margins sorted highest to lowest
+    TODO:(pv) Show trade margins sorted highest to lowest
   </v-container>
   <v-container
-    v-else-if="stationsFiltered.length == 1"
+    v-else
     grid-list-md
   >
     <!--
-    TODO:(pv) show single trade console prices for {{ stationsFiltered[0].name }}
+    Show single trade console prices for {{ stationsFiltered[0].name }}
     -->
-    <v-tooltip bottom>
-      <span slot="activator"><h2>{{ stationsFiltered[0].name }}</h2></span>
-      <span>TODO:(pv) *Move* this station title in to the search filter</span>
-    </v-tooltip>
     <v-layout row wrap>
       <v-flex
         xs4
@@ -81,6 +77,7 @@
       </v-flex>
     </v-layout>
   </v-container>
+  <!--
   <v-container
     v-else
   >
@@ -95,9 +92,9 @@
               >
                 <v-list-tile-content>
                   <v-list-tile-title>{{ station.name }}</v-list-tile-title>
-                  <!--
+                  <!- -
                   <v-list-tile-sub-title>{{ station.stationType }}</v-list-tile-sub-title>
-                  -->
+                  - ->
                 </v-list-tile-content>
               </v-list-tile>
               <v-divider v-if="index + 1 < stationsFiltered.length" :key="index"></v-divider>
@@ -107,19 +104,17 @@
       </v-flex>
     </v-layout>
   </v-container>
+  -->
 </template>
 
 <script>
   export default {
     data () {
       return {
-        searchFilter: ''
+        station: null
       }
     },
     computed: {
-      stationsFiltered () {
-        return this.$store.getters.stationsFiltered(this.searchFilter)
-      },
       commodities () {
         return this.$store.getters.commodities
       }
@@ -127,9 +122,9 @@
     mounted: function () {
       // console.log('Home mounted')
       var vm = this
-      vm.$root.$on('newSearchFilter', function (newSearchFilter) {
-        // console.log('Home newSearchFilter ' + newSearchFilter)
-        vm.searchFilter = newSearchFilter
+      vm.$root.$on('newStation', function (newStation) {
+        // console.log('Home newStation ' + newStation)
+        vm.station = newStation
       })
     }
   }
