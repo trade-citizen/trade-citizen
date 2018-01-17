@@ -38,41 +38,30 @@
         @click="home">
       {{ title }}
       </v-toolbar-title>
-      <v-select
-        class="mx-2"
-        append-icon="search"
-        placeholder="Search"
-        autofocus
-        solo-inverted
-        autocomplete
-        v-model="station"
-        v-bind:items="stations()"
-        item-text="name"
-        item-value="id"
-      >
-      </v-select>
-      <div
-        class="d-flex align-center mx-0"
-        v-if="!userIsAuthenticated"
-      >
+      <template v-if="$route.path==='/signin'">
+        <v-spacer></v-spacer>
         <v-btn
           flat
           class="ml-0 mr-2"
           to="/signup">
-            <v-icon class="mx-1">face</v-icon>
-            Sign up
+          <v-icon class="mx-1">face</v-icon>
+          Sign up
         </v-btn>
-        <v-btn
-          flat
-          class="ml-0 mr-2"
-          to="/signin">
-            <v-icon class="mx-1">lock_open</v-icon>
-            Sign in
-        </v-btn>
-      </div>
-      <div
-        v-else-if="station !== null"
-      >
+      </template>
+      <template v-else-if="$route.path==='/'">
+        <v-select
+          class="mx-2"
+          append-icon="search"
+          placeholder="Search"
+          autofocus
+          solo-inverted
+          autocomplete
+          v-model="station"
+          v-bind:items="stations()"
+          item-text="name"
+          item-value="id"
+        >
+        </v-select>
         <v-btn
           icon
           class="ml-0 mr-2"
@@ -80,14 +69,27 @@
         >
           <v-icon class="mx-1">clear</v-icon>
         </v-btn>
-        <v-btn
-          icon
-          class="ml-0 mr-2"
-          @click="saveStation()"
-        >
-          <v-icon class="mx-1">save</v-icon>
-        </v-btn>
-      </div>
+        <template v-if="station != null">
+          <template v-if="!userIsAuthenticated">
+            <v-btn
+              flat
+              class="mx-0"
+              to="/signin">
+              <v-icon class="mx-1">lock_open</v-icon>
+              Sign in
+            </v-btn>
+          </template>
+          <template v-else>
+            <v-btn
+              icon
+              class="ml-0 mr-2"
+              @click="saveStation()"
+            >
+              <v-icon class="mx-1">save</v-icon>
+            </v-btn>
+          </template>
+        </template>
+      </template>
     </v-toolbar>
     <v-content>
         <v-fade-transition mode="out-in">

@@ -38,10 +38,11 @@ new Vue({
         console.log('enablePersistence error ' + err.code)
       })
     firebase.auth().onAuthStateChanged((user) => {
+      console.log('onAuthStateChanged user:' + user)
       if (user) {
         this.$store.dispatch('autoSignIn', user)
-        this.$store.dispatch('fetchTradeinfo')
       }
+      this.$store.dispatch('fetchTradeinfo')
     })
   }
 })

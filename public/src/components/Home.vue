@@ -14,7 +14,7 @@
     <v-layout row wrap>
       <v-flex
         xs4
-        v-for="commodity in commodities"
+        v-for="(commodity, index) in commodities"
         :key="commodity.id"
       >
         <v-card style="border:1px solid white; border-radius:6px;">
@@ -48,19 +48,21 @@
             <v-layout row>
               <v-flex xs6>
                 <v-text-field
+                  class="input-group--focused"
                   color="cyan lighten-2"
                   hide-details
                   label="Buy Price"
-                  placeholder="aUEC / Unit"
+                  :disabled="!userIsAuthenticated"
                 >
                 </v-text-field>
               </v-flex>
               <v-flex xs6>
                 <v-text-field
+                  class="input-group--focused"
                   color="cyan lighten-2"
                   hide-details
                   label="Sell Price"
-                  placeholder="aUEC / Unit"
+                  :disabled="!userIsAuthenticated"
                 >
                 </v-text-field>
               </v-flex>
@@ -115,6 +117,10 @@
       }
     },
     computed: {
+      userIsAuthenticated () {
+        return this.$store.getters.user !== null &&
+          this.$store.getters.user !== undefined
+      },
       commodities () {
         return this.$store.getters.commodities
       }
