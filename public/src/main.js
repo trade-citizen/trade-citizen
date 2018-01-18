@@ -9,6 +9,12 @@ import router from './router'
 import { store } from './store'
 import AlertCmp from './components/Shared/Alert.vue'
 
+// Required for roboto & material-design-icons fonts to work offline
+import 'roboto-fontface/css/roboto/roboto-fontface.css'
+import 'material-design-icons-iconfont/dist/material-design-icons.css'
+// TODO:(pv) Include http://fontawesome.io/icons/ and https://materialdesignicons.com/
+//  https://next.vuetifyjs.com/components/icons#examples
+
 Vue.use(Vuetify)
 Vue.config.productionTip = false
 

@@ -7,7 +7,10 @@
     "indexes": "firestore.indexes.json"
   },
   "hosting": {
-    "public": "public/dist"
+    "public": "public/dist",
+    "headers": [
+      { "source":"/service-worker.js", "headers": [{"key": "Cache-Control", "value": "no-cache"}] }
+    ]
   },
   "storage": {
     "rules": "storage.rules"
