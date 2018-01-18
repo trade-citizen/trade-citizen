@@ -48,6 +48,16 @@
           Sign up
         </v-btn>
       </template>
+      <template v-if="$route.path==='/signup'">
+        <v-spacer></v-spacer>
+        <v-btn
+          flat
+          class="ml-0 mr-2"
+          to="/signin">
+          <v-icon class="mx-1">lock_open</v-icon>
+          Sign in
+        </v-btn>
+      </template>
       <template v-else-if="$route.path==='/'">
         <v-select
           class="mx-2"
@@ -73,7 +83,7 @@
           <template v-if="!userIsAuthenticated">
             <v-btn
               flat
-              class="mx-0"
+              class="ml-0 mr-2"
               to="/signin">
               <v-icon class="mx-1">lock_open</v-icon>
               Sign in

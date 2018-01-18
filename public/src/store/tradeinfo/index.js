@@ -2,40 +2,42 @@ import * as firebase from 'firebase'
 
 export default {
   state: {
-    stations: [
+    commodityCategories: [
     ],
     commodities: [
+    ],
+    stations: [
     ]
   },
   mutations: {
-    setStations (state, payload) {
-      state.stations = payload
+    setCommodityCategories (state, payload) {
+      state.commodityCategories = payload
     },
     setCommodities (state, payload) {
       state.commodities = payload
+    },
+    setStations (state, payload) {
+      state.stations = payload
     }
   },
   actions: {
     fetchTradeinfo ({commit}) {
       commit('setLoading', true)
-      firebase.firestore().collection('stations')
+      firebase.firestore().collection('itemCategories')
         .get()
         .then((querySnapshot) => {
-          console.log('got stations')
-          const stations = []
+          console.log('got itemCategories')
+          const commodityCategories = []
           querySnapshot.forEach((doc) => {
-            // console.log(doc)
             let data = doc.data()
-            let station = {
+            let commodityCategory = {
               id: doc.id,
-              anchor: data.anchor,
-              name: data.name,
-              stationType: data.type
+              name: data.name
             }
-            // console.log('station.name:' + station.name)
-            stations.push(station)
+            // console.log('commodityCategory.name:' + commodityCategory.name)
+            commodityCategories.push(commodityCategory)
           })
-          commit('setStations', stations)
+          commit('setCommodityCategories', commodityCategories)
 
           firebase.firestore().collection('itemTypes')
             .get()
@@ -54,7 +56,31 @@ export default {
               })
               commit('setCommodities', commodities)
 
-              commit('setLoading', false)
+              firebase.firestore().collection('stations')
+                .get()
+                .then((querySnapshot) => {
+                  console.log('got stations')
+                  const stations = []
+                  querySnapshot.forEach((doc) => {
+                    // console.log(doc)
+                    let data = doc.data()
+                    let station = {
+                      id: doc.id,
+                      anchor: data.anchor,
+                      name: data.name,
+                      stationType: data.type
+                    }
+                    // console.log('station.name:' + station.name)
+                    stations.push(station)
+                  })
+                  commit('setStations', stations)
+
+                  commit('setLoading', false)
+                })
+                .catch((error) => {
+                  console.error('Error getting stations', error)
+                  commit('setLoading', false)
+                })
             })
             .catch((error) => {
               console.error('Error getting itemTypes', error)
@@ -62,29 +88,29 @@ export default {
             })
         })
         .catch((error) => {
-          console.error('Error getting stations', error)
+          console.error('Error getting itemCategories', error)
           commit('setLoading', false)
         })
     }
   },
   getters: {
-    stations (state) {
-      return state.stations.sort((stationA, stationB) => {
-        if (stationA.name < stationB.name) {
-          return -1
-        }
-        if (stationA.name > stationB.name) {
-          return 1
-        }
-        return 0
-      })
-    },
     commodities (state) {
       return state.commodities.sort((commodityA, commodityB) => {
         if (commodityA.name < commodityB.name) {
           return -1
         }
         if (commodityA.name > commodityB.name) {
+          return 1
+        }
+        return 0
+      })
+    },
+    stations (state) {
+      return state.stations.sort((stationA, stationB) => {
+        if (stationA.name < stationB.name) {
+          return -1
+        }
+        if (stationA.name > stationB.name) {
           return 1
         }
         return 0
