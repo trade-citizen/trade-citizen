@@ -66,7 +66,7 @@
           autofocus
           solo-inverted
           autocomplete
-          v-model="station"
+          v-model="stationId"
           v-bind:items="stations()"
           item-text="name"
           item-value="id"
@@ -79,7 +79,7 @@
         >
           <v-icon class="mx-1">clear</v-icon>
         </v-btn>
-        <template v-if="station != null">
+        <template v-if="stationId != null">
           <template v-if="!userIsAuthenticated">
             <v-btn
               flat
@@ -93,7 +93,7 @@
             <v-btn
               icon
               class="ml-0 mr-2"
-              @click="saveStation()"
+              @click="saveStation(stationId)"
             >
               <v-icon class="mx-1">save</v-icon>
             </v-btn>
@@ -115,7 +115,7 @@
       return {
         drawer: false,
         title: 'Trade Citizen',
-        station: null
+        stationId: null
       }
     },
     computed: {
@@ -126,6 +126,7 @@
     },
     methods: {
       signout () {
+        this.stationId = null
         this.$store.dispatch('logout')
         this.home()
       },
@@ -138,13 +139,13 @@
       clearSearch () {
         this.station = null
       },
-      saveStation () {
+      saveStation (stationId) {
         console.log('TODO:(pv) Save the station commodities to firebase firestore')
         this.$root.$emit('saveStation') // stationId
       }
     },
     watch: {
-      station: function (newStation, oldStation) {
+      stationId: function (newStation, oldStation) {
         // console.log('App newStation ' + newStation)
         this.$root.$emit('newStation', newStation)
       }

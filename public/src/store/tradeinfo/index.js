@@ -8,6 +8,8 @@ export default {
     ],
     commoditiesList: [
     ],
+    stationsMap: {
+    },
     stationsList: [
     ]
   },
@@ -45,7 +47,13 @@ export default {
       })
     },
     setStations (state, payload) {
-      state.stationsList = payload.sort((a, b) => {
+      state.stationsMap = payload
+      let list = []
+      for (let key in payload) {
+        let value = payload[key]
+        list.push(value)
+      }
+      state.stationsList = list.sort((a, b) => {
         let aName = a.name.toLowerCase()
         let bName = b.name.toLowerCase()
         if (aName < bName) {
@@ -107,18 +115,18 @@ export default {
       firebase.firestore().collection('stations')
         .onSnapshot((querySnapshot) => {
           console.log('got stations')
-          const stations = []
+          const stations = {}
           querySnapshot.forEach((doc) => {
             // console.log(doc)
             let data = doc.data()
             let station = {
               id: doc.id,
-              anchor: data.anchor,
-              name: data.name,
-              stationType: data.type
+              // anchor: data.anchor,
+              name: data.name
+              // stationType: data.type
             }
             // console.log('station.name:' + station.name)
-            stations.push(station)
+            stations[station.id] = station
           })
           context.commit('setStations', stations)
           // commit('setLoading', false)
@@ -139,6 +147,11 @@ export default {
     },
     stations (state) {
       return state.stationsList
+    },
+    station (state) {
+      return (stationId) => {
+        return state.stationsMap[stationId]
+      }
     }
   }
 }
