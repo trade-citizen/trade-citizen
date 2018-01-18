@@ -61,11 +61,13 @@
       <template v-else-if="$route.path==='/'">
         <v-select
           class="mx-2"
+          color="cyan lighten-2"
           append-icon="search"
           placeholder="Search"
           autofocus
           solo-inverted
           autocomplete
+          :dense="$vuetify.breakpoint.xsOnly"
           v-model="stationId"
           v-bind:items="stations()"
           item-text="name"
