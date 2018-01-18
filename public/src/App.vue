@@ -137,17 +137,17 @@
         return this.$store.getters.stations
       },
       clearSearch () {
-        this.station = null
+        this.stationId = null
       },
       saveStation (stationId) {
-        console.log('TODO:(pv) Save the station commodities to firebase firestore')
-        this.$root.$emit('saveStation') // stationId
+        // console.log('App saveStation stationId:' + stationId)
+        this.$root.$emit('saveStationId', stationId)
       }
     },
     watch: {
-      stationId: function (newStation, oldStation) {
-        // console.log('App newStation ' + newStation)
-        this.$root.$emit('newStation', newStation)
+      stationId: function (newStationId, oldStationId) {
+        // console.log('App newStationId newStationId:' + newStationId)
+        this.$root.$emit('newStationId', newStationId)
       }
     }
   }

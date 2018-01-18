@@ -1,6 +1,6 @@
 <template>
   <v-container
-    v-if="station == null"
+    v-if="stationId == null"
   >
     TODO:(pv) Show trade margins sorted highest to lowest
   </v-container>
@@ -8,9 +8,6 @@
     v-else
     grid-list-md
   >
-    <!--
-    Show single trade console prices for {{ stationsFiltered[0].name }}
-    -->
     <v-layout row wrap>
       <v-flex
         xs4
@@ -50,6 +47,7 @@
                 <v-text-field
                   class="input-group--focused"
                   hide-details
+                  v-model="pricesBuy[commodity.id]"
                   label="Buy Price"
                   :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
                   :disabled="!userIsAuthenticated"
@@ -60,6 +58,7 @@
                 <v-text-field
                   class="input-group--focused"
                   hide-details
+                  v-model="pricesSell[commodity.id]"
                   label="Sell Price"
                   :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
                   :disabled="!userIsAuthenticated"
@@ -79,41 +78,13 @@
       </v-flex>
     </v-layout>
   </v-container>
-  <!--
-  <v-container
-    v-else
-  >
-    <v-layout row>
-      <v-flex xs12>
-        <v-card>
-          <v-list>
-            <template v-for="(station, index) in stationsFiltered">
-              <v-list-tile
-                ripple
-                :key="station.id"
-              >
-                <v-list-tile-content>
-                  <v-list-tile-title>{{ station.name }}</v-list-tile-title>
-                  <!- -
-                  <v-list-tile-sub-title>{{ station.stationType }}</v-list-tile-sub-title>
-                  - ->
-                </v-list-tile-content>
-              </v-list-tile>
-              <v-divider v-if="index + 1 < stationsFiltered.length" :key="index"></v-divider>
-            </template>
-          </v-list>
-        </v-card>
-      </v-flex>
-    </v-layout>
-  </v-container>
-  -->
 </template>
 
 <script>
   export default {
     data () {
       return {
-        station: null
+        stationId: null
       }
     },
     computed: {
@@ -123,14 +94,41 @@
       },
       commodities () {
         return this.$store.getters.commodities
+      },
+      pricesBuy () {
+        return {}
+      },
+      pricesSell () {
+        return {}
+      }
+    },
+    methods: {
+      newStationId (stationId) {
+        console.log('newStationId stationId:' + stationId)
+        this.stationId = stationId
+        let station = this.$store.getters.station(stationId)
+        console.log('newStationId station:', station)
+        console.log('newStationId TODO:(pv) Load station data from local or firestore')
+      },
+      saveStationId (stationId) {
+        console.log('saveStationId stationId:', stationId)
+        let station = this.$store.getters.station(stationId)
+        console.log('saveStationId station:', station)
+        console.log('saveStationId pricesBuy:', this.pricesBuy)
+        console.log('saveStationId pricesSell:', this.pricesSell)
+        console.log('saveStationId TODO:(pv) Save the station commodities to firebase firestore')
       }
     },
     mounted: function () {
       // console.log('Home mounted')
       var vm = this
-      vm.$root.$on('newStation', function (newStation) {
-        // console.log('Home newStation ' + newStation)
-        vm.station = newStation
+      vm.$root.$on('newStationId', function (stationId) {
+        console.log('Home newStationId stationId:' + stationId)
+        vm.newStationId(stationId)
+      })
+      vm.$root.$on('saveStationId', function (stationId) {
+        console.log('Home saveStationId stationId:' + stationId)
+        vm.saveStationId(stationId)
       })
     }
   }
