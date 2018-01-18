@@ -49,9 +49,9 @@
               <v-flex xs6>
                 <v-text-field
                   class="input-group--focused"
-                  color="cyan lighten-2"
                   hide-details
                   label="Buy Price"
+                  :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
                   :disabled="!userIsAuthenticated"
                 >
                 </v-text-field>
@@ -59,9 +59,9 @@
               <v-flex xs6>
                 <v-text-field
                   class="input-group--focused"
-                  color="cyan lighten-2"
                   hide-details
                   label="Sell Price"
+                  :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
                   :disabled="!userIsAuthenticated"
                 >
                 </v-text-field>
