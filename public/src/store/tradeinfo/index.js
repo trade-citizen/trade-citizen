@@ -2,6 +2,8 @@ import * as firebase from 'firebase'
 
 export default {
   state: {
+    commodityCategoriesMap: {
+    },
     commodityCategoriesList: [
     ],
     commoditiesList: [
@@ -11,7 +13,13 @@ export default {
   },
   mutations: {
     setCommodityCategories (state, payload) {
-      state.commodityCategoriesList = payload.sort((a, b) => {
+      state.commodityCategoriesMap = payload
+      let list = []
+      for (let key in payload) {
+        let value = payload[key]
+        list.push(value)
+      }
+      state.commodityCategoriesList = list.sort((a, b) => {
         let aName = a.name.toLowerCase()
         let bName = b.name.toLowerCase()
         if (aName < bName) {
@@ -51,13 +59,13 @@ export default {
     }
   },
   actions: {
-    fetchTradeinfo ({commit}) {
+    fetchTradeinfo (context) {
       // commit('setLoading', true)
 
       firebase.firestore().collection('itemCategories')
         .onSnapshot((querySnapshot) => {
           console.log('got itemCategories')
-          const commodityCategories = []
+          const commodityCategories = {}
           querySnapshot.forEach((doc) => {
             // console.log(doc)
             let data = doc.data()
@@ -66,9 +74,9 @@ export default {
               name: data.name
             }
             // console.log('commodityCategory.name:' + commodityCategory.name)
-            commodityCategories.push(commodityCategory)
+            commodityCategories[commodityCategory.id] = commodityCategory
           })
-          commit('setCommodityCategories', commodityCategories)
+          context.commit('setCommodityCategories', commodityCategories)
         }, (error) => {
           console.error('Error getting itemCategories', error)
           // commit('setLoading', false)
@@ -81,14 +89,16 @@ export default {
           querySnapshot.forEach((doc) => {
             // console.log(doc)
             let data = doc.data()
+            let commodityCategoryId = data.category.id
             let commodity = {
               id: doc.id,
-              name: data.name
+              name: data.name,
+              category: context.getters.commodityCategory(commodityCategoryId)
             }
             // console.log('commodity.name:' + commodity.name)
             commodities.push(commodity)
           })
-          commit('setCommodities', commodities)
+          context.commit('setCommodities', commodities)
         }, (error) => {
           console.error('Error getting itemTypes', error)
           // commit('setLoading', false)
@@ -110,7 +120,7 @@ export default {
             // console.log('station.name:' + station.name)
             stations.push(station)
           })
-          commit('setStations', stations)
+          context.commit('setStations', stations)
           // commit('setLoading', false)
         }, (error) => {
           console.error('Error getting stations', error)
@@ -119,6 +129,11 @@ export default {
     }
   },
   getters: {
+    commodityCategory (state) {
+      return (commodityCategoryId) => {
+        return state.commodityCategoriesMap[commodityCategoryId].name
+      }
+    },
     commodities (state) {
       return state.commoditiesList
     },

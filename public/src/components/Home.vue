@@ -38,7 +38,7 @@
                 <v-card-title primary-title class="px-0 py-0">
                       <h3 class="headline">{{ commodity.name }}</h3>
                 </v-card-title>
-                <div>{ commodity.type }</div>
+                <div>{{ commodity.category }}</div>
                 <!--
                     </v-layout>
                   </v-container>
