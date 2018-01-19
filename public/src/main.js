@@ -15,6 +15,8 @@ import 'material-design-icons-iconfont/dist/material-design-icons.css'
 // TODO:(pv) Include http://fontawesome.io/icons/ and https://materialdesignicons.com/
 //  https://next.vuetifyjs.com/components/icons#examples
 
+Vue.prototype.$PACKAGE_VERSION = PACKAGE_VERSION
+
 Vue.use(Vuetify)
 Vue.config.productionTip = false
 

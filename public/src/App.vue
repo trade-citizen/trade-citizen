@@ -108,6 +108,10 @@
           <router-view></router-view>
         </v-fade-transition>
     </v-content>
+    <v-footer app class="pa-3">
+      <v-spacer></v-spacer>
+      <div>v{{ $PACKAGE_VERSION }} &copy; 2018</div>
+    </v-footer>
   </v-app>
 </template>
 
