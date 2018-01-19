@@ -74,14 +74,14 @@
           item-value="id"
         >
         </v-select>
-        <v-btn
-          icon
-          class="ml-0 mr-2"
-          @click="clearSearch()"
-        >
-          <v-icon class="mx-1">clear</v-icon>
-        </v-btn>
         <template v-if="stationId != null">
+          <v-btn
+            icon
+            class="ml-0 mr-2"
+            @click="clearSearch()"
+          >
+            <v-icon class="mx-1">clear</v-icon>
+          </v-btn>
           <template v-if="!userIsAuthenticated">
             <v-btn
               flat
