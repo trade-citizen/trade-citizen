@@ -87,6 +87,18 @@ export default {
       stationId: null
     }
   },
+  mounted: function () {
+    // console.log('Home mounted')
+    var vm = this
+    vm.$root.$on('onStationChanged', function (stationId) {
+      console.log('Home onStationChanged stationId:' + stationId)
+      vm.onStationChanged(stationId)
+    })
+    vm.$root.$on('saveStation', function (stationId) {
+      console.log('Home saveStation stationId:' + stationId)
+      vm.saveStation(stationId)
+    })
+  },
   computed: {
     userIsAuthenticated () {
       return this.$store.getters.user !== null &&
@@ -110,18 +122,6 @@ export default {
     saveStation (stationId) {
       console.log('saveStation stationId:', stationId)
     }
-  },
-  mounted: function () {
-    // console.log('Home mounted')
-    var vm = this
-    vm.$root.$on('onStationChanged', function (stationId) {
-      console.log('Home onStationChanged stationId:' + stationId)
-      vm.onStationChanged(stationId)
-    })
-    vm.$root.$on('saveStation', function (stationId) {
-      console.log('Home saveStation stationId:' + stationId)
-      vm.saveStation(stationId)
-    })
   }
 }
 </script>

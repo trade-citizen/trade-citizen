@@ -142,7 +142,7 @@ export default {
     },
     saveStation (stationId) {
       // console.log('App saveStation stationId:' + stationId)
-      this.$root.$emit('saveStationId', stationId)
+      this.$root.$emit('saveStation', stationId)
     }
   }
 }
