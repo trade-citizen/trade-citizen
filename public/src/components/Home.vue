@@ -120,7 +120,16 @@ export default {
       this.stationId = stationId
     },
     saveStation (stationId) {
-      console.log('saveStation stationId:', stationId)
+      // console.log('saveStation stationId:', stationId)
+      let station = this.$store.getters.station(stationId)
+      // console.log('saveStation station:', station)
+      // console.log('saveStation station:', this.pricesBuy)
+      // console.log('saveStation station:', this.pricesSell)
+      this.$store.dispatch('savePrices', {
+        station: station,
+        pricesBuy: this.pricesBuy,
+        pricesSell: this.pricesSell
+      })
     }
   }
 }

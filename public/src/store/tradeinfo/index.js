@@ -134,6 +134,43 @@ export default {
           console.error('Error getting stations', error)
           // commit('setLoading', false)
         })
+    },
+    savePrices (context, {station, pricesBuy, pricesSell}) {
+      console.log('savePrices station:', station)
+      console.log('savePrices pricesBuy:', pricesBuy)
+      console.log('savePrices pricesSell:', pricesSell)
+      let stationDocRef = firebase.firestore().collection('stations').doc(station.id)
+      // console.log('stationDocRef', stationDocRef)
+      for (let commodityId in pricesBuy) {
+        let price = pricesBuy[commodityId]
+        console.log('saveStation add /itemTypes/' + commodityId + '/buy/%AUTO-ID% { price:' + price + ', station:' + stationDocRef.path + '}')
+        firebase.firestore().collection('itemTypes/' + commodityId + '/buy')
+          .add({
+            value: Number.parseFloat(price),
+            station: stationDocRef
+          })
+          .then((docRef) => {
+            console.log('SUCCESS!')
+          })
+          .catch((error) => {
+            console.error('ERROR', error)
+          })
+      }
+      for (let commodityId in pricesSell) {
+        let price = pricesSell[commodityId]
+        console.log('saveStation add /itemTypes/' + commodityId + '/sell/%AUTO-ID% { price:' + price + ', station:' + stationDocRef.path + '}')
+        firebase.firestore().collection('itemTypes/' + commodityId + '/sell')
+          .add({
+            price: Number.parseFloat(price),
+            station: stationDocRef
+          })
+          .then((docRef) => {
+            console.log('SUCCESS!')
+          })
+          .catch((error) => {
+            console.error('ERROR', error)
+          })
+      }
     }
   },
   getters: {
