@@ -81,55 +81,47 @@
 </template>
 
 <script>
-  export default {
-    data () {
-      return {
-        stationId: null
-      }
-    },
-    computed: {
-      userIsAuthenticated () {
-        return this.$store.getters.user !== null &&
-          this.$store.getters.user !== undefined
-      },
-      commodities () {
-        return this.$store.getters.commodities
-      },
-      pricesBuy () {
-        return {}
-      },
-      pricesSell () {
-        return {}
-      }
-    },
-    methods: {
-      newStationId (stationId) {
-        console.log('newStationId stationId:' + stationId)
-        this.stationId = stationId
-        let station = this.$store.getters.station(stationId)
-        console.log('newStationId station:', station)
-        console.log('newStationId TODO:(pv) Load station data from local or firestore')
-      },
-      saveStationId (stationId) {
-        console.log('saveStationId stationId:', stationId)
-        let station = this.$store.getters.station(stationId)
-        console.log('saveStationId station:', station)
-        console.log('saveStationId pricesBuy:', this.pricesBuy)
-        console.log('saveStationId pricesSell:', this.pricesSell)
-        console.log('saveStationId TODO:(pv) Save the station commodities to firebase firestore')
-      }
-    },
-    mounted: function () {
-      // console.log('Home mounted')
-      var vm = this
-      vm.$root.$on('newStationId', function (stationId) {
-        console.log('Home newStationId stationId:' + stationId)
-        vm.newStationId(stationId)
-      })
-      vm.$root.$on('saveStationId', function (stationId) {
-        console.log('Home saveStationId stationId:' + stationId)
-        vm.saveStationId(stationId)
-      })
+export default {
+  data () {
+    return {
+      stationId: null
     }
+  },
+  computed: {
+    userIsAuthenticated () {
+      return this.$store.getters.user !== null &&
+        this.$store.getters.user !== undefined
+    },
+    commodities () {
+      return this.$store.getters.commodities
+    },
+    pricesBuy () {
+      return {}
+    },
+    pricesSell () {
+      return {}
+    }
+  },
+  methods: {
+    onStationChanged (stationId) {
+      console.log('onStationChanged stationId:' + stationId)
+      this.stationId = stationId
+    },
+    saveStation (stationId) {
+      console.log('saveStation stationId:', stationId)
+    }
+  },
+  mounted: function () {
+    // console.log('Home mounted')
+    var vm = this
+    vm.$root.$on('onStationChanged', function (stationId) {
+      console.log('Home onStationChanged stationId:' + stationId)
+      vm.onStationChanged(stationId)
+    })
+    vm.$root.$on('saveStation', function (stationId) {
+      console.log('Home saveStation stationId:' + stationId)
+      vm.saveStation(stationId)
+    })
   }
+}
 </script>

@@ -73,6 +73,7 @@
           v-bind:items="stations()"
           item-text="name"
           item-value="id"
+          @change="onStationChanged"
         >
         </v-select>
         <template v-if="stationId != null">
@@ -110,44 +111,41 @@
 </template>
 
 <script>
-  export default {
-    data () {
-      return {
-        drawer: false,
-        title: 'Trade Citizen',
-        stationId: null
-      }
+export default {
+  data () {
+    return {
+      drawer: false,
+      title: 'Trade Citizen',
+      stationId: null
+    }
+  },
+  computed: {
+    userIsAuthenticated () {
+      return this.$store.getters.user !== null &&
+        this.$store.getters.user !== undefined
+    }
+  },
+  methods: {
+    signout () {
+      this.stationId = null
+      this.$store.dispatch('logout')
+      this.home()
     },
-    computed: {
-      userIsAuthenticated () {
-        return this.$store.getters.user !== null &&
-          this.$store.getters.user !== undefined
-      }
+    home () {
+      this.$router.push('/')
     },
-    methods: {
-      signout () {
-        this.stationId = null
-        this.$store.dispatch('logout')
-        this.home()
-      },
-      home () {
-        this.$router.push('/')
-      },
-      stations () {
-        return this.$store.getters.stations
-      },
-      saveStation (stationId) {
-        // console.log('App saveStation stationId:' + stationId)
-        this.$root.$emit('saveStationId', stationId)
-      }
+    stations () {
+      return this.$store.getters.stations
     },
-    watch: {
-      stationId: function (newStationId, oldStationId) {
-        // console.log('App newStationId newStationId:' + newStationId)
-        this.$root.$emit('newStationId', newStationId)
-      }
+    onStationChanged (stationId) {
+      this.$root.$emit('onStationChanged', stationId)
+    },
+    saveStation (stationId) {
+      // console.log('App saveStation stationId:' + stationId)
+      this.$root.$emit('saveStationId', stationId)
     }
   }
+}
 </script>
 
 <style lang="stylus">
