@@ -6,6 +6,8 @@ export default {
     },
     commodityCategoriesList: [
     ],
+    commoditiesMap: {
+    },
     commoditiesList: [
     ],
     stationsMap: {
@@ -34,7 +36,13 @@ export default {
       })
     },
     setCommodities (state, payload) {
-      state.commoditiesList = payload.sort((a, b) => {
+      state.commoditiesMap = payload
+      let list = []
+      for (let key in payload) {
+        let value = payload[key]
+        list.push(value)
+      }
+      state.commoditiesList = list.sort((a, b) => {
         let aName = a.name.toLowerCase()
         let bName = b.name.toLowerCase()
         if (aName < bName) {
@@ -94,7 +102,7 @@ export default {
       firebase.firestore().collection('itemTypes')
         .onSnapshot((querySnapshot) => {
           console.log('got itemTypes')
-          const commodities = []
+          const commodities = {}
           querySnapshot.forEach((doc) => {
             // console.log(doc)
             let docData = doc.data()
@@ -106,7 +114,7 @@ export default {
               category: context.getters.commodityCategory(commodityCategoryId)
             }
             // console.log('commodity.name:' + commodity.name)
-            commodities.push(commodity)
+            commodities[commodity.id] = commodity
           })
           context.commit('setCommodities', commodities)
         }, (error) => {
