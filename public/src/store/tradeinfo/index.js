@@ -76,10 +76,11 @@ export default {
           const commodityCategories = {}
           querySnapshot.forEach((doc) => {
             // console.log(doc)
-            let data = doc.data()
+            let docData = doc.data()
+            // console.log(docData)
             let commodityCategory = {
               id: doc.id,
-              name: data.name
+              name: docData.name
             }
             // console.log('commodityCategory.name:' + commodityCategory.name)
             commodityCategories[commodityCategory.id] = commodityCategory
@@ -96,11 +97,12 @@ export default {
           const commodities = []
           querySnapshot.forEach((doc) => {
             // console.log(doc)
-            let data = doc.data()
-            let commodityCategoryId = data.category.id
+            let docData = doc.data()
+            // console.log(docData)
+            let commodityCategoryId = docData.category.id
             let commodity = {
               id: doc.id,
-              name: data.name,
+              name: docData.name,
               category: context.getters.commodityCategory(commodityCategoryId)
             }
             // console.log('commodity.name:' + commodity.name)
@@ -118,11 +120,12 @@ export default {
           const stations = {}
           querySnapshot.forEach((doc) => {
             // console.log(doc)
-            let data = doc.data()
+            let docData = doc.data()
+            // console.log(docData)
             let station = {
               id: doc.id,
               // anchor: data.anchor,
-              name: data.name
+              name: docData.name
               // stationType: data.type
             }
             // console.log('station.name:' + station.name)
@@ -133,6 +136,19 @@ export default {
         }, (error) => {
           console.error('Error getting stations', error)
           // commit('setLoading', false)
+        })
+
+      firebase.firestore().collection('prices')
+        .orderBy('timestamp_created')
+        .onSnapshot((querySnapshot) => {
+          console.log('got prices')
+          querySnapshot.forEach((doc) => {
+            console.log(doc)
+            let docData = doc.data()
+            console.log(docData)
+          })
+        }, (error) => {
+          console.error('Error getting prices', error)
         })
     },
     savePrices (context, {station, pricesBuy, pricesSell}) {
