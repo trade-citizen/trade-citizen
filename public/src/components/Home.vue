@@ -11,8 +11,8 @@
     <v-layout row wrap>
       <v-flex
         xs4
-        v-for="(commodity, index) in commodities"
-        :key="commodity.id"
+        v-for="stationPrice in stationPrices"
+        :key="stationPrice.id"
       >
         <v-card style="border:1px solid white; border-radius:6px;">
           <v-container fluid grid-list-lg>
@@ -33,9 +33,9 @@
                     <v-layout justify-left align-top>
                 -->
                 <v-card-title primary-title class="px-0 py-0">
-                      <h3 class="headline">{{ commodity.name }}</h3>
+                      <h3 class="headline">{{ stationPrice.name }}</h3>
                 </v-card-title>
-                <div>{{ commodity.category }}</div>
+                <div>{{ stationPrice.category }}</div>
                 <!--
                     </v-layout>
                   </v-container>
@@ -47,10 +47,10 @@
                 <v-text-field
                   class="input-group--focused"
                   hide-details
-                  v-model="pricesBuy[commodity.id]"
                   label="Buy Price"
                   :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
                   :disabled="!userIsAuthenticated"
+                  v-model="stationPrice.buy"
                 >
                 </v-text-field>
               </v-flex>
@@ -58,10 +58,10 @@
                 <v-text-field
                   class="input-group--focused"
                   hide-details
-                  v-model="pricesSell[commodity.id]"
                   label="Sell Price"
                   :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
                   :disabled="!userIsAuthenticated"
+                  v-model="stationPrice.sell"
                 >
                 </v-text-field>
               </v-flex>
@@ -107,28 +107,36 @@ export default {
     commodities () {
       return this.$store.getters.commodities
     },
-    pricesBuy () {
-      return {}
-    },
-    pricesSell () {
-      return {}
+    stationPrices () {
+      // console.log('Home stationPrices stationId:' + this.stationId)
+      return this.$store.getters.stationPrices(this.stationId)
     }
   },
   methods: {
     onStationChanged (stationId) {
-      console.log('onStationChanged stationId:' + stationId)
+      console.log('Home onStationChanged stationId:' + stationId)
       this.stationId = stationId
     },
     saveStation (stationId) {
       // console.log('saveStation stationId:', stationId)
       let station = this.$store.getters.station(stationId)
       // console.log('saveStation station:', station)
-      // console.log('saveStation station:', this.pricesBuy)
-      // console.log('saveStation station:', this.pricesSell)
+      let stationPrices = {}
+      this.stationPrices.forEach((stationPrice) => {
+        let temp = {}
+        if (stationPrice.buy !== undefined) {
+          temp.buy = stationPrice.buy
+        }
+        if (stationPrice.sell !== undefined) {
+          temp.sell = stationPrice.sell
+        }
+        if (Object.keys(temp).length !== 0) {
+          stationPrices[stationPrice.id] = temp
+        }
+      })
       this.$store.dispatch('savePrices', {
         station: station,
-        pricesBuy: this.pricesBuy,
-        pricesSell: this.pricesSell
+        prices: stationPrices
       })
     }
   }
