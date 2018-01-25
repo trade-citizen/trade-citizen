@@ -6,6 +6,7 @@ export default {
     commodityCategoriesList: [],
     commoditiesMap: {},
     commoditiesList: [],
+    anchorsMap: {},
     stationsMap: {},
     stationsList: [],
     stationsPricesMap: {}
@@ -38,6 +39,9 @@ export default {
         }
         return 0
       })
+    },
+    addAnchor (state, payload) {
+      state.anchorsMap[payload.id] = payload
     },
     addStation (state, payload) {
       state.stationsMap[payload.id] = payload
@@ -162,6 +166,52 @@ export default {
       }
     },
 
+    _getAnchors (context) {
+      console.log('_getAnchors')
+      firebase.firestore().collection('anchors')
+        .onSnapshot({ includeQueryMetadataChanges: true }, (querySnapshot) => {
+          context.dispatch('_gotAnchors', querySnapshot)
+        }, (error) => {
+          console.error('_getAnchors', error)
+          context.commit('setLoading', false)
+        })
+    },
+
+    _gotAnchors (context, querySnapshot) {
+      let docChanges = querySnapshot.docChanges
+      // console.log('_gotAnchors docChanges', docChanges)
+      if (docChanges.length === 0) {
+        // console.log('_gotAnchors docChanges.length === 0 ignoring')
+        return
+      }
+      console.log('_gotAnchors')
+      docChanges.forEach((change) => {
+        // console.log('_gotAnchors change', change)
+        let doc = change.doc
+        // console.log('_gotAnchors doc', doc)
+        let anchorId = doc.id
+        let fromCache = doc.metadata.fromCache
+        // console.log('_gotAnchors ' + anchorId + ' fromCache', fromCache)
+        if (!fromCache ||
+          context.state.anchorsMap[anchorId] === undefined) {
+          let docData = doc.data()
+          console.log('_gotAnchors docData', docData)
+          let anchor = {
+            id: doc.id,
+            name: docData.name,
+            type: docData.type.id,
+            anchor: docData.anchor.id
+          }
+          // console.log('anchor.name:' + anchor.name)
+          context.commit('addAnchor', anchor)
+        }
+      })
+
+      if (Object.keys(context.state.stationsMap).length === 0) {
+        context.dispatch('_getStations')
+      }
+    },
+
     _getStations (context) {
       console.log('_getStations')
       firebase.firestore().collection('stations')
@@ -254,6 +304,7 @@ export default {
     },
 
     saveStationPrices (context, { stationId, prices }) {
+      console.log('saveStationPrices stationId:', stationId)
       console.log('saveStationPrices prices:', prices)
       for (var commodityId in prices) {
         let price = prices[commodityId]
