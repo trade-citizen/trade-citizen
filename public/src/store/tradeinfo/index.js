@@ -45,17 +45,25 @@ export default {
     },
     addStation (state, payload) {
       state.stationsMap[payload.id] = payload
-      state.stationsList = Object.values(state.stationsMap).sort((a, b) => {
-        let aName = a.name.toLowerCase()
-        let bName = b.name.toLowerCase()
-        if (aName < bName) {
-          return -1
-        }
-        if (aName > bName) {
-          return 1
-        }
-        return 0
-      })
+      return Object.values(state.stationsMap)
+        .map((station) => {
+          // console.log('addStation map BEFORE', station)
+          station = Object.assign({}, station)
+          station.name = station.anchor.name + ' - ' + station.name
+          // console.log('addStation map AFTER', station)
+          return station
+        })
+        .sort((a, b) => {
+          let aName = a.name.toLowerCase()
+          let bName = b.name.toLowerCase()
+          if (aName < bName) {
+            return -1
+          }
+          if (aName > bName) {
+            return 1
+          }
+          return 0
+        })
     },
     setStationPrices (state, { stationId, stationPrices }) {
       state.stationsMap[stationId].prices = stationPrices
@@ -161,8 +169,8 @@ export default {
         }
       })
 
-      if (Object.keys(context.state.stationsMap).length === 0) {
-        context.dispatch('_getStations')
+      if (Object.keys(context.state.anchorsMap).length === 0) {
+        context.dispatch('_getAnchors')
       }
     },
 
@@ -195,12 +203,12 @@ export default {
         if (!fromCache ||
           context.state.anchorsMap[anchorId] === undefined) {
           let docData = doc.data()
-          console.log('_gotAnchors docData', docData)
+          // console.log('_gotAnchors docData', docData)
           let anchor = {
-            id: doc.id,
+            id: anchorId,
             name: docData.name,
             type: docData.type.id,
-            anchor: docData.anchor.id
+            anchor: (docData.anchor !== undefined) ? docData.anchor.id : undefined
           }
           // console.log('anchor.name:' + anchor.name)
           context.commit('addAnchor', anchor)
@@ -243,8 +251,8 @@ export default {
           let docData = doc.data()
           let station = {
             id: stationId,
-            // anchor: docData.anchor,
             name: docData.name,
+            anchor: context.state.anchorsMap[docData.anchor.id],
             // stationType: docData.type,
             prices: undefined
           }
@@ -295,6 +303,7 @@ export default {
           stationPrices[commodityId] = docData.prices[commodityId]
         }
       })
+      // console.log('_gotStationPrices stationPrices', stationPrices)
       context.commit('setStationPrices', { stationId, stationPrices })
       if (Object.keys(context.state.stationsPricesMap).length === Object.keys(context.state.stationsMap).length) {
         // Only setLoading false after all prices have come back
