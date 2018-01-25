@@ -70,7 +70,7 @@
           clearable
           :dense="$vuetify.breakpoint.xsOnly"
           v-model="stationId"
-          v-bind:items="stations()"
+          :items="stations()"
           item-text="name"
           item-value="id"
           @change="onStationChanged"

@@ -3,14 +3,11 @@ import * as firebase from 'firebase'
 export default {
   state: {
     commodityCategoriesMap: {},
-    commodityCategoriesList: [
-    ],
+    commodityCategoriesList: [],
     commoditiesMap: {},
-    commoditiesList: [
-    ],
+    commoditiesList: [],
     stationsMap: {},
-    stationsList: [
-    ],
+    stationsList: [],
     stationsPricesMap: {}
   },
   mutations: {
@@ -151,7 +148,8 @@ export default {
             let commodity = {
               id: commodityId,
               name: docData.name,
-              category: context.state.commodityCategoriesMap[commodityCategoryId].name
+              category: context.state.commodityCategoriesMap[commodityCategoryId].name,
+              illegal: docData.illegal
             }
             // console.log('commodity.name:' + commodity.name)
             context.commit('addCommodity', commodity)
@@ -195,9 +193,9 @@ export default {
           let docData = doc.data()
           let station = {
             id: stationId,
-            // anchor: data.anchor,
+            // anchor: docData.anchor,
             name: docData.name,
-            // stationType: data.type,
+            // stationType: docData.type,
             prices: undefined
           }
           // console.log('station.name:' + station.name)

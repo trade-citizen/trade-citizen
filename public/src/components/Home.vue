@@ -1,8 +1,51 @@
 <template>
   <v-container
     v-if="stationId == null"
+    class="pa-2"
   >
-    TODO:(pv) Show trade margins sorted highest to lowest
+    <v-layout row d-flex align-center>
+      <v-icon class="mx-2">filter_list</v-icon><span class="mr-2">Filter</span>
+      <v-select
+                label="Commodities"
+                clearable
+                multiple
+                single-line
+                hide-details
+                hide-selected
+                :items="commodities"
+                v-model="filter.commodities"
+                item-text="name"
+                item-value="id"
+                return-object
+              >
+      </v-select>
+      <v-checkbox
+                  label="Illegal"
+                  v-model="filter.illegal"
+                  @change="refresh()"
+                  hide-details
+                  >
+      </v-checkbox>
+    </v-layout>
+    <v-layout row d-flex>
+      <v-data-table
+                  class="elevation-1"
+                  hide-actions
+                  must-sort
+                  v-bind:pagination.sync="pagination"
+                  :headers="headers"
+                  :items="margins"
+                  >
+        <template slot="items" slot-scope="props">
+          <td class="text-xs-right">{{ props.item.commodity }}</td>
+          <td class="text-xs-right">{{ props.item.buyStation }}</td>
+          <td class="text-xs-right">{{ toFixed(props.item.buyPrice, 3) }}</td>
+          <td class="text-xs-center">{{ calculateMargin(props.item) }}</td>
+          <td class="text-xs-left">{{ toFixed(props.item.sellPrice, 3) }}</td>
+          <td class="text-xs-left">{{ props.item.sellStation }}</td>
+        </template>
+      </v-data-table>
+    </v-layout>
   </v-container>
   <v-container
     v-else
@@ -84,7 +127,26 @@
 export default {
   data () {
     return {
-      stationId: null
+      stationId: null,
+      headers: [
+        { sortable: true, align: 'right', text: 'Commodity', value: 'commodity' },
+        { sortable: true, align: 'right', text: 'Buy Station', value: 'buyStation' },
+        { sortable: true, align: 'right', text: 'Buy Price', value: 'buyPrice' },
+        { sortable: true, align: 'center', text: 'Margin', value: 'margin' },
+        { sortable: true, align: 'left', text: 'Sell Price', value: 'sellPrice' },
+        { sortable: true, align: 'left', text: 'Sell Station', value: 'sellStation' }
+      ],
+      pagination: {
+        sortBy: 'margin',
+        descending: false
+      },
+      filter: {
+        illegal: false,
+        commodities: [],
+        anchors: [],
+        stationsBuy: [],
+        stationsSell: []
+      }
     }
   },
   mounted: function () {
@@ -105,7 +167,17 @@ export default {
         this.$store.getters.user !== undefined
     },
     commodities () {
-      return this.$store.getters.commodities
+      let commodities = this.$store.getters.commodities
+      let result = []
+      Object.keys(commodities).forEach((commodityId) => {
+        let commodity = commodities[commodityId]
+        if (!commodity.illegal || this.filter.illegal) {
+          result.push({ id: commodityId, name: commodity.name })
+        }
+      })
+      return result
+    },
+    margins () {
     },
     stationPrices () {
       // console.log('Home stationPrices stationId:' + this.stationId)
@@ -116,6 +188,25 @@ export default {
     onStationChanged (stationId) {
       console.log('Home onStationChanged stationId:' + stationId)
       this.stationId = stationId
+    },
+    refresh () {
+      // console.log('refresh()')
+      if (!this.filter.illegal) {
+        // Clear illegal items from this.filter.commodities
+        let commodities = this.$store.getters.commodities
+        var i = this.filter.commodities.length
+        while (i--) {
+          let commodity = this.filter.commodities[i]
+          if (commodities[commodity.id].illegal) {
+            this.filter.commodities.splice(i, 1)
+          }
+        }
+      }
+    },
+    sortMarginPrices (items, index, isDescending) {
+      return items.sort((itemA, itemB) => {
+        return 0
+      })
     },
     saveStation (stationId) {
       // console.log('saveStation stationId:', stationId)

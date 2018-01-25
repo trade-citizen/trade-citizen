@@ -1,6 +1,6 @@
 {
   "name": "trade-citizen",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Crowd Sourced Reptuation Based Commodity Prices for Star Citizen",
   "author": "tradecitizen.org <trade.citizen@gmail.com>",
   "private": true,
@@ -14,12 +14,12 @@
     "lint": "eslint --ext .js,.vue src test/unit/specs test/e2e/specs"
   },
   "dependencies": {
-    "firebase": "^4.8.2",
+    "firebase": "^4.9.0",
     "material-design-icons-iconfont": "^3.0.3",
     "roboto-fontface": "^0.8.0",
     "vue": "^2.5.13",
     "vue-router": "^3.0.1",
-    "vuetify": "^1.0.0-beta.4",
+    "vuetify": "^1.0.0-beta.5",
     "vuex": "^3.0.1"
   },
   "devDependencies": {
@@ -36,7 +36,7 @@
     "copy-webpack-plugin": "^4.0.1",
     "css-loader": "^0.28.9",
     "cssnano": "^3.10.0",
-    "eslint": "^4.15.0",
+    "eslint": "^4.16.0",
     "eslint-config-standard": "^11.0.0-beta.0",
     "eslint-friendly-formatter": "^3.0.0",
     "eslint-loader": "^1.7.1",
@@ -57,11 +57,11 @@
     "ora": "^1.2.0",
     "rimraf": "^2.6.0",
     "semver": "^5.5.0",
-    "shelljs": "^0.8.0",
+    "shelljs": "^0.8.1",
     "stylus": "^0.54.5",
     "stylus-loader": "^3.0.1",
     "sw-precache-webpack-plugin": "^0.11.4",
-    "uglify-es": "^3.3.7",
+    "uglify-es": "^3.3.8",
     "url-loader": "^0.6.2",
     "vue-loader": "^13.7.0",
     "vue-style-loader": "^3.0.1",
