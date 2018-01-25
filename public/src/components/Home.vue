@@ -242,7 +242,7 @@ export default {
           stationPrices[stationPrice.id] = temp
         }
       })
-      this.$store.dispatch('savePrices', {
+      this.$store.dispatch('saveStationPrices', {
         station: station,
         prices: stationPrices
       })
