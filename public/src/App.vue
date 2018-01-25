@@ -88,6 +88,14 @@
           </template>
           <template v-else>
             <v-btn
+              v-if="mayEdit"
+              icon
+              class="ml-0 mr-2"
+              @click="editStation(stationId)"
+            >
+              <v-icon class="mx-1">edit</v-icon>
+            </v-btn>
+            <v-btn
               icon
               class="ml-0 mr-2"
               @click="saveStation(stationId)"
@@ -116,18 +124,27 @@ export default {
     return {
       drawer: false,
       title: 'Trade Citizen',
-      stationId: null
+      stationId: null,
+      editing: false
     }
   },
   computed: {
     userIsAuthenticated () {
       return this.$store.getters.user !== null &&
         this.$store.getters.user !== undefined
+    },
+    mayEdit () {
+      if (this.stationId == null) {
+        return false
+      }
+      let station = this.$store.getters.station(this.stationId)
+      return !this.editing && Object.keys(station.prices).length !== 0
     }
   },
   methods: {
     signout () {
       this.stationId = null
+      this.editing = false
       this.$store.dispatch('logout')
       this.home()
     },
@@ -138,10 +155,18 @@ export default {
       return this.$store.getters.stations
     },
     onStationChanged (stationId) {
+      // console.log('App onStationChanged stationId:' + stationId)
+      this.editing = false
       this.$root.$emit('onStationChanged', stationId)
+    },
+    editStation (stationId) {
+      // console.log('App editStation stationId:' + stationId)
+      this.editing = true
+      this.$root.$emit('editStation', stationId)
     },
     saveStation (stationId) {
       // console.log('App saveStation stationId:' + stationId)
+      this.editing = false
       this.$root.$emit('saveStation', stationId)
     }
   }

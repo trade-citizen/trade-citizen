@@ -35,6 +35,7 @@
                   v-bind:pagination.sync="pagination"
                   :headers="headers"
                   :items="margins"
+                  no-data-text="Soon™..."
                   >
         <template slot="items" slot-scope="props">
           <td class="text-xs-right">{{ props.item.commodity }}</td>
@@ -146,7 +147,8 @@ export default {
         anchors: [],
         stationsBuy: [],
         stationsSell: []
-      }
+      },
+      editing: false
     }
   },
   mounted: function () {
@@ -155,6 +157,10 @@ export default {
     vm.$root.$on('onStationChanged', function (stationId) {
       console.log('Home onStationChanged stationId:' + stationId)
       vm.onStationChanged(stationId)
+    })
+    vm.$root.$on('editStation', function (stationId) {
+      console.log('Home editStation stationId:' + stationId)
+      vm.editStation(stationId)
     })
     vm.$root.$on('saveStation', function (stationId) {
       console.log('Home saveStation stationId:' + stationId)
@@ -181,14 +187,10 @@ export default {
     },
     stationPrices () {
       // console.log('Home stationPrices stationId:' + this.stationId)
-      return this.$store.getters.stationPrices(this.stationId)
+      return this.$store.getters.stationPrices(this.stationId, this.editing)
     }
   },
   methods: {
-    onStationChanged (stationId) {
-      console.log('Home onStationChanged stationId:' + stationId)
-      this.stationId = stationId
-    },
     refresh () {
       // console.log('refresh()')
       if (!this.filter.illegal) {
@@ -203,13 +205,28 @@ export default {
         }
       }
     },
+    toFixed (floatValue, digits) {
+      return Number(floatValue).toFixed(digits)
+    },
+    calculateMargin (item) {
+      return this.toFixed((item.sellPrice / item.buyPrice), 3)
+    },
     sortMarginPrices (items, index, isDescending) {
       return items.sort((itemA, itemB) => {
         return 0
       })
     },
+    onStationChanged (stationId) {
+      // console.log('Home onStationChanged stationId:' + stationId)
+      this.editing = false
+      this.stationId = stationId
+    },
+    editStation (stationId) {
+      // console.log('Home editStation stationId:' + stationId)
+      this.editing = true
+    },
     saveStation (stationId) {
-      // console.log('saveStation stationId:', stationId)
+      // console.log('Home saveStation stationId:' + stationId)
       let station = this.$store.getters.station(stationId)
       // console.log('saveStation station:', station)
       let stationPrices = {}
@@ -229,6 +246,7 @@ export default {
         station: station,
         prices: stationPrices
       })
+      this.editing = false
     }
   }
 }

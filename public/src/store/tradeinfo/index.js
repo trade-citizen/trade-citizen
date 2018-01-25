@@ -289,30 +289,48 @@ export default {
     },
     station (state) {
       return (stationId) => {
-        return state.stationsMap[stationId]
+        // console.log('getters.station ' + stationId)
+        // console.log('getters.station ', state.stationsMap)
+        let station = state.stationsMap[stationId]
+        // console.log('getters.station ', station)
+        return station
       }
     },
     stationPrices (state) {
-      return (stationId) => {
+      return (stationId, all) => {
         let station = state.stationsMap[stationId]
         let stationPrices = station.prices
-        // console.log('getters.stationPrices stationPrices', stationPrices)
+
         let result = []
-        state.commoditiesList.forEach((commodity) => {
-          // console.log('getters.stationPrices commodity', commodity)
-          let stationPrice = Object.assign({}, commodity)
-          // console.log('getters.stationPrices stationPrice', stationPrice)
+
+        let commodityIdsMap
+        if (all || Object.keys(stationPrices).length === 0) {
+          commodityIdsMap = state.commoditiesMap
+        } else {
+          commodityIdsMap = stationPrices
+        }
+        Object.keys(commodityIdsMap).forEach((commodityId) => {
+          let commodity = state.commoditiesMap[commodityId]
           if (stationPrices !== undefined) {
+            let stationPrice = Object.assign({}, commodity)
             let stationCommodityPrice = stationPrices[commodity.id]
             if (stationCommodityPrice !== undefined) {
               stationPrice.buy = stationCommodityPrice.buy
               stationPrice.sell = stationCommodityPrice.sell
             }
+            result.push(stationPrice)
           }
-          result.push(stationPrice)
         })
-        // console.log('getters.stationPrices ' + stationId, result)
-        return result
+
+        return result.sort((a, b) => {
+          if (a.name < b.name) {
+            return -1
+          }
+          if (a.name > b.name) {
+            return 1
+          }
+          return 0
+        })
       }
     }
   }
