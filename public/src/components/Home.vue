@@ -155,15 +155,15 @@ export default {
     // console.log('Home mounted')
     var vm = this
     vm.$root.$on('onStationChanged', function (stationId) {
-      console.log('Home onStationChanged stationId:' + stationId)
+      // console.log('Home vm.onStationChanged stationId', stationId)
       vm.onStationChanged(stationId)
     })
     vm.$root.$on('editStation', function (stationId) {
-      console.log('Home editStation stationId:' + stationId)
+      // console.log('Home vm.editStation stationId:' + stationId)
       vm.editStation(stationId)
     })
     vm.$root.$on('saveStation', function (stationId) {
-      console.log('Home saveStation stationId:' + stationId)
+      // console.log('Home vm.saveStation stationId:' + stationId)
       vm.saveStation(stationId)
     })
   },
@@ -227,8 +227,8 @@ export default {
     },
     saveStation (stationId) {
       // console.log('Home saveStation stationId:' + stationId)
-      let station = this.$store.getters.station(stationId)
       // console.log('saveStation station:', station)
+      // Make a {} version of the [] this.stationPrices
       let stationPrices = {}
       this.stationPrices.forEach((stationPrice) => {
         let temp = {}
@@ -243,7 +243,7 @@ export default {
         }
       })
       this.$store.dispatch('saveStationPrices', {
-        station: station,
+        stationId: stationId,
         prices: stationPrices
       })
       this.editing = false

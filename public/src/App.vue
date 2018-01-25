@@ -69,10 +69,10 @@
           autocomplete
           clearable
           :dense="$vuetify.breakpoint.xsOnly"
-          v-model="stationId"
-          :items="stations()"
+          :items="stations"
           item-text="name"
           item-value="id"
+          v-model="stationId"
           @change="onStationChanged"
         >
         </v-select>
@@ -139,6 +139,9 @@ export default {
       }
       let station = this.$store.getters.station(this.stationId)
       return !this.editing && Object.keys(station.prices).length !== 0
+    },
+    stations () {
+      return this.$store.getters.stations
     }
   },
   methods: {
@@ -151,11 +154,11 @@ export default {
     home () {
       this.$router.push('/')
     },
-    stations () {
-      return this.$store.getters.stations
-    },
     onStationChanged (stationId) {
-      // console.log('App onStationChanged stationId:' + stationId)
+      if (stationId instanceof Event) {
+        return
+      }
+      console.log('App onStationChanged stationId', stationId)
       this.editing = false
       this.$root.$emit('onStationChanged', stationId)
     },

@@ -210,7 +210,7 @@ export default {
       let path = '/stations/' + stationId + '/prices'
       console.log('_getStationPrices query ' + path)
       firebase.firestore().collection(path)
-        .orderBy('timestamp_created')
+        .orderBy('timestamp_created', 'desc')
         .limit(1)
         .onSnapshot({ includeQueryMetadataChanges: true }, (querySnapshot) => {
           context.dispatch('_gotStationPrices', { stationId, querySnapshot })
@@ -253,10 +253,23 @@ export default {
       }
     },
 
-    saveStationPrices (context, { station, prices }) {
-      console.log('saveStationPrices station:', station)
+    saveStationPrices (context, { stationId, prices }) {
       console.log('saveStationPrices prices:', prices)
-      let stationId = station.id
+      for (var commodityId in prices) {
+        let price = prices[commodityId]
+        let temp = {}
+        if (price.buy !== undefined && price.buy !== '') {
+          temp.buy = price.buy
+        }
+        if (price.sell !== undefined && price.sell !== '') {
+          temp.sell = price.sell
+        }
+        if (Object.keys(temp).length === 0) {
+          delete prices[commodityId]
+        } else {
+          prices[commodityId] = temp
+        }
+      }
       let docData = {
         // TODO:(pv) Remove this and set via server side function?
         timestamp_created: firebase.firestore.FieldValue.serverTimestamp(),
