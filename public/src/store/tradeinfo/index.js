@@ -45,7 +45,7 @@ export default {
     },
     addStation (state, payload) {
       state.stationsMap[payload.id] = payload
-      return Object.values(state.stationsMap)
+      state.stationsList = Object.values(state.stationsMap)
         .map((station) => {
           // console.log('addStation map BEFORE', station)
           station = Object.assign({}, station)
