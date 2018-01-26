@@ -7,7 +7,7 @@
     "indexes": "firestore.indexes.json"
   },
   "hosting": {
-    "public": "public/dist",
+    "public": "hosting/dist",
     "headers": [
       { "source":"/index.html", "headers": [{"key": "Cache-Control", "value": "max-age=0, no-cache, no-store, must-revalidate, proxy-revalidate"}] },
       { "source":"/service-worker.js", "headers": [{"key": "Cache-Control", "value": "max-age=0, no-cache, no-store, must-revalidate, proxy-revalidate"}] }
