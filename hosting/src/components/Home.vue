@@ -196,7 +196,7 @@ export default {
       if (!this.filter.illegal) {
         // Clear illegal items from this.filter.commodities
         let commodities = this.$store.getters.commodities
-        var i = this.filter.commodities.length
+        let i = this.filter.commodities.length
         while (i--) {
           let commodity = this.filter.commodities[i]
           if (commodities[commodity.id].illegal) {

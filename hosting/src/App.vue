@@ -73,7 +73,6 @@
           item-text="name"
           item-value="id"
           v-model="stationId"
-          @change="onStationChanged"
         >
         </v-select>
         <template v-if="stationId != null">
@@ -134,7 +133,7 @@ export default {
         this.$store.getters.user !== undefined
     },
     mayEdit () {
-      if (this.stationId == null) {
+      if (this.stationId === undefined || this.stationId === null || this.stationId === '') {
         return false
       }
       let station = this.$store.getters.station(this.stationId)
@@ -142,6 +141,13 @@ export default {
     },
     stations () {
       return this.$store.getters.stations
+    }
+  },
+  watch: {
+    stationId (value) {
+      // console.log('watch stationId', this.stationId)
+      this.editing = false
+      this.$root.$emit('onStationChanged', this.stationId)
     }
   },
   methods: {
@@ -153,14 +159,6 @@ export default {
     },
     home () {
       this.$router.push('/')
-    },
-    onStationChanged (stationId) {
-      if (stationId instanceof Event) {
-        return
-      }
-      console.log('App onStationChanged stationId', stationId)
-      this.editing = false
-      this.$root.$emit('onStationChanged', stationId)
     },
     editStation (stationId) {
       // console.log('App editStation stationId:' + stationId)
