@@ -52,11 +52,12 @@
     v-else
     grid-list-md
   >
-    <v-layout row wrap>
+    <v-layout row wrap justify-center>
+      <template v-if="stationCommodityPrices.length">
       <v-flex
         xs4
-        v-for="stationPrice in stationPrices"
-        :key="stationPrice.id"
+          v-for="stationCommodityPrice in stationCommodityPrices"
+          :key="stationCommodityPrice.id"
       >
         <v-card style="border:1px solid white; border-radius:6px;">
           <v-container fluid grid-list-lg>
@@ -74,15 +75,15 @@
               <v-flex xs12>
                 <!--
                   <v-container fluid fill-height>
-                    <v-layout justify-left align-top>
-                -->
-                <v-card-title primary-title class="px-0 py-0">
-                      <h3 class="headline">{{ stationPrice.name }}</h3>
-                </v-card-title>
-                <div>{{ stationPrice.category }}</div>
-                <!--
-                    </v-layout>
-                  </v-container>
+                      <v-layout justify-left align-top>
+                  -->
+                  <v-card-title primary-title class="px-0 py-0">
+                        <h3 class="headline">{{ stationCommodityPrice.name }}</h3>
+                  </v-card-title>
+                  <div>{{ stationCommodityPrice.category }}</div>
+                  <!--
+                      </v-layout>
+                    </v-container>
                 -->
               </v-flex>
             </v-layout>
@@ -91,24 +92,24 @@
                 <v-text-field
                   class="input-group--focused"
                   hide-details
-                  label="Buy Price"
-                  :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
-                  :disabled="!userIsAuthenticated"
-                  v-model="stationPrice.buy"
-                >
-                </v-text-field>
-              </v-flex>
+                    label="Buy Price"
+                    :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
+                    :disabled="!userIsAuthenticated"
+                    v-model="stationCommodityPrice.priceBuy"
+                  >
+                  </v-text-field>
+                </v-flex>
               <v-flex xs6>
                 <v-text-field
                   class="input-group--focused"
                   hide-details
-                  label="Sell Price"
-                  :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
-                  :disabled="!userIsAuthenticated"
-                  v-model="stationPrice.sell"
-                >
-                </v-text-field>
-              </v-flex>
+                    label="Sell Price"
+                    :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
+                    :disabled="!userIsAuthenticated"
+                    v-model="stationCommodityPrice.priceSell"
+                  >
+                  </v-text-field>
+                </v-flex>
             </v-layout>
             <!--
             <v-layout row>
@@ -117,9 +118,11 @@
               </v-card-actions>
             </v-layout>
             -->
-          </v-container>
-        </v-card>
-      </v-flex>
+            </v-container>
+          </v-card>
+        </v-flex>
+      </template>
+      <p v-else class="pa-2">No prices set</p>
     </v-layout>
   </v-container>
 </template>
@@ -158,9 +161,9 @@ export default {
       // console.log('Home vm.onStationChanged stationId', stationId)
       vm.onStationChanged(stationId)
     })
-    vm.$root.$on('editStation', function (stationId) {
+    vm.$root.$on('editStation', function (stationId, editing) {
       // console.log('Home vm.editStation stationId:' + stationId)
-      vm.editStation(stationId)
+      vm.editStation(stationId, editing)
     })
     vm.$root.$on('saveStation', function (stationId) {
       // console.log('Home vm.saveStation stationId:' + stationId)
@@ -185,9 +188,18 @@ export default {
     },
     margins () {
     },
-    stationPrices () {
-      // console.log('Home stationPrices stationId:' + this.stationId)
-      return this.$store.getters.stationPrices(this.stationId, this.editing)
+    stationCommodityPrices () {
+      let stationCommodityPrices = this.$store.getters.stationCommodityPrices(this.stationId)
+      if (stationCommodityPrices) {
+        let temp = stationCommodityPrices.filter((stationCommodityPrice) => {
+          let result = this.editing ||
+            (stationCommodityPrice.priceBuy !== undefined && stationCommodityPrice.priceBuy !== '') ||
+            (stationCommodityPrice.priceSell !== undefined && stationCommodityPrice.priceSell !== '')
+          return result
+        })
+        return (temp.length > 0 || !this.userIsAuthenticated) ? temp : stationCommodityPrices
+      }
+      return stationCommodityPrices
     }
   },
   methods: {
@@ -221,30 +233,15 @@ export default {
       this.editing = false
       this.stationId = stationId
     },
-    editStation (stationId) {
+    editStation (stationId, editing) {
       // console.log('Home editStation stationId:' + stationId)
-      this.editing = true
+      this.editing = editing
     },
     saveStation (stationId) {
       // console.log('Home saveStation stationId:' + stationId)
-      // console.log('saveStation station:', station)
-      // Make a {} version of the [] this.stationPrices
-      let stationPrices = {}
-      this.stationPrices.forEach((stationPrice) => {
-        let temp = {}
-        if (stationPrice.buy !== undefined) {
-          temp.buy = stationPrice.buy
-        }
-        if (stationPrice.sell !== undefined) {
-          temp.sell = stationPrice.sell
-        }
-        if (Object.keys(temp).length !== 0) {
-          stationPrices[stationPrice.id] = temp
-        }
-      })
-      this.$store.dispatch('saveStationPrices', {
+      this.$store.dispatch('saveStationCommodityPrices', {
         stationId: stationId,
-        prices: stationPrices
+        commodityPrices: this.stationCommodityPrices
       })
       this.editing = false
     }

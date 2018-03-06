@@ -14,10 +14,11 @@ export default {
   mutations: {
     addCommodityCategory (state, payload) {
       state.commodityCategoriesMap[payload.id] = payload
-      state.commodityCategoriesList = Object.values(state.commodityCategoriesMap).sort((a, b) => {
-        let aName = a.name.toLowerCase()
-        let bName = b.name.toLowerCase()
-        if (aName < bName) {
+      state.commodityCategoriesList = Object.values(state.commodityCategoriesMap)
+        .sort((a, b) => {
+          let aName = a.name.toLowerCase()
+          let bName = b.name.toLowerCase()
+          if (aName < bName) {
           return -1
         }
         if (aName > bName) {
@@ -28,7 +29,8 @@ export default {
     },
     addCommodity (state, payload) {
       state.commoditiesMap[payload.id] = payload
-      state.commoditiesList = Object.values(state.commoditiesMap).sort((a, b) => {
+      state.commoditiesList = Object.values(state.commoditiesMap)
+        .sort((a, b) => {
         let aName = a.name.toLowerCase()
         let bName = b.name.toLowerCase()
         if (aName < bName) {
@@ -46,13 +48,6 @@ export default {
     addStation (state, payload) {
       state.stationsMap[payload.id] = payload
       state.stationsList = Object.values(state.stationsMap)
-        .map((station) => {
-          // console.log('addStation map BEFORE', station)
-          station = Object.assign({}, station)
-          station.name = station.anchor.name + ' - ' + station.name
-          // console.log('addStation map AFTER', station)
-          return station
-        })
         .sort((a, b) => {
           let aName = a.name.toLowerCase()
           let bName = b.name.toLowerCase()

@@ -80,20 +80,31 @@
             <v-btn
               flat
               class="ml-0 mr-2"
-              to="/signin">
+              @click="signin"
+            >
               <v-icon class="mx-1">lock_open</v-icon>
               Sign in
             </v-btn>
           </template>
           <template v-else>
-            <v-btn
-              v-if="mayEdit"
-              icon
-              class="ml-0 mr-2"
-              @click="editStation(stationId)"
-            >
-              <v-icon class="mx-1">edit</v-icon>
-            </v-btn>
+            <template v-if="mayEdit">
+              <v-btn
+                v-if="editing"
+                icon
+                class="ml-0 mr-2"
+                @click="editStation(stationId, false)"
+              >
+                <v-icon class="mx-1">cancel</v-icon>
+              </v-btn>
+              <v-btn
+                v-else
+                icon
+                class="ml-0 mr-2"
+                @click="editStation(stationId, true)"
+              >
+                <v-icon class="mx-1">edit</v-icon>
+              </v-btn>
+            </template>
             <v-btn
               icon
               class="ml-0 mr-2"
@@ -133,24 +144,50 @@ export default {
         this.$store.getters.user !== undefined
     },
     mayEdit () {
-      if (this.stationId === undefined || this.stationId === null || this.stationId === '') {
+      if (!this.stationId || this.editing) {
         return false
       }
-      let station = this.$store.getters.station(this.stationId)
-      return !this.editing && Object.keys(station.prices).length !== 0
+      let stationCommodityPricesAll = this.$store.getters.stationCommodityPrices(this.storeId)
+      return stationCommodityPricesAll && stationCommodityPricesAll
+        .reduce((accumulator, stationCommodityPrice) => {
+          if (stationCommodityPrice.isPriceDefined) {
+            accumulator++
+          }
+          return accumulator
+        }, 0) > 0
     },
     stations () {
       return this.$store.getters.stations
+        .map((station) => {
+          return {
+            id: station.id,
+            name: station.anchor.name + ' - ' + station.name
+          }
+        })
+        .sort((a, b) => {
+          let aName = a.name.toLowerCase()
+          let bName = b.name.toLowerCase()
+          if (aName < bName) {
+            return -1
+          }
+          if (aName > bName) {
+            return 1
+          }
+          return 0
+        })
     }
   },
   watch: {
     stationId (value) {
-      // console.log('watch stationId', this.stationId)
-      this.editing = false
-      this.$root.$emit('onStationChanged', this.stationId)
+      this.onStationChanged(this.stationId)
     }
   },
   methods: {
+    signin () {
+      this.stationId = null
+      this.editing = false
+      this.$router.push('/signin')
+    },
     signout () {
       this.stationId = null
       this.editing = false
@@ -160,10 +197,14 @@ export default {
     home () {
       this.$router.push('/')
     },
-    editStation (stationId) {
-      // console.log('App editStation stationId:' + stationId)
-      this.editing = true
-      this.$root.$emit('editStation', stationId)
+    onStationChanged (stationId) {
+      this.editing = false
+      this.$root.$emit('onStationChanged', this.stationId)
+    },
+    editStation (stationId, editing) {
+      console.log('App editStation', arguments)
+      this.editing = editing
+      this.$root.$emit('editStation', stationId, editing)
     },
     saveStation (stationId) {
       // console.log('App saveStation stationId:' + stationId)
