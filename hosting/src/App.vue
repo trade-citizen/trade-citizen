@@ -22,6 +22,13 @@
           </v-list-tile-action>
           <v-list-tile-content>Sign out</v-list-tile-content>
         </v-list-tile>
+        <v-list-tile v-else
+          @click="signin">
+          <v-list-tile-action>
+            <v-icon>lock_open</v-icon>
+          </v-list-tile-action>
+          <v-list-tile-content>Sign in</v-list-tile-content>
+        </v-list-tile>
       </v-list>
     </v-navigation-drawer>
     <v-toolbar
