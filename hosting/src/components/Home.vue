@@ -52,29 +52,29 @@
     v-else
     grid-list-md
   >
-    <v-layout row wrap justify-center>
-      <template v-if="stationCommodityPrices.length">
-      <v-flex
-        xs4
+    <template v-if="stationCommodityPrices.length">
+      <v-layout row wrap>
+        <v-flex
+          xs4
           v-for="stationCommodityPrice in stationCommodityPrices"
           :key="stationCommodityPrice.id"
-      >
-        <v-card style="border:1px solid white; border-radius:6px;">
-          <v-container fluid grid-list-lg>
-            <v-layout row>
-              <!--
-              <v-flex xs4>
-                <v-card-media
-                  :src="`images/commodity-${commodity.type}.png`"
-                  height="86px"
-                  width="auto"
-                >
-                </v-card-media>
-              </v-flex>
-              -->
-              <v-flex xs12>
+        >
+          <v-card style="border:1px solid white; border-radius:6px;">
+            <v-container fluid grid-list-lg>
+              <v-layout row>
                 <!--
-                  <v-container fluid fill-height>
+                <v-flex xs4>
+                  <v-card-media
+                    :src="`images/commodity-${commodity.type}.png`"
+                    height="86px"
+                    width="auto"
+                  >
+                  </v-card-media>
+                </v-flex>
+                -->
+                <v-flex xs12>
+                  <!--
+                    <v-container fluid fill-height>
                       <v-layout justify-left align-top>
                   -->
                   <v-card-title primary-title class="px-0 py-0">
@@ -84,14 +84,14 @@
                   <!--
                       </v-layout>
                     </v-container>
-                -->
-              </v-flex>
-            </v-layout>
-            <v-layout row>
-              <v-flex xs6>
-                <v-text-field
-                  class="input-group--focused"
-                  hide-details
+                  -->
+                </v-flex>
+              </v-layout>
+              <v-layout row>
+                <v-flex xs6>
+                  <v-text-field
+                    class="input-group--focused"
+                    hide-details
                     label="Buy Price"
                     :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
                     :disabled="!userIsAuthenticated"
@@ -99,10 +99,10 @@
                   >
                   </v-text-field>
                 </v-flex>
-              <v-flex xs6>
-                <v-text-field
-                  class="input-group--focused"
-                  hide-details
+                <v-flex xs6>
+                  <v-text-field
+                    class="input-group--focused"
+                    hide-details
                     label="Sell Price"
                     :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
                     :disabled="!userIsAuthenticated"
@@ -110,19 +110,21 @@
                   >
                   </v-text-field>
                 </v-flex>
-            </v-layout>
-            <!--
-            <v-layout row>
-              <v-card-actions>
-                <v-btn flat>Approve</v-btn>
-              </v-card-actions>
-            </v-layout>
-            -->
+              </v-layout>
+              <!--
+              <v-layout row>
+                <v-card-actions>
+                  <v-btn flat>Approve</v-btn>
+                </v-card-actions>
+              </v-layout>
+              -->
             </v-container>
           </v-card>
         </v-flex>
-      </template>
-      <p v-else class="pa-2">No prices set</p>
+      </v-layout>
+    </template>
+    <v-layout v-else justify-center>
+      <p class="pa-2">No prices set</p>
     </v-layout>
   </v-container>
 </template>
@@ -131,7 +133,6 @@
 export default {
   data () {
     return {
-      stationId: null,
       headers: [
         { sortable: true, align: 'right', text: 'Commodity', value: 'commodity' },
         { sortable: true, align: 'right', text: 'Buy Station', value: 'buyStation' },
@@ -171,6 +172,9 @@ export default {
     })
   },
   computed: {
+    stationId () {
+      return this.$store.getters.getSelectedStationId
+    },
     userIsAuthenticated () {
       return this.$store.getters.user !== null &&
         this.$store.getters.user !== undefined
@@ -231,7 +235,6 @@ export default {
     onStationChanged (stationId) {
       // console.log('Home onStationChanged stationId:' + stationId)
       this.editing = false
-      this.stationId = stationId
     },
     editStation (stationId, editing) {
       // console.log('Home editStation stationId:' + stationId)

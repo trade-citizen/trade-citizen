@@ -2,6 +2,7 @@ import * as firebase from 'firebase'
 
 export default {
   state: {
+    selectedStationId: null,
     commodityCategoriesMap: {},
     commodityCategoriesList: [],
     commoditiesMap: {},
@@ -9,9 +10,12 @@ export default {
     anchorsMap: {},
     stationsMap: {},
     stationsList: [],
-    stationsPricesMap: {}
+    stationsCommoditiesPricesMap: {}
   },
   mutations: {
+    setSelectedStationId (state, payload) {
+      state.selectedStationId = payload
+    },
     addCommodityCategory (state, payload) {
       state.commodityCategoriesMap[payload.id] = payload
       state.commodityCategoriesList = Object.values(state.commodityCategoriesMap)
@@ -19,28 +23,28 @@ export default {
           let aName = a.name.toLowerCase()
           let bName = b.name.toLowerCase()
           if (aName < bName) {
-          return -1
-        }
-        if (aName > bName) {
-          return 1
-        }
-        return 0
-      })
+            return -1
+          }
+          if (aName > bName) {
+            return 1
+          }
+          return 0
+        })
     },
     addCommodity (state, payload) {
       state.commoditiesMap[payload.id] = payload
       state.commoditiesList = Object.values(state.commoditiesMap)
         .sort((a, b) => {
-        let aName = a.name.toLowerCase()
-        let bName = b.name.toLowerCase()
-        if (aName < bName) {
-          return -1
-        }
-        if (aName > bName) {
-          return 1
-        }
-        return 0
-      })
+          let aName = a.name.toLowerCase()
+          let bName = b.name.toLowerCase()
+          if (aName < bName) {
+            return -1
+          }
+          if (aName > bName) {
+            return 1
+          }
+          return 0
+        })
     },
     addAnchor (state, payload) {
       state.anchorsMap[payload.id] = payload
@@ -60,14 +64,35 @@ export default {
           return 0
         })
     },
-    setStationPrices (state, { stationId, stationPrices }) {
-      state.stationsMap[stationId].prices = stationPrices
-      state.stationsPricesMap[stationId] = stationPrices
-      // console.log('setStationPrices state.stationsMap', state.stationsMap)
-      // console.log('setStationPrices state.stationsPricesMap', state.stationsPricesMap)
+    setStationCommodityPrices (state, { stationId, stationCommodityPrices }) {
+      state.stationsCommoditiesPricesMap[stationId] = state.commoditiesList
+        .map(commodity => {
+
+          let commodityId = commodity.id
+          let stationCommodityPrice = stationCommodityPrices[commodityId]
+
+          stationCommodityPrice = Object.assign({
+            id: commodityId,
+            name: commodity.name,
+            category: commodity.category
+          }, stationCommodityPrice)
+
+          let priceBuy = stationCommodityPrice.priceBuy
+          let priceSell = stationCommodityPrice.priceSell
+          stationCommodityPrice.isPriceDefined =
+            ((priceBuy !== undefined && priceBuy !== '') ||
+            (priceSell !== undefined && priceSell !== ''))
+
+          return stationCommodityPrice
+        })
     }
   },
   actions: {
+
+    setSelectedStationId (context, stationId) {
+      context.commit('setSelectedStationId', stationId)
+    },
+
     fetchTradeinfo (context) {
       context.commit('setLoading', true)
 
@@ -77,7 +102,7 @@ export default {
     _getCommodityCategories (context) {
       console.log('_getCommodityCategories')
       firebase.firestore().collection('itemCategories')
-        .onSnapshot({ includeQueryMetadataChanges: true }, (querySnapshot) => {
+        .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
           context.dispatch('_gotCommodityCategories', querySnapshot)
         }, (error) => {
           console.error('_getCommodityCategories', error)
@@ -98,9 +123,9 @@ export default {
         let doc = change.doc
         // console.log('_gotCommodityCategories doc', doc)
         let commodityCategoryId = doc.id
-        let fromCache = doc.metadata.fromCache
+        // let fromCache = doc.metadata.fromCache
         // console.log('_gotCommodityCategories ' + commodityCategoryId + ' fromCache', fromCache)
-        if (!fromCache ||
+        if (// !fromCache ||
           context.state.commodityCategoriesMap[commodityCategoryId] === undefined) {
           let docData = doc.data()
           // console.log(docData)
@@ -115,7 +140,7 @@ export default {
         }
       })
 
-      if (Object.keys(context.state.commoditiesMap).length === 0) {
+      if (context.state.commoditiesList.length === 0) {
         context.dispatch('_getCommodities')
       }
     },
@@ -123,7 +148,7 @@ export default {
     _getCommodities (context) {
       console.log('_getCommodities')
       firebase.firestore().collection('itemTypes')
-        .onSnapshot({ includeQueryMetadataChanges: true }, (querySnapshot) => {
+        .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
           context.dispatch('_gotCommodities', querySnapshot)
         }, (error) => {
           console.error('_getCommodities', error)
@@ -144,9 +169,9 @@ export default {
         let doc = change.doc
         // console.log('_gotCommodities doc', doc)
         let commodityId = doc.id
-        let fromCache = doc.metadata.fromCache
+        // let fromCache = doc.metadata.fromCache
         // console.log('_gotCommodities ' + commodityId + ' fromCache', fromCache)
-        if (!fromCache ||
+        if (// !fromCache ||
           context.state.commoditiesMap[commodityId] === undefined) {
           let docData = doc.data()
           // console.log(docData)
@@ -155,8 +180,10 @@ export default {
             let commodity = {
               id: commodityId,
               name: docData.name,
-              category: context.state.commodityCategoriesMap[commodityCategoryId].name,
-              illegal: docData.illegal
+              category: context.state.commodityCategoriesMap[commodityCategoryId].name
+            }
+            if (docData.illegal) {
+              commodity.illegal = true
             }
             // console.log('commodity.name:' + commodity.name)
             context.commit('addCommodity', commodity)
@@ -172,7 +199,7 @@ export default {
     _getAnchors (context) {
       console.log('_getAnchors')
       firebase.firestore().collection('anchors')
-        .onSnapshot({ includeQueryMetadataChanges: true }, (querySnapshot) => {
+        .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
           context.dispatch('_gotAnchors', querySnapshot)
         }, (error) => {
           console.error('_getAnchors', error)
@@ -193,9 +220,9 @@ export default {
         let doc = change.doc
         // console.log('_gotAnchors doc', doc)
         let anchorId = doc.id
-        let fromCache = doc.metadata.fromCache
+        // let fromCache = doc.metadata.fromCache
         // console.log('_gotAnchors ' + anchorId + ' fromCache', fromCache)
-        if (!fromCache ||
+        if (// !fromCache ||
           context.state.anchorsMap[anchorId] === undefined) {
           let docData = doc.data()
           // console.log('_gotAnchors docData', docData)
@@ -210,7 +237,7 @@ export default {
         }
       })
 
-      if (Object.keys(context.state.stationsMap).length === 0) {
+      if (context.state.stationsList.length === 0) {
         context.dispatch('_getStations')
       }
     },
@@ -218,7 +245,7 @@ export default {
     _getStations (context) {
       console.log('_getStations')
       firebase.firestore().collection('stations')
-        .onSnapshot({ includeQueryMetadataChanges: true }, (querySnapshot) => {
+        .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
           context.dispatch('_gotStations', querySnapshot)
         }, (error) => {
           console.error('_getStations', error)
@@ -239,9 +266,9 @@ export default {
         let doc = change.doc
         // console.log('_gotStations doc', doc)
         let stationId = doc.id
-        let fromCache = doc.metadata.fromCache
+        // let fromCache = doc.metadata.fromCache
         // console.log('_gotStations ' + stationId + ' fromCache', fromCache)
-        if (!fromCache ||
+        if (// !fromCache ||
           context.state.stationsMap[stationId] === undefined) {
           let docData = doc.data()
           let station = {
@@ -249,101 +276,118 @@ export default {
             name: docData.name,
             anchor: context.state.anchorsMap[docData.anchor.id],
             // stationType: docData.type,
-            prices: undefined
+            prices: {}
           }
           // console.log('station.name:' + station.name)
           context.commit('addStation', station)
 
-          context.dispatch('_getStationPrices', stationId)
+          context.dispatch('_getStationCommodityPrices', stationId)
         }
       })
     },
 
-    _getStationPrices (context, stationId) {
+    _getStationCommodityPrices (context, stationId) {
       let path = '/stations/' + stationId + '/prices'
-      console.log('_getStationPrices query ' + path)
+      console.log('_getStationCommodityPrices query ' + path)
       firebase.firestore().collection(path)
         .orderBy('timestamp_created', 'desc')
         .limit(1)
-        .onSnapshot({ includeQueryMetadataChanges: true }, (querySnapshot) => {
-          context.dispatch('_gotStationPrices', { stationId, querySnapshot })
+        .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
+          context.dispatch('_gotStationCommodityPrices', { stationId, querySnapshot })
         }, (error) => {
-          console.error('_getStationPrices', error)
-          context.commit('setStationPrices', { stationId: stationId, stationPrices: undefined })
-          if (Object.keys(context.state.stationsPricesMap).length === Object.keys(context.state.stationsMap).length) {
+          console.error('_getStationCommodityPrices', error)
+          context.commit('setStationCommodityPrices', { stationId: stationId, stationCommodityPrices: undefined })
+          if (Object.keys(context.state.stationsCommoditiesPricesMap).length === context.state.stationsList.length) {
             // Only setLoading false after all prices have come back
             context.commit('setLoading', false)
           }
         })
     },
 
-    _gotStationPrices (context, { stationId, querySnapshot }) {
+    _gotStationCommodityPrices (context, { stationId, querySnapshot }) {
       let docChanges = querySnapshot.docChanges
       // console.log('_gotStationPrices docChanges', docChanges)
-      if (docChanges.length === 0 && context.state.stationsPricesMap[stationId] !== undefined) {
-        // console.log('_gotStationPrices query /stations/' + stationId + '/prices docChanges.length === 0 ignoring')
+      if (docChanges.length === 0 && context.state.stationsCommoditiesPricesMap[stationId] !== undefined) {
+        console.log('_gotStationCommodityPrices query /stations/' + stationId + '/prices docChanges.length === 0 ignoring')
         return
       }
-      console.log('_gotStationPrices query /stations/' + stationId + '/prices')
-      let stationPrices = {}
+      console.log('_gotStationCommodityPrices query /stations/' + stationId + '/prices')
+      let stationCommodityPrices = {}
       docChanges.forEach((change) => {
         // console.log('_gotStationPrices change', change)
+        if (change.type === 'removed' && docChanges.length !== 1) {
+          return
+        }
         let doc = change.doc
         // console.log('_gotStationPrices doc', doc)
         // let fromCache = doc.metadata.fromCache
         // console.log('_gotStationPrices fromCache', fromCache)
         let docData = doc.data()
         // console.log('_gotStationPrices docData', docData)
-        for (let commodityId in docData.prices) {
-          stationPrices[commodityId] = docData.prices[commodityId]
+        if (docData.prices) {
+          Object.keys(docData.prices).forEach(commodityId => {
+            let stationCommodityPrice = docData.prices[commodityId]
+            stationCommodityPrices[commodityId] = {
+              timestamp_created: docData.timestamp_created,
+              userId: docData.userId,
+              priceBuy: stationCommodityPrice.buy,
+              priceSell: stationCommodityPrice.sell
+            }
+          })
         }
       })
       // console.log('_gotStationPrices stationPrices', stationPrices)
-      context.commit('setStationPrices', { stationId, stationPrices })
-      if (Object.keys(context.state.stationsPricesMap).length === Object.keys(context.state.stationsMap).length) {
+      context.commit('setStationCommodityPrices', { stationId, stationCommodityPrices })
+
+      if (context.rootState.shared.loading &&
+        Object.keys(context.state.stationsCommoditiesPricesMap).length === context.state.stationsList.length) {
         // Only setLoading false after all prices have come back
-        console.info('%c_gotStationPrices LOADED!', 'color: green;')
+        console.info('%c_gotStationCommodityPrices LOADED!', 'color: green;')
         context.commit('setLoading', false)
       }
     },
 
-    saveStationPrices (context, { stationId, prices }) {
-      console.log('saveStationPrices stationId:', stationId)
-      console.log('saveStationPrices prices:', prices)
-      for (var commodityId in prices) {
-        let price = prices[commodityId]
-        let temp = {}
-        if (price.buy !== undefined && price.buy !== '') {
-          temp.buy = price.buy
-        }
-        if (price.sell !== undefined && price.sell !== '') {
-          temp.sell = price.sell
-        }
-        if (Object.keys(temp).length === 0) {
-          delete prices[commodityId]
-        } else {
-          prices[commodityId] = temp
-        }
-      }
+    saveStationCommodityPrices (context, payload) {
+      let stationId = payload.stationId
+      let stationCommodityPrices = payload.commodityPrices
+      let user = context.rootState.user.user
       let docData = {
         // TODO:(pv) Remove this and set via server side function?
         timestamp_created: firebase.firestore.FieldValue.serverTimestamp(),
-        prices: prices
+        userId: user.id,
+        prices: {}
+      }
+      stationCommodityPrices.forEach((stationCommodityPrice) => {
+        let docDataPrice = {}
+        if (stationCommodityPrice.buy !== undefined && stationCommodityPrice.buy !== '') {
+          docDataPrice.buy = stationCommodityPrice.buy
+        }
+        if (stationCommodityPrice.sell !== undefined && stationCommodityPrice.sell !== '') {
+          docDataPrice.sell = stationCommodityPrice.sell
+        }
+        if (Object.keys(docDataPrice).length !== 0) {
+          docData.prices[stationCommodityPrice.id] = docDataPrice
+        }
+      })
+      if (Object.keys(docData.prices).length === 0) {
+        delete docData.prices
       }
       let path = '/stations/' + stationId + '/prices'
-      console.log('saveStationPrices add ' + path + '/%AUTO-ID%', docData)
       firebase.firestore().collection(path)
         .add(docData)
         .then((docRef) => {
-          console.log('saveStationPrices SUCCESS!')
+          console.log('saveStationCommodityPrices SUCCESS!')
         })
         .catch((error) => {
-          console.error('saveStationPrices ERROR', error)
+          console.error('saveStationCommodityPrices ERROR', error)
           context.commit('setLoading', false)
         })
     }
   },
   getters: {
+    getSelectedStationId (state) {
+      return state.selectedStationId
+    },
     commodityCategory (state) {
       return (commodityCategoryId) => {
         return state.commodityCategoriesMap[commodityCategoryId].name
@@ -357,48 +401,16 @@ export default {
     },
     station (state) {
       return (stationId) => {
-        // console.log('getters.station ' + stationId)
-        // console.log('getters.station ', state.stationsMap)
-        let station = state.stationsMap[stationId]
-        // console.log('getters.station ', station)
-        return station
+        return state.stationsMap[stationId]
       }
     },
-    stationPrices (state) {
-      return (stationId, all) => {
-        let station = state.stationsMap[stationId]
-        let stationPrices = station.prices
-
-        let result = []
-
-        let commodityIdsMap
-        if (all || Object.keys(stationPrices).length === 0) {
-          commodityIdsMap = state.commoditiesMap
-        } else {
-          commodityIdsMap = stationPrices
+    stationCommodityPrices (state) {
+      return (stationId) => {
+        let stationCommodityPrices = state.stationsCommoditiesPricesMap[stationId]
+        if (stationCommodityPrices === undefined) {
+          stationCommodityPrices = []
         }
-        Object.keys(commodityIdsMap).forEach((commodityId) => {
-          let commodity = state.commoditiesMap[commodityId]
-          if (stationPrices !== undefined) {
-            let stationPrice = Object.assign({}, commodity)
-            let stationCommodityPrice = stationPrices[commodity.id]
-            if (stationCommodityPrice !== undefined) {
-              stationPrice.buy = stationCommodityPrice.buy
-              stationPrice.sell = stationCommodityPrice.sell
-            }
-            result.push(stationPrice)
-          }
-        })
-
-        return result.sort((a, b) => {
-          if (a.name < b.name) {
-            return -1
-          }
-          if (a.name > b.name) {
-            return 1
-          }
-          return 0
-        })
+        return stationCommodityPrices
       }
     }
   }

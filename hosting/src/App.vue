@@ -4,7 +4,7 @@
       app
       fixed
       v-model="drawer"
-    >
+      >
       <v-list>
         <v-list-tile to="/">
           <v-list-tile-action>
@@ -34,15 +34,17 @@
     <v-toolbar
       app
       fixed
-    >
+      >
       <v-toolbar-side-icon
-        @click.stop="drawer = !drawer">
+        @click.stop="drawer = !drawer"
+        >
       </v-toolbar-side-icon>
       <v-toolbar-title
         class="ml-0 mr-2"
         tag="span"
         style="cursor: pointer"
-        @click="home">
+        @click="home"
+        >
       {{ title }}
       </v-toolbar-title>
       <template v-if="$route.path==='/signin'">
@@ -50,7 +52,8 @@
         <v-btn
           flat
           class="ml-0 mr-2"
-          to="/signup">
+          @click="signup"
+          >
           <v-icon class="mx-1">face</v-icon>
           Sign up
         </v-btn>
@@ -60,7 +63,8 @@
         <v-btn
           flat
           class="ml-0 mr-2"
-          to="/signin">
+          @click="signin"
+          >
           <v-icon class="mx-1">lock_open</v-icon>
           Sign in
         </v-btn>
@@ -80,7 +84,7 @@
           item-text="name"
           item-value="id"
           v-model="stationId"
-        >
+          >
         </v-select>
         <template v-if="stationId != null">
           <template v-if="!userIsAuthenticated">
@@ -88,7 +92,7 @@
               flat
               class="ml-0 mr-2"
               @click="signin"
-            >
+              >
               <v-icon class="mx-1">lock_open</v-icon>
               Sign in
             </v-btn>
@@ -99,24 +103,25 @@
                 v-if="editing"
                 icon
                 class="ml-0 mr-2"
-                @click="editStation(stationId, false)"
-              >
+                @click="editStation(false)"
+                >
                 <v-icon class="mx-1">cancel</v-icon>
               </v-btn>
               <v-btn
                 v-else
                 icon
                 class="ml-0 mr-2"
-                @click="editStation(stationId, true)"
-              >
+                @click="editStation(true)"
+                >
                 <v-icon class="mx-1">edit</v-icon>
               </v-btn>
             </template>
             <v-btn
               icon
               class="ml-0 mr-2"
-              @click="saveStation(stationId)"
-            >
+              @keydown.native="handleKeyboard($event)"
+              @click="saveStation"
+              >
               <v-icon class="mx-1">save</v-icon>
             </v-btn>
           </template>
@@ -141,11 +146,20 @@ export default {
     return {
       drawer: false,
       title: 'Trade Citizen',
-      stationId: null,
       editing: false
     }
   },
   computed: {
+    stationId: {
+      get: function () {
+        return this.$store.getters.getSelectedStationId
+      },
+      set: function (value) {
+        this.editing = false
+        this.$store.dispatch('setSelectedStationId', value)
+        this.$root.$emit('onStationChanged', value)
+      }
+    },
     userIsAuthenticated () {
       return this.$store.getters.user !== null &&
         this.$store.getters.user !== undefined
@@ -184,19 +198,12 @@ export default {
         })
     }
   },
-  watch: {
-    stationId (value) {
-      this.onStationChanged(this.stationId)
-    }
-  },
   methods: {
     signin () {
-      this.stationId = null
       this.editing = false
       this.$router.push('/signin')
     },
     signout () {
-      this.stationId = null
       this.editing = false
       this.$store.dispatch('logout')
       this.home()
@@ -204,19 +211,14 @@ export default {
     home () {
       this.$router.push('/')
     },
-    onStationChanged (stationId) {
-      this.editing = false
-      this.$root.$emit('onStationChanged', this.stationId)
-    },
-    editStation (stationId, editing) {
+    editStation (editing) {
       console.log('App editStation', arguments)
       this.editing = editing
-      this.$root.$emit('editStation', stationId, editing)
+      this.$root.$emit('editStation', this.stationId, editing)
     },
-    saveStation (stationId) {
-      // console.log('App saveStation stationId:' + stationId)
+    saveStation () {
       this.editing = false
-      this.$root.$emit('saveStation', stationId)
+      this.$root.$emit('saveStation', this.stationId)
     }
   }
 }
