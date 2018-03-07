@@ -185,9 +185,14 @@ export default {
     stations () {
       return this.$store.getters.stations
         .map((station) => {
+          let id = station.id
+          let name = station.anchor.name + ' - ' + station.name
+          if (process.env.NODE_ENV === 'development') {
+            name += ' {' + id + '}'
+          }
           return {
-            id: station.id,
-            name: station.anchor.name + ' - ' + station.name
+            id: id,
+            name: name
           }
         })
         .sort((a, b) => {
