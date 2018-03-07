@@ -45,7 +45,7 @@ function firebaseInitialize (vue) {
   })
   firebase.firestore().enablePersistence()
     .then(function () {
-      console.log('enablePersistence success')
+      // console.log('enablePersistence success')
       initializeUser(vue)
     })
     .catch(function (err) {
@@ -56,7 +56,7 @@ function firebaseInitialize (vue) {
 
 function initializeUser (vue) {
   firebase.auth().onAuthStateChanged((user) => {
-    console.log('onAuthStateChanged', user)
+    // console.log('onAuthStateChanged', user)
     if (user) {
       vue.$store.dispatch('autoSignIn', user)
     }

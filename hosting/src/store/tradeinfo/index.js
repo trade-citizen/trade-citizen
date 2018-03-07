@@ -100,7 +100,7 @@ export default {
     },
 
     _getCommodityCategories (context) {
-      console.log('_getCommodityCategories')
+      // console.log('_getCommodityCategories')
       firebase.firestore().collection('itemCategories')
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
           context.dispatch('_gotCommodityCategories', querySnapshot)
@@ -117,9 +117,9 @@ export default {
         // console.log('_gotCommodityCategories docChanges.length === 0 ignoring')
         return
       }
-      console.log('_gotCommodityCategories')
+      // console.log('_gotCommodityCategories')
       docChanges.forEach((change) => {
-        // console.log('_gotCommodityCategories change', change)
+        // console.log('_gotCommodityCategories change.type', change.type)
         let doc = change.doc
         // console.log('_gotCommodityCategories doc', doc)
         let commodityCategoryId = doc.id
@@ -146,7 +146,7 @@ export default {
     },
 
     _getCommodities (context) {
-      console.log('_getCommodities')
+      // console.log('_getCommodities')
       firebase.firestore().collection('itemTypes')
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
           context.dispatch('_gotCommodities', querySnapshot)
@@ -163,9 +163,9 @@ export default {
         // console.log('_gotCommodities docChanges.length === 0 ignoring')
         return
       }
-      console.log('_gotCommodities')
+      // console.log('_gotCommodities')
       docChanges.forEach((change) => {
-        // console.log('_gotCommodities change', change)
+        // console.log('_gotCommodities change.type', change.type)
         let doc = change.doc
         // console.log('_gotCommodities doc', doc)
         let commodityId = doc.id
@@ -197,7 +197,7 @@ export default {
     },
 
     _getAnchors (context) {
-      console.log('_getAnchors')
+      // console.log('_getAnchors')
       firebase.firestore().collection('anchors')
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
           context.dispatch('_gotAnchors', querySnapshot)
@@ -214,9 +214,9 @@ export default {
         // console.log('_gotAnchors docChanges.length === 0 ignoring')
         return
       }
-      console.log('_gotAnchors')
+      // console.log('_gotAnchors')
       docChanges.forEach((change) => {
-        // console.log('_gotAnchors change', change)
+        // console.log('_gotAnchors change.type', change.type)
         let doc = change.doc
         // console.log('_gotAnchors doc', doc)
         let anchorId = doc.id
@@ -243,7 +243,7 @@ export default {
     },
 
     _getStations (context) {
-      console.log('_getStations')
+      // console.log('_getStations')
       firebase.firestore().collection('stations')
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
           context.dispatch('_gotStations', querySnapshot)
@@ -260,9 +260,9 @@ export default {
         // console.log('_gotStations docChanges.length === 0 ignoring')
         return
       }
-      console.log('_gotStations')
+      // console.log('_gotStations')
       docChanges.forEach((change) => {
-        // console.log('_gotStations change', change)
+        // console.log('_gotStations change.type', change.type)
         let doc = change.doc
         // console.log('_gotStations doc', doc)
         let stationId = doc.id
@@ -288,8 +288,9 @@ export default {
 
     _getStationCommodityPrices (context, stationId) {
       let path = '/stations/' + stationId + '/prices'
-      console.log('_getStationCommodityPrices query ' + path)
+      // console.log('_getStationCommodityPrices query ' + path)
       firebase.firestore().collection(path)
+        // .where('prices', '!==', null) // <- firestore does not support inequality queries :(
         .orderBy('timestamp_created', 'desc')
         .limit(1)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
@@ -306,37 +307,37 @@ export default {
 
     _gotStationCommodityPrices (context, { stationId, querySnapshot }) {
       let docChanges = querySnapshot.docChanges
-      // console.log('_gotStationPrices docChanges', docChanges)
+      // console.log('_gotStationCommodityPrices docChanges', docChanges)
       if (docChanges.length === 0 && context.state.stationsCommoditiesPricesMap[stationId] !== undefined) {
-        console.log('_gotStationCommodityPrices query /stations/' + stationId + '/prices docChanges.length === 0 ignoring')
+        // console.log('_gotStationCommodityPrices query /stations/' + stationId + '/prices docChanges.length === 0 ignoring')
         return
       }
-      console.log('_gotStationCommodityPrices query /stations/' + stationId + '/prices')
+      // console.log('_gotStationCommodityPrices query /stations/' + stationId + '/prices')
       let stationCommodityPrices = {}
       docChanges.forEach((change) => {
-        // console.log('_gotStationPrices change', change)
+        // console.log('_gotStationCommodityPrices change.type', change.type)
         if (change.type === 'removed' && docChanges.length !== 1) {
           return
         }
         let doc = change.doc
-        // console.log('_gotStationPrices doc', doc)
+        // console.log('_gotStationCommodityPrices doc', doc)
         // let fromCache = doc.metadata.fromCache
-        // console.log('_gotStationPrices fromCache', fromCache)
+        // console.log('_gotStationCommodityPrices fromCache', fromCache)
         let docData = doc.data()
-        // console.log('_gotStationPrices docData', docData)
-        if (docData.prices) {
-          Object.keys(docData.prices).forEach(commodityId => {
-            let stationCommodityPrice = docData.prices[commodityId]
+        let prices = docData.prices
+        if (prices) {
+          Object.keys(prices).forEach(commodityId => {
+            let stationCommodityPrice = prices[commodityId]
             stationCommodityPrices[commodityId] = {
               timestamp_created: docData.timestamp_created,
               userId: docData.userId,
-              priceBuy: stationCommodityPrice.buy,
-              priceSell: stationCommodityPrice.sell
+              priceBuy: stationCommodityPrice.priceBuy,
+              priceSell: stationCommodityPrice.priceSell
             }
           })
         }
       })
-      // console.log('_gotStationPrices stationPrices', stationPrices)
+      // console.log('_gotStationCommodityPrices stationCommodityPrices', stationCommodityPrices)
       context.commit('setStationCommodityPrices', { stationId, stationCommodityPrices })
 
       if (context.rootState.shared.loading &&
@@ -359,11 +360,11 @@ export default {
       }
       stationCommodityPrices.forEach((stationCommodityPrice) => {
         let docDataPrice = {}
-        if (stationCommodityPrice.buy !== undefined && stationCommodityPrice.buy !== '') {
-          docDataPrice.buy = stationCommodityPrice.buy
+        if (stationCommodityPrice.priceBuy !== undefined && stationCommodityPrice.priceBuy !== '') {
+          docDataPrice.priceBuy = stationCommodityPrice.priceBuy
         }
-        if (stationCommodityPrice.sell !== undefined && stationCommodityPrice.sell !== '') {
-          docDataPrice.sell = stationCommodityPrice.sell
+        if (stationCommodityPrice.priceSell !== undefined && stationCommodityPrice.priceSell !== '') {
+          docDataPrice.priceSell = stationCommodityPrice.priceSell
         }
         if (Object.keys(docDataPrice).length !== 0) {
           docData.prices[stationCommodityPrice.id] = docDataPrice
