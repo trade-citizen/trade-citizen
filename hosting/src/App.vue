@@ -169,10 +169,10 @@ export default {
       if (!this.stationId || this.editing) {
         return false
       }
-      let stationCommodityPricesAll = this.$store.getters.stationCommodityPrices(this.stationId)
+      let stationCommodityPriceList = this.$store.getters.stationCommodityPriceList(this.stationId)
       let accumulator = 0
-      if (stationCommodityPricesAll) {
-        accumulator = stationCommodityPricesAll
+      if (stationCommodityPriceList) {
+        accumulator = stationCommodityPriceList
           .reduce((accumulator, stationCommodityPrice) => {
             if (stationCommodityPrice.isPriceDefined) {
               accumulator++

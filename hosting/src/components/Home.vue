@@ -52,11 +52,11 @@
     v-else
     grid-list-md
   >
-    <template v-if="stationCommodityPrices.length">
+    <template v-if="stationCommodityPriceList.length">
       <v-layout row wrap>
         <v-flex
           xs4
-          v-for="stationCommodityPrice in stationCommodityPrices"
+          v-for="stationCommodityPrice in stationCommodityPriceList"
           :key="stationCommodityPrice.id"
         >
           <v-card style="border:1px solid white; border-radius:6px;">
@@ -192,18 +192,18 @@ export default {
     },
     margins () {
     },
-    stationCommodityPrices () {
-      let stationCommodityPrices = this.$store.getters.stationCommodityPrices(this.stationId)
-      if (stationCommodityPrices) {
-        let temp = stationCommodityPrices.filter((stationCommodityPrice) => {
-          let result = this.editing ||
-            (stationCommodityPrice.priceBuy !== undefined && stationCommodityPrice.priceBuy !== '') ||
-            (stationCommodityPrice.priceSell !== undefined && stationCommodityPrice.priceSell !== '')
-          return result
+    stationCommodityPriceList () {
+      // CONCERN: Should prices update in real-time even if being edited?
+      //  Option 1: Yes; easier to code and the user has to deal with it
+      //  Option 2: No; Harder to code because edit mode disables real-time updates and has to play a 'who wins' game when saving
+      let stationCommodityPriceList = this.$store.getters.stationCommodityPriceList(this.stationId)
+      if (stationCommodityPriceList) {
+        let temp = stationCommodityPriceList.filter((stationCommodityPrice) => {
+          return this.editing || stationCommodityPrice.isPriceDefined
         })
-        return (temp.length > 0 || !this.userIsAuthenticated) ? temp : stationCommodityPrices
+        return (temp.length > 0 || !this.userIsAuthenticated) ? temp : stationCommodityPriceList
       }
-      return stationCommodityPrices
+      return stationCommodityPriceList
     }
   },
   methods: {
@@ -244,7 +244,7 @@ export default {
       // console.log('Home saveStation stationId:' + stationId)
       this.$store.dispatch('saveStationCommodityPrices', {
         stationId: stationId,
-        commodityPrices: this.stationCommodityPrices
+        stationCommodityPrices: this.stationCommodityPriceList
       })
       this.editing = false
     }

@@ -1,3 +1,4 @@
+import Vue from 'vue'
 import * as firebase from 'firebase'
 
 export default {
@@ -17,7 +18,7 @@ export default {
       state.selectedStationId = payload
     },
     addCommodityCategory (state, payload) {
-      state.commodityCategoriesMap[payload.id] = payload
+      Vue.set(state.commodityCategoriesMap, payload.id, payload)
       state.commodityCategoriesList = Object.values(state.commodityCategoriesMap)
         .sort((a, b) => {
           let aName = a.name.toLowerCase()
@@ -32,7 +33,7 @@ export default {
         })
     },
     addCommodity (state, payload) {
-      state.commoditiesMap[payload.id] = payload
+      Vue.set(state.commoditiesMap, payload.id, payload)
       state.commoditiesList = Object.values(state.commoditiesMap)
         .sort((a, b) => {
           let aName = a.name.toLowerCase()
@@ -47,10 +48,10 @@ export default {
         })
     },
     addAnchor (state, payload) {
-      state.anchorsMap[payload.id] = payload
+      Vue.set(state.anchorsMap, payload.id, payload)
     },
     addStation (state, payload) {
-      state.stationsMap[payload.id] = payload
+      Vue.set(state.stationsMap, payload.id, payload)
       state.stationsList = Object.values(state.stationsMap)
         .sort((a, b) => {
           let aName = a.name.toLowerCase()
@@ -65,7 +66,7 @@ export default {
         })
     },
     setStationCommodityPrices (state, { stationId, stationCommodityPrices }) {
-      state.stationsCommoditiesPricesMap[stationId] = state.commoditiesList
+      let stationCommodityPricesList = state.commoditiesList
         .map(commodity => {
 
           let commodityId = commodity.id
@@ -85,6 +86,7 @@ export default {
 
           return stationCommodityPrice
         })
+      Vue.set(state.stationsCommoditiesPricesMap, stationId, stationCommodityPricesList)
     }
   },
   actions: {
@@ -291,6 +293,7 @@ export default {
       // console.log('_getStationCommodityPrices query ' + path)
       firebase.firestore().collection(path)
         // .where('prices', '!==', null) // <- firestore does not support inequality queries :(
+        // .where('prices.priceBuy', '>=' 0) or .where('prices.priceSell', '>=' 0)
         .orderBy('timestamp_created', 'desc')
         .limit(1)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
@@ -348,9 +351,7 @@ export default {
       }
     },
 
-    saveStationCommodityPrices (context, payload) {
-      let stationId = payload.stationId
-      let stationCommodityPrices = payload.commodityPrices
+    saveStationCommodityPrices (context, { stationId, stationCommodityPrices }) {
       let user = context.rootState.user.user
       let docData = {
         // TODO:(pv) Remove this and set via server side function?
@@ -405,13 +406,13 @@ export default {
         return state.stationsMap[stationId]
       }
     },
-    stationCommodityPrices (state) {
+    stationCommodityPriceList (state) {
       return (stationId) => {
-        let stationCommodityPrices = state.stationsCommoditiesPricesMap[stationId]
-        if (stationCommodityPrices === undefined) {
-          stationCommodityPrices = []
+        let stationCommodityPriceList = state.stationsCommoditiesPricesMap[stationId]
+        if (!stationCommodityPriceList) {
+          stationCommodityPriceList = []
         }
-        return stationCommodityPrices
+        return stationCommodityPriceList
       }
     }
   }
