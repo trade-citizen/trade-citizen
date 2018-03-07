@@ -98,7 +98,7 @@
             </v-btn>
           </template>
           <template v-else>
-            <template v-if="mayEdit">
+            <template v-if="showEdit">
               <v-btn
                 v-if="editing"
                 icon
@@ -164,7 +164,7 @@ export default {
       return this.$store.getters.user !== null &&
         this.$store.getters.user !== undefined
     },
-    mayEdit () {
+    showEdit () {
       if (!this.stationId || this.editing) {
         return false
       }
