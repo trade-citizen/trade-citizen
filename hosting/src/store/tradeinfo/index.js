@@ -17,7 +17,7 @@ export default {
     setSelectedStationId (state, payload) {
       state.selectedStationId = payload
     },
-    addCommodityCategory (state, payload) {
+    _addCommodityCategory (state, payload) {
       Vue.set(state.commodityCategoriesMap, payload.id, payload)
       state.commodityCategoriesList = Object.values(state.commodityCategoriesMap)
         .sort((a, b) => {
@@ -32,7 +32,7 @@ export default {
           return 0
         })
     },
-    addCommodity (state, payload) {
+    _addCommodity (state, payload) {
       Vue.set(state.commoditiesMap, payload.id, payload)
       state.commoditiesList = Object.values(state.commoditiesMap)
         .sort((a, b) => {
@@ -47,10 +47,10 @@ export default {
           return 0
         })
     },
-    addAnchor (state, payload) {
+    _addAnchor (state, payload) {
       Vue.set(state.anchorsMap, payload.id, payload)
     },
-    addStation (state, payload) {
+    _addStation (state, payload) {
       Vue.set(state.stationsMap, payload.id, payload)
       state.stationsList = Object.values(state.stationsMap)
         .sort((a, b) => {
@@ -65,7 +65,7 @@ export default {
           return 0
         })
     },
-    setStationCommodityPrices (state, { stationId, stationCommodityPrices }) {
+    _setStationCommodityPrices (state, { stationId, stationCommodityPrices }) {
       let stationCommodityPricesList = state.commoditiesList
         .map(commodity => {
 
@@ -87,13 +87,16 @@ export default {
           return stationCommodityPrice
         })
       Vue.set(state.stationsCommoditiesPricesMap, stationId, stationCommodityPricesList)
+    },
+    updateStationCommodityPrice (state, { stationId, commodityId, priceId, value }) {
+      let stationCommodityPrices = state.stationsCommoditiesPricesMap[stationId]
+        .find(commodity => {
+          return commodity.id === commodityId
+        })
+      Vue.set(stationCommodityPrices, priceId, value)
     }
   },
   actions: {
-
-    setSelectedStationId (context, stationId) {
-      context.commit('setSelectedStationId', stationId)
-    },
 
     fetchTradeinfo (context) {
       context.commit('setLoading', true)
@@ -137,7 +140,7 @@ export default {
               name: docData.name
             }
             // console.log('commodityCategory.name:' + commodityCategory.name)
-            context.commit('addCommodityCategory', commodityCategory)
+            context.commit('_addCommodityCategory', commodityCategory)
           }
         }
       })
@@ -188,7 +191,7 @@ export default {
               commodity.illegal = true
             }
             // console.log('commodity.name:' + commodity.name)
-            context.commit('addCommodity', commodity)
+            context.commit('_addCommodity', commodity)
           }
         }
       })
@@ -235,7 +238,7 @@ export default {
             anchor: (docData.anchor !== undefined) ? docData.anchor.id : undefined
           }
           // console.log('anchor.name:' + anchor.name)
-          context.commit('addAnchor', anchor)
+          context.commit('_addAnchor', anchor)
         }
       })
 
@@ -281,7 +284,7 @@ export default {
             prices: {}
           }
           // console.log('station.name:' + station.name)
-          context.commit('addStation', station)
+          context.commit('_addStation', station)
 
           context.dispatch('_getStationCommodityPrices', stationId)
         }
@@ -300,7 +303,7 @@ export default {
           context.dispatch('_gotStationCommodityPrices', { stationId, querySnapshot })
         }, (error) => {
           console.error('_getStationCommodityPrices', error)
-          context.commit('setStationCommodityPrices', { stationId: stationId, stationCommodityPrices: undefined })
+          context.commit('_setStationCommodityPrices', { stationId: stationId, stationCommodityPrices: undefined })
           if (Object.keys(context.state.stationsCommoditiesPricesMap).length === context.state.stationsList.length) {
             // Only setLoading false after all prices have come back
             context.commit('setLoading', false)
@@ -341,7 +344,7 @@ export default {
         }
       })
       // console.log('_gotStationCommodityPrices stationCommodityPrices', stationCommodityPrices)
-      context.commit('setStationCommodityPrices', { stationId, stationCommodityPrices })
+      context.commit('_setStationCommodityPrices', { stationId, stationCommodityPrices })
 
       if (context.rootState.shared.loading &&
         Object.keys(context.state.stationsCommoditiesPricesMap).length === context.state.stationsList.length) {
@@ -408,11 +411,7 @@ export default {
     },
     stationCommodityPriceList (state) {
       return (stationId) => {
-        let stationCommodityPriceList = state.stationsCommoditiesPricesMap[stationId]
-        if (!stationCommodityPriceList) {
-          stationCommodityPriceList = []
-        }
-        return stationCommodityPriceList
+        return state.stationsCommoditiesPricesMap[stationId]
       }
     }
   }

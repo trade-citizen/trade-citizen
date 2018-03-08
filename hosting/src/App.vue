@@ -157,7 +157,7 @@ export default {
       },
       set: function (value) {
         this.editing = false
-        this.$store.dispatch('setSelectedStationId', value)
+        this.$store.commit('setSelectedStationId', value)
         this.$root.$emit('onStationChanged', value)
       }
     },

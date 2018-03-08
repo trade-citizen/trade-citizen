@@ -95,7 +95,8 @@
                     label="Buy Price"
                     :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
                     :disabled="!userIsAuthenticated"
-                    v-model="stationCommodityPrice.priceBuy"
+                    :value="stationCommodityPrice.priceBuy"
+                    @input="updateStationCommodityPrice(stationCommodityPrice.id, 'priceBuy', $event)"
                   >
                   </v-text-field>
                 </v-flex>
@@ -106,7 +107,8 @@
                     label="Sell Price"
                     :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
                     :disabled="!userIsAuthenticated"
-                    v-model="stationCommodityPrice.priceSell"
+                    :value="stationCommodityPrice.priceSell"
+                    @input="updateStationCommodityPrice(stationCommodityPrice.id, 'priceSell', $event)"
                   >
                   </v-text-field>
                 </v-flex>
@@ -172,8 +174,10 @@ export default {
     })
   },
   computed: {
-    stationId () {
-      return this.$store.getters.getSelectedStationId
+    stationId: {
+      get: function () {
+        return this.$store.getters.getSelectedStationId
+      }
     },
     userIsAuthenticated () {
       return this.$store.getters.user !== null &&
@@ -243,10 +247,18 @@ export default {
     saveStation (stationId) {
       // console.log('Home saveStation stationId:' + stationId)
       this.$store.dispatch('saveStationCommodityPrices', {
-        stationId: stationId,
+        stationId: this.stationId,
         stationCommodityPrices: this.stationCommodityPriceList
       })
       this.editing = false
+    },
+    updateStationCommodityPrice (commodityId, priceId, value) {
+      this.$store.commit('updateStationCommodityPrice', {
+        stationId: this.stationId,
+        commodityId: commodityId,
+        priceId: priceId,
+        value: value
+      })
     }
   }
 }
