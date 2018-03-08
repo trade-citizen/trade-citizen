@@ -1,6 +1,8 @@
 import Vue from 'vue'
 import * as firebase from 'firebase'
 
+const ROOT = '/deployments/' + (process.env.NODE_ENV === 'production' ? 'production' : 'test') + '/'
+
 export default {
   state: {
     selectedStationId: null,
@@ -106,7 +108,9 @@ export default {
 
     _getCommodityCategories (context) {
       // console.log('_getCommodityCategories')
-      firebase.firestore().collection('itemCategories')
+      let path = ROOT + 'itemCategories'
+      // console.log('_getCommodityCategories path', path)
+      firebase.firestore().collection(path)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
           context.dispatch('_gotCommodityCategories', querySnapshot)
         }, (error) => {
@@ -152,7 +156,9 @@ export default {
 
     _getCommodities (context) {
       // console.log('_getCommodities')
-      firebase.firestore().collection('itemTypes')
+      let path = ROOT + 'itemTypes'
+      // console.log('_getCommodities path', path)
+      firebase.firestore().collection(path)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
           context.dispatch('_gotCommodities', querySnapshot)
         }, (error) => {
@@ -203,7 +209,9 @@ export default {
 
     _getAnchors (context) {
       // console.log('_getAnchors')
-      firebase.firestore().collection('anchors')
+      let path = ROOT + 'anchors'
+      // console.log('_getAnchors path', path)
+      firebase.firestore().collection(path)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
           context.dispatch('_gotAnchors', querySnapshot)
         }, (error) => {
@@ -249,7 +257,9 @@ export default {
 
     _getStations (context) {
       // console.log('_getStations')
-      firebase.firestore().collection('stations')
+      let path = ROOT + 'stations'
+      // console.log('_getStations path', path)
+      firebase.firestore().collection(path)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
           context.dispatch('_gotStations', querySnapshot)
         }, (error) => {
@@ -292,8 +302,9 @@ export default {
     },
 
     _getStationCommodityPrices (context, stationId) {
-      let path = '/stations/' + stationId + '/prices'
-      // console.log('_getStationCommodityPrices query ' + path)
+      // console.log('_getStationCommodityPrices stationId', stationId)
+      let path = ROOT + 'stations/' + stationId + '/prices'
+      // console.log('_getStationCommodityPrices path', path)
       firebase.firestore().collection(path)
         // .where('prices', '!==', null) // <- firestore does not support inequality queries :(
         // .where('prices.priceBuy', '>=' 0) or .where('prices.priceSell', '>=' 0)
@@ -377,7 +388,7 @@ export default {
       if (Object.keys(docData.prices).length === 0) {
         delete docData.prices
       }
-      let path = '/stations/' + stationId + '/prices'
+      let path = ROOT + 'stations/' + stationId + '/prices'
       firebase.firestore().collection(path)
         .add(docData)
         .then((docRef) => {

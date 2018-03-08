@@ -197,15 +197,12 @@ export default {
     margins () {
     },
     stationCommodityPriceList () {
-      // CONCERN: Should prices update in real-time even if being edited?
-      //  Option 1: Yes; easier to code and the user has to deal with it
-      //  Option 2: No; Harder to code because edit mode disables real-time updates and has to play a 'who wins' game when saving
       let stationCommodityPriceList = this.$store.getters.stationCommodityPriceList(this.stationId)
-      if (stationCommodityPriceList) {
-        let temp = stationCommodityPriceList.filter((stationCommodityPrice) => {
-          return this.editing || stationCommodityPrice.isPriceDefined
+      if (stationCommodityPriceList && !this.editing) {
+        let stationCommodityPriceListDefined = stationCommodityPriceList.filter((stationCommodityPrice) => {
+          return stationCommodityPrice.isPriceDefined
         })
-        return (temp.length > 0 || !this.userIsAuthenticated) ? temp : stationCommodityPriceList
+        stationCommodityPriceList = (stationCommodityPriceListDefined.length > 0 || !this.userIsAuthenticated) ? stationCommodityPriceListDefined : stationCommodityPriceList
       }
       return stationCommodityPriceList
     }
