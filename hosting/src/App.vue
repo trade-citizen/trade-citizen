@@ -166,7 +166,7 @@ export default {
         this.$store.getters.user !== undefined
     },
     showEdit () {
-      if (!this.stationId || this.editing) {
+      if (!this.stationId) {
         return false
       }
       let stationCommodityPriceList = this.$store.getters.stationCommodityPriceList(this.stationId)
