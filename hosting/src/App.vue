@@ -15,8 +15,7 @@
           </v-list-tile-content>
         </v-list-tile>
         <template v-if="userIsAuthenticated">
-          <v-list-tile
-            @click="signout">
+          <v-list-tile @click="signout">
             <v-list-tile-action>
               <v-icon>exit_to_app</v-icon>
             </v-list-tile-action>
@@ -24,8 +23,7 @@
           </v-list-tile>
         </template>
         <template v-else>
-          <v-list-tile
-            @click="signin">
+          <v-list-tile @click="signin">
             <v-list-tile-action>
               <v-icon>lock_open</v-icon>
             </v-list-tile-action>
@@ -55,7 +53,8 @@
         <v-btn
           flat
           class="ml-0 mr-2"
-          to="/signup">
+          to="/signup"
+          >
           <v-icon class="mx-1">face</v-icon>
           Sign up
         </v-btn>
@@ -65,7 +64,8 @@
         <v-btn
           flat
           class="ml-0 mr-2"
-          to="/signin">
+          to="/signin"
+          >
           <v-icon class="mx-1">lock_open</v-icon>
           Sign in
         </v-btn>

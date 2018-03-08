@@ -2,41 +2,42 @@
   <v-container
     v-if="stationId == null"
     class="pa-2"
-  >
+    >
     <v-layout row d-flex align-center>
       <v-icon class="mx-2">filter_list</v-icon><span class="mr-2">Filter</span>
       <v-select
-                label="Commodities"
-                clearable
-                multiple
-                single-line
-                hide-details
-                hide-selected
-                :items="commodities"
-                v-model="filter.commodities"
-                item-text="name"
-                item-value="id"
-                return-object
-              >
+        label="Commodities"
+        clearable
+        multiple
+        single-line
+        hide-details
+        hide-selected
+        :items="commodities"
+        v-model="filter.commodities"
+        item-value="id"
+        item-text="name"
+        return-object
+        >
       </v-select>
       <v-checkbox
-                  label="Illegal"
-                  v-model="filter.illegal"
-                  @change="refresh()"
-                  hide-details
-                  >
+        label="Illegal"
+        v-model="filter.illegal"
+        @change="refresh()"
+        hide-details
+        >
       </v-checkbox>
     </v-layout>
     <v-layout row d-flex>
       <v-data-table
-                  class="elevation-1"
-                  hide-actions
-                  must-sort
-                  v-bind:pagination.sync="pagination"
-                  :headers="headers"
-                  :items="margins"
-                  no-data-text="Soon™..."
-                  >
+        class="elevation-1"
+        hide-actions
+        must-sort
+        v-bind:pagination.sync="pagination"
+        :headers="headers"
+        :custom-sort="sortMarginPrices"
+        :items="margins"
+        no-data-text="Soon™..."
+        >
         <template slot="items" slot-scope="props">
           <td class="text-xs-right">{{ props.item.commodity }}</td>
           <td class="text-xs-right">{{ props.item.buyStation }}</td>
@@ -51,81 +52,78 @@
   <v-container
     v-else
     grid-list-md
-  >
-    <template v-if="stationCommodityPriceList.length">
-      <v-layout row wrap>
-        <v-flex
-          xs4
-          v-for="stationCommodityPrice in stationCommodityPriceList"
-          :key="stationCommodityPrice.id"
+    >
+    <v-layout
+      v-if="stationCommodityPriceList.length"
+      row wrap
+      >
+      <v-flex
+        xs4
+        v-for="stationCommodityPrice in stationCommodityPriceList"
+        :key="stationCommodityPrice.id"
         >
-          <v-card style="border:1px solid white; border-radius:6px;">
-            <v-container fluid grid-list-lg>
-              <v-layout row>
-                <!--
-                <v-flex xs4>
-                  <v-card-media
-                    :src="`images/commodity-${commodity.type}.png`"
-                    height="86px"
-                    width="auto"
-                  >
-                  </v-card-media>
-                </v-flex>
-                -->
-                <v-flex xs12>
-                  <!--
-                    <v-container fluid fill-height>
-                      <v-layout justify-left align-top>
-                  -->
-                  <v-card-title primary-title class="px-0 py-0">
-                        <h3 class="headline">{{ stationCommodityPrice.name }}</h3>
-                  </v-card-title>
-                  <div>{{ stationCommodityPrice.category }}</div>
-                  <!--
-                      </v-layout>
-                    </v-container>
-                  -->
-                </v-flex>
-              </v-layout>
-              <v-layout row>
-                <v-flex xs6>
-                  <v-text-field
-                    class="input-group--focused"
-                    hide-details
-                    label="Buy Price"
-                    :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
-                    :disabled="!userIsAuthenticated"
-                    :value="stationCommodityPrice.priceBuy"
-                    @input="updateStationCommodityPrice(stationCommodityPrice.id, 'priceBuy', $event)"
-                  >
-                  </v-text-field>
-                </v-flex>
-                <v-flex xs6>
-                  <v-text-field
-                    class="input-group--focused"
-                    hide-details
-                    label="Sell Price"
-                    :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
-                    :disabled="!userIsAuthenticated"
-                    :value="stationCommodityPrice.priceSell"
-                    @input="updateStationCommodityPrice(stationCommodityPrice.id, 'priceSell', $event)"
-                  >
-                  </v-text-field>
-                </v-flex>
-              </v-layout>
+        <v-card style="border:1px solid white; border-radius:6px;">
+          <v-container fluid grid-list-lg>
+            <v-layout row>
               <!--
-              <v-layout row>
-                <v-card-actions>
-                  <v-btn flat>Approve</v-btn>
-                </v-card-actions>
-              </v-layout>
+              <v-flex xs4>
+                <v-card-media
+                  :src="`images/commodity-${commodity.type}.png`"
+                  height="86px"
+                  width="auto"
+                >
+                </v-card-media>
+              </v-flex>
               -->
-            </v-container>
-          </v-card>
-        </v-flex>
-      </v-layout>
-    </template>
-    <v-layout v-else justify-center>
+              <v-flex xs12>
+                <!--
+                  <v-container fluid fill-height>
+                    <v-layout justify-left align-top>
+                -->
+                <v-card-title primary-title class="px-0 py-0">
+                  <h3 class="headline">{{ stationCommodityPrice.name }}</h3>
+                </v-card-title>
+                <div>{{ stationCommodityPrice.category }}</div>
+                <!--
+                    </v-layout>
+                  </v-container>
+                -->
+              </v-flex>
+            </v-layout>
+            <v-layout row>
+              <v-flex xs6>
+                <v-text-field
+                  class="input-group--focused"
+                  hide-details
+                  label="Buy Price"
+                  :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
+                  :disabled="!userIsAuthenticated"
+                  :value="stationCommodityPrice.priceBuy"
+                  @input="updateStationCommodityPrice(stationCommodityPrice.id, 'priceBuy', $event)"
+                  >
+                </v-text-field>
+              </v-flex>
+              <v-flex xs6>
+                <v-text-field
+                  class="input-group--focused"
+                  hide-details
+                  label="Sell Price"
+                  :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
+                  :disabled="!userIsAuthenticated"
+                  :value="stationCommodityPrice.priceSell"
+                  @input="updateStationCommodityPrice(stationCommodityPrice.id, 'priceSell', $event)"
+                  >
+                </v-text-field>
+              </v-flex>
+            </v-layout>
+          </v-container>
+        </v-card>
+      </v-flex>
+    </v-layout>
+    <v-layout
+      v-else
+      justify-center
+      >
       <p class="pa-2">No prices set</p>
     </v-layout>
   </v-container>
