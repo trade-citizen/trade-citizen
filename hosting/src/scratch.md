@@ -29,6 +29,8 @@ Ideas?:
   https://www.youtube.com/watch?v=SobXoh4rb58
   https://github.com/mbleigh/pwas-on-firebase/
   How to get "There is a new version available; refresh" prompt?
+  https://github.com/vuejs-templates/pwa/issues/81
+
 https://firebase.google.com/docs/hosting/functions
 
 https://github.com/vuejs/vuefire
