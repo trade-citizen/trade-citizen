@@ -35,4 +35,6 @@ Follow these steps to setup and run the quickstart:
  1. Deploy to live hosting:
     ```bash
     firebase deploy
+    -or-
+    firebase deploy --only hosting
     ```
