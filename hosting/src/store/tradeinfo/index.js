@@ -72,19 +72,20 @@ export default {
         .map(commodity => {
 
           let commodityId = commodity.id
+          let commodityName = commodity.name
+          let commodityCategory = commodity.category
           let stationCommodityPrice = stationCommodityPrices[commodityId]
 
           stationCommodityPrice = Object.assign({
             id: commodityId,
-            name: commodity.name,
-            category: commodity.category
+            name: commodityName,
+            category: commodityCategory
           }, stationCommodityPrice)
 
           let priceBuy = stationCommodityPrice.priceBuy
           let priceSell = stationCommodityPrice.priceSell
-          stationCommodityPrice.isPriceDefined =
-            ((priceBuy !== undefined && priceBuy !== '') ||
-            (priceSell !== undefined && priceSell !== ''))
+          let isPriceDefined = !isNaN(priceBuy) || !isNaN(priceSell)
+          stationCommodityPrice.isPriceDefined = isPriceDefined
 
           return stationCommodityPrice
         })
@@ -307,7 +308,7 @@ export default {
       // console.log('_getStationCommodityPrices path', path)
       firebase.firestore().collection(path)
         // .where('prices', '!==', null) // <- firestore does not support inequality queries :(
-        // .where('prices.priceBuy', '>=' 0) or .where('prices.priceSell', '>=' 0)
+        // .where('prices.*.priceBuy', '>=' 0) or .where('prices.*.priceSell', '>=' 0)
         .orderBy('timestamp_created', 'desc')
         .limit(1)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
@@ -348,8 +349,8 @@ export default {
             stationCommodityPrices[commodityId] = {
               timestamp_created: docData.timestamp_created,
               userId: docData.userId,
-              priceBuy: stationCommodityPrice.priceBuy,
-              priceSell: stationCommodityPrice.priceSell
+              priceBuy: Number(stationCommodityPrice.priceBuy),
+              priceSell: Number(stationCommodityPrice.priceSell)
             }
           })
         }
@@ -375,11 +376,13 @@ export default {
       }
       stationCommodityPrices.forEach((stationCommodityPrice) => {
         let docDataPrice = {}
-        if (stationCommodityPrice.priceBuy !== undefined && stationCommodityPrice.priceBuy !== '') {
-          docDataPrice.priceBuy = stationCommodityPrice.priceBuy
+        let priceBuy = Number(stationCommodityPrice.priceBuy)
+        if (!isNaN(priceBuy)) {
+          docDataPrice.priceBuy = priceBuy
         }
-        if (stationCommodityPrice.priceSell !== undefined && stationCommodityPrice.priceSell !== '') {
-          docDataPrice.priceSell = stationCommodityPrice.priceSell
+        let priceSell = Number(stationCommodityPrice.priceSell)
+        if (!isNaN(priceSell)) {
+          docDataPrice.priceSell = priceSell
         }
         if (Object.keys(docDataPrice).length !== 0) {
           docData.prices[stationCommodityPrice.id] = docDataPrice
@@ -396,7 +399,6 @@ export default {
         })
         .catch((error) => {
           console.error('saveStationCommodityPrices ERROR', error)
-          context.commit('setLoading', false)
         })
     }
   },

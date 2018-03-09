@@ -2,6 +2,8 @@
 
 > Crowd sourced commodity prices
 
+Vuetify: https://next.vuetifyjs.com/
+
 ## Build Setup
 
 ``` bash
@@ -25,6 +27,12 @@ npm run e2e
 
 # run all tests
 npm test
+
+# deploy to firebase hosting
+cd ..
+firebase deploy
+-or-
+firebase deploy --only hosting
 ```
 
 For detailed explanation on how things work, checkout the [guide](http://vuejs-templates.github.io/webpack/) and [docs for vue-loader](http://vuejs.github.io/vue-loader).
@@ -32,11 +40,13 @@ For detailed explanation on how things work, checkout the [guide](http://vuejs-t
 ## Update
 
 ```bash
-npm outdated
 npm update
 npm update -g
+npm outdated
+npm i foo@x.y.z
 ```
 
+NOTE: This mostly automatic way can cause problems...
 ```bash
 npm install -g npm-check-updates
 ncu

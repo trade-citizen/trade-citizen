@@ -28,6 +28,9 @@
       </v-checkbox>
     </v-layout>
     <v-layout row d-flex>
+      <!--
+        NOTE: pagination.sync is needed to define non-default sort column
+      -->
       <v-data-table
         class="elevation-1"
         hide-actions
@@ -40,11 +43,11 @@
         >
         <template slot="items" slot-scope="props">
           <td class="text-xs-right">{{ props.item.commodity }}</td>
-          <td class="text-xs-right">{{ props.item.buyStation }}</td>
-          <td class="text-xs-right">{{ toFixed(props.item.buyPrice, 3) }}</td>
+          <td class="text-xs-right">{{ props.item.stationBuy }}</td>
+          <td class="text-xs-right">{{ props.item.priceBuy.toFixed(3) }}</td>
           <td class="text-xs-center">{{ calculateMargin(props.item) }}</td>
-          <td class="text-xs-left">{{ toFixed(props.item.sellPrice, 3) }}</td>
-          <td class="text-xs-left">{{ props.item.sellStation }}</td>
+          <td class="text-xs-left">{{ props.item.priceSell.toFixed(3) }}</td>
+          <td class="text-xs-left">{{ props.item.stationSell }}</td>
         </template>
       </v-data-table>
     </v-layout>
@@ -135,11 +138,11 @@ export default {
     return {
       headers: [
         { sortable: true, align: 'right', text: 'Commodity', value: 'commodity' },
-        { sortable: true, align: 'right', text: 'Buy Station', value: 'buyStation' },
-        { sortable: true, align: 'right', text: 'Buy Price', value: 'buyPrice' },
+        { sortable: true, align: 'right', text: 'Buy Station', value: 'stationBuy' },
+        { sortable: true, align: 'right', text: 'Buy Price', value: 'priceBuy' },
         { sortable: true, align: 'center', text: 'Margin', value: 'margin' },
-        { sortable: true, align: 'left', text: 'Sell Price', value: 'sellPrice' },
-        { sortable: true, align: 'left', text: 'Sell Station', value: 'sellStation' }
+        { sortable: true, align: 'left', text: 'Sell Price', value: 'priceSell' },
+        { sortable: true, align: 'left', text: 'Sell Station', value: 'stationSell' }
       ],
       pagination: {
         sortBy: 'margin',
@@ -220,14 +223,28 @@ export default {
         }
       }
     },
-    toFixed (floatValue, digits) {
-      return Number(floatValue).toFixed(digits)
-    },
     calculateMargin (item) {
-      return this.toFixed((item.sellPrice / item.buyPrice), 3)
+      return (item.priceSell / item.priceBuy).toFixed(3)
     },
     sortMarginPrices (items, index, isDescending) {
       return items.sort((itemA, itemB) => {
+        let valueA, valueB
+        switch (index) {
+          case 'margin':
+            valueA = this.calculateMargin(itemA)
+            valueB = this.calculateMargin(itemB)
+            break
+          default:
+            valueA = itemA[index]
+            valueB = itemB[index]
+        }
+
+        if (valueA < valueB) {
+          return isDescending ? -1 : 1
+        }
+        if (valueA > valueB) {
+          return isDescending ? 1 : -1
+        }
         return 0
       })
     },
