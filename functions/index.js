@@ -11,12 +11,13 @@ exports.onPriceCreated = functions.firestore
   ;
 
 function onPriceCreated(event) {
+    const newValue = event.data.data();
+    console.log('onPriceCreated newValue', newValue);
     // TODO:(pv) Update statistical averages...
     // ...
     // Get station id
     // Get commodity id
-
     return event.data.ref.set({
-      server_timestamp_created: event.timestamp,
+      server_timestamp_created: new Date(event.timestamp),
     }, {merge: true});
 }
