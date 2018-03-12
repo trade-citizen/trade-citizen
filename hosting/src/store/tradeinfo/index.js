@@ -70,7 +70,6 @@ export default {
     _setStationCommodityPrices (state, { stationId, stationCommodityPrices }) {
       let stationCommodityPricesList = state.commoditiesList
         .map(commodity => {
-
           let commodityId = commodity.id
           let commodityName = commodity.name
           let commodityCategory = commodity.category
