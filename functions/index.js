@@ -6,7 +6,7 @@ const functions = require('firebase-functions');
 
 const ROOT = '/deployments/test/'
 
-exports.onPriceCreated = firestore
+exports.onPriceCreated = functions.firestore
   .document(ROOT + 'stations/{stationId}/prices/{priceId}')
   .onCreate(onPriceCreated)
   // TODO:(pv) .onUpdate, .onDelete, .onWrite?
