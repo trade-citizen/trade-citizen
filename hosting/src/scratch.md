@@ -30,6 +30,7 @@ Ideas?:
   https://github.com/mbleigh/pwas-on-firebase/
   How to get "There is a new version available; refresh" prompt?
   https://github.com/vuejs-templates/pwa/issues/81
+  https://medium.com/progressive-web-apps/pwa-create-a-new-update-available-notification-using-service-workers-18be9168d717
 
 https://firebase.google.com/docs/hosting/functions
 
