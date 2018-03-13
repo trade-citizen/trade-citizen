@@ -49,17 +49,16 @@ function onPriceCreated(event) {
   const newValue = event.data.data();
   // console.log('onPriceCreated #TEST newValue', newValue);
   const prices = newValue.prices;
-  let hasPrices = false;
+  let priceBuy = undefined;
+  let priceSell = undefined;
   if (prices) {
     Object.keys(prices).forEach(commodityId => {
       const price = prices[commodityId];
-      const priceBuy = price.priceBuy;
-      const priceSell = price.priceSell;
-      if (priceBuy || priceSell) {
-        hasPrices = true
-      }
+      priceBuy = price.priceBuy;
+      priceSell = price.priceSell;
     });
   }
+  let hasPrices = Boolean(priceBuy || priceSell);
 
   if (deploymentId === 'test') {
     const path = '/deployments/' + deploymentId + '/stations';
@@ -67,11 +66,11 @@ function onPriceCreated(event) {
       .collection(path)
       .doc(stationId)
       .set({
-        hasPrices: true,
+        hasPrices: hasPrices,
         timestamp_last_priced: timestamp
       }, { merge: true });
 
-    createBuySellMargins(deploymentId);      
+    createBuySellRatios(deploymentId);//, stationId, priceId, newValue);      
   }
 
   return event.data.ref.set({
@@ -80,13 +79,15 @@ function onPriceCreated(event) {
   }, { merge: true });
 }
 
-function createBuySellMargins(deploymentId) {
+function createBuySellRatios(deploymentId) {
+  let stationCommodityPrices = {};
   const path = '/deployments/' + deploymentId + '/stations';
   firestoreClient.collection(path)
     .where('hasPrices', '==', true)
     .get()
     .then(snapshotStations => {
       snapshotStations.forEach(docStation => {
+        // console.log('docStation', docStation.data());
         let stationId = docStation.id;
         docStation.ref.collection('prices')
           .where('hasPrices', '==', true)
@@ -95,8 +96,48 @@ function createBuySellMargins(deploymentId) {
           .get()
           .then(snapshotPrices => {
             snapshotPrices.forEach(docPrice => {
+              let docId = docPrice.id;
+              // console.log('stationId', stationId, 'docId', docId, 'docPrice', docPrice.data());
+              let prices = docPrice.get('prices');
+              // console.log('stationId', stationId, 'prices', prices);
+              if (!prices) {
+                // 'hasPrices' should prevent this from ever happening
+                return;
+              }
+              Object.keys(prices).forEach(commodityId => {
+                let price = prices[commodityId];
+                let priceBuy = price.priceBuy;
+                let priceSell = price.priceSell;
+                // console.log('stationId', stationId, 'commodityId', commodityId, 'priceBuy', priceBuy, 'priceSell', priceSell);
+                addStationCommodityPrice(stationCommodityPrices, stationId, commodityId, 'buy', priceBuy);
+                addStationCommodityPrice(stationCommodityPrices, stationId, commodityId, 'sell', priceSell);
+              });
+              console.log('stationCommodityPrices', stationCommodityPrices);
             });
           });
       });
     });
+}
+
+function addStationCommodityPrice(stationCommodityPrices,
+                                  stationId,
+                                  commodityId,
+                                  buyOrSell,
+                                  commodityPrice) {
+  if (!commodityPrice) {
+    return;
+  }
+  const side = 'price' + buyOrSell.charAt(0).toUpperCase() + buyOrSell.slice(1).toLowerCase();
+  // console.log('side', side);
+  let thisStationCommodityPrices = stationCommodityPrices[stationId];
+  if (!thisStationCommodityPrices) {
+    thisStationCommodityPrices = {};
+    stationCommodityPrices[stationId] = thisStationCommodityPrices;
+  }
+  let commodityPrices = thisStationCommodityPrices[commodityId];
+  if (!commodityPrices) {
+    commodityPrices = {};
+    thisStationCommodityPrices[commodityId] = commodityPrices;
+  }
+  commodityPrices[side] = commodityPrice;
 }
