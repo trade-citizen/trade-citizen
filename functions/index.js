@@ -53,12 +53,14 @@ function onPriceCreated(event) {
       const price = prices[commodityId];
       const priceBuy = price.priceBuy;
       const priceSell = price.priceSell;
-      hasPrices |= priceBuy || priceSell
+      if (priceBuy || priceSell) {
+        hasPrices = true
+      }
     });
   }
 
   return event.data.ref.set({
     hasPrices: hasPrices,
-    server_timestamp_created: timestamp,
+    timestamp_priced: timestamp,
   }, { merge: true });
 }

@@ -307,7 +307,7 @@ export default {
       // console.log('_getStationCommodityPrices path', path)
       firebase.firestore().collection(path)
         .where('hasPrices', '==', true)
-        .orderBy('timestamp_created', 'desc')
+        .orderBy('timestamp_priced', 'desc')
         .limit(1)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
           context.dispatch('_gotStationCommodityPrices', { stationId, querySnapshot })
