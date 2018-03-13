@@ -87,18 +87,8 @@
           v-model="stationId"
           >
         </v-select>
-        <template v-if="stationId != null">
-          <template v-if="!userIsAuthenticated">
-            <v-btn
-              flat
-              class="ml-0 mr-2"
-              @click="signin"
-              >
-              <v-icon class="mx-1">lock_open</v-icon>
-              Sign in
-            </v-btn>
-          </template>
-          <template v-else>
+        <template v-if="stationId">
+          <template v-if="userIsAuthenticated">
             <template v-if="showEdit">
               <v-btn
                 v-if="editing"
@@ -120,10 +110,19 @@
             <v-btn
               icon
               class="ml-0 mr-2"
-              @keydown.native="handleKeyboard($event)"
               @click="saveStation"
               >
               <v-icon class="mx-1">save</v-icon>
+            </v-btn>
+          </template>
+          <template v-else>
+            <v-btn
+              flat
+              class="ml-0 mr-2"
+              @click="signin"
+              >
+              <v-icon class="mx-1">lock_open</v-icon>
+              Sign in
             </v-btn>
           </template>
         </template>
@@ -149,6 +148,16 @@ export default {
       title: 'Trade Citizen',
       editing: false
     }
+  },
+  mounted: function () {
+    var vm = this
+    window.addEventListener('keydown', function (event) {
+      // NOTE: metaKey == Command on Mac
+      if ((event.metaKey || event.ctrlKey) && event.keyCode === 'S'.charCodeAt(0)) {
+        event.preventDefault()
+        vm.saveStation()
+      }
+    })
   },
   computed: {
     stationId: {
@@ -227,6 +236,9 @@ export default {
       this.$root.$emit('editStation', this.stationId, editing)
     },
     saveStation () {
+      if (!(this.stationId && this.userIsAuthenticated)) {
+        return
+      }
       this.editing = false
       this.$root.$emit('saveStation', this.stationId)
     }

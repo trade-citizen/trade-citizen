@@ -366,9 +366,17 @@ export default {
 
     saveStationCommodityPrices (context, { stationId, stationCommodityPrices }) {
       let user = context.rootState.user.user
+      if (!user) {
+        return
+      }
+      // console.log('saveStationCommodityPrices user:', user)
+      let userId = user.id
+      if (!userId) {
+        return
+      }
       let docData = {
         // TODO:(pv) Remove this and set via server side function?
-        userId: user.id,
+        userId: userId,
         prices: {}
       }
       stationCommodityPrices.forEach((stationCommodityPrice) => {
