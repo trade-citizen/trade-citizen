@@ -1,10 +1,20 @@
+//
+// NOTE:(pv) There are two "firestore" classes.
+//  1) firestoreServer: Manages the server-side function hooks
+//  2) firestoreClient: Full firestore client
+//      https://cloud.google.com/nodejs/docs/reference/firestore/latest/
+//
 const functions = require('firebase-functions');
+const firestoreServer = functions.firestore
+const admin = require('firebase-admin');
+admin.initializeApp(functions.config().firebase);
+const firestoreClient = admin.firestore();
 
 // https://firebase.google.com/docs/functions/write-firebase-functions
 // https://firebase.google.com/docs/firestore/extend-with-functions
 // https://github.com/firebase/functions-samples
 
-exports.onPriceCreated = functions.firestore
+exports.onPriceCreated = firestoreServer
   .document('/deployments/{deploymentId}/stations/{stationId}/prices/{priceId}')
   .onCreate(onPriceCreated)
   // TODO:(pv) .onUpdate, .onDelete, .onWrite?
@@ -27,11 +37,28 @@ exports.onPriceCreated = functions.firestore
  *    invocations in an unexpected order."
  */
 function onPriceCreated(event) {
-  const params = event.params
-  console.log('onPriceCreated params', params);
+  // console.log('onPriceCreated event', event);
+  const timestamp = new Date(event.timestamp);
+  const params = event.params;
+  // console.log('onPriceCreated params', params);
+  const deploymentId = params.deploymentId;
+  const stationId = params.stationId;
+  const priceId = params.priceId;
   const newValue = event.data.data();
-  console.log('onPriceCreated newValue', newValue);
+  // console.log('onPriceCreated #TEST newValue', newValue);
+  const prices = newValue.prices;
+  let hasPrices = false;
+  if (prices) {
+    Object.keys(prices).forEach(commodityId => {
+      const price = prices[commodityId];
+      const priceBuy = price.priceBuy;
+      const priceSell = price.priceSell;
+      hasPrices |= priceBuy || priceSell
+    });
+  }
+
   return event.data.ref.set({
-    server_timestamp_created: new Date(event.timestamp),
-  }, {merge: true});
+    hasPrices: hasPrices,
+    server_timestamp_created: timestamp,
+  }, { merge: true });
 }
