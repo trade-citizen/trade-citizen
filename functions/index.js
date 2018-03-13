@@ -10,9 +10,11 @@ const admin = require('firebase-admin');
 admin.initializeApp(functions.config().firebase);
 const firestoreClient = admin.firestore();
 
+//
 // https://firebase.google.com/docs/functions/write-firebase-functions
 // https://firebase.google.com/docs/firestore/extend-with-functions
 // https://github.com/firebase/functions-samples
+//
 
 exports.onPriceCreated = firestoreServer
   .document('/deployments/{deploymentId}/stations/{stationId}/prices/{priceId}')
@@ -59,8 +61,42 @@ function onPriceCreated(event) {
     });
   }
 
+  if (deploymentId === 'test') {
+    const path = '/deployments/' + deploymentId + '/stations';
+    firestoreClient
+      .collection(path)
+      .doc(stationId)
+      .set({
+        hasPrices: true,
+        timestamp_last_priced: timestamp
+      }, { merge: true });
+
+    createBuySellMargins(deploymentId);      
+  }
+
   return event.data.ref.set({
     hasPrices: hasPrices,
     timestamp_priced: timestamp,
   }, { merge: true });
+}
+
+function createBuySellMargins(deploymentId) {
+  const path = '/deployments/' + deploymentId + '/stations';
+  firestoreClient.collection(path)
+    .where('hasPrices', '==', true)
+    .get()
+    .then(snapshotStations => {
+      snapshotStations.forEach(docStation => {
+        let stationId = docStation.id;
+        docStation.ref.collection('prices')
+          .where('hasPrices', '==', true)
+          .orderBy('timestamp_priced', 'desc')
+          .limit(1)
+          .get()
+          .then(snapshotPrices => {
+            snapshotPrices.forEach(docPrice => {
+            });
+          });
+      });
+    });
 }
