@@ -306,8 +306,7 @@ export default {
       let path = ROOT + 'stations/' + stationId + '/prices'
       // console.log('_getStationCommodityPrices path', path)
       firebase.firestore().collection(path)
-        // .where('prices', '!==', null) // <- firestore does not support inequality queries :(
-        // .where('prices.*.priceBuy', '>=' 0) or .where('prices.*.priceSell', '>=' 0)
+        .where('hasPrices', '==', true)
         .orderBy('timestamp_created', 'desc')
         .limit(1)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
@@ -369,7 +368,6 @@ export default {
       let user = context.rootState.user.user
       let docData = {
         // TODO:(pv) Remove this and set via server side function?
-        timestamp_created: firebase.firestore.FieldValue.serverTimestamp(),
         userId: user.id,
         prices: {}
       }
