@@ -4,6 +4,7 @@
     fluid
     class="pt-0"
     >
+    <!--
     <v-layout row d-flex align-center>
       <v-icon class="mx-2">filter_list</v-icon><span class="mr-2">Filter</span>
       <v-select
@@ -28,6 +29,7 @@
         >
       </v-checkbox>
     </v-layout>
+    -->
     <v-layout row d-flex>
       <!--
         NOTE: pagination.sync is needed to define non-default sort column
@@ -38,17 +40,17 @@
         must-sort
         v-bind:pagination.sync="pagination"
         :headers="headers"
-        :custom-sort="sortMarginPrices"
-        :items="margins"
+        :custom-sort="sortBuySellRatios"
+        :items="buySellRatios"
         no-data-text="Soon™..."
         >
         <template slot="items" slot-scope="props">
-          <td class="text-xs-right">{{ props.item.commodity }}</td>
-          <td class="text-xs-right">{{ props.item.stationBuy }}</td>
-          <td class="text-xs-right">{{ props.item.priceBuy.toFixed(3) }}</td>
-          <td class="text-xs-center">{{ calculateMargin(props.item) }}</td>
-          <td class="text-xs-left">{{ props.item.priceSell.toFixed(3) }}</td>
-          <td class="text-xs-left">{{ props.item.stationSell }}</td>
+          <td class="text-xs-right">{{ props.item.itemName }}</td>
+          <td class="text-xs-right">{{ props.item.buyStoreName }}</td>
+          <td class="text-xs-right">{{ props.item.buyPrice.toFixed(3) }}</td>
+          <td class="text-xs-center">{{ props.item.ratio.toFixed(3) }}</td>
+          <td class="text-xs-left">{{ props.item.sellPrice.toFixed(3) }}</td>
+          <td class="text-xs-left">{{ props.item.sellStoreName }}</td>
         </template>
       </v-data-table>
     </v-layout>
@@ -149,15 +151,15 @@ export default {
   data () {
     return {
       headers: [
-        { sortable: true, align: 'right', text: 'Commodity', value: 'commodity' },
-        { sortable: true, align: 'right', text: 'Buy Station', value: 'stationBuy' },
-        { sortable: true, align: 'right', text: 'Buy Price', value: 'priceBuy' },
-        { sortable: true, align: 'center', text: 'Margin', value: 'margin' },
-        { sortable: true, align: 'left', text: 'Sell Price', value: 'priceSell' },
-        { sortable: true, align: 'left', text: 'Sell Station', value: 'stationSell' }
+        { sortable: true, align: 'right', text: 'Item', value: 'itemName' },
+        { sortable: true, align: 'right', text: 'Buy Store', value: 'buyStoreName' },
+        { sortable: true, align: 'right', text: 'Buy Price', value: 'buyPrice' },
+        { sortable: true, align: 'center', text: 'Ratio', value: 'ratio' },
+        { sortable: true, align: 'left', text: 'Sell Price', value: 'sellPrice' },
+        { sortable: true, align: 'left', text: 'Sell Store', value: 'sellStoreName' }
       ],
       pagination: {
-        sortBy: 'margin',
+        sortBy: 'ratio',
         descending: false
       },
       filter: {
@@ -210,7 +212,8 @@ export default {
       })
       return result
     },
-    margins () {
+    buySellRatios () {
+      return this.$store.getters.buySellRatios
     },
     stationCommodityPriceList () {
       let stationCommodityPriceList = this.$store.getters.stationCommodityPriceList(this.stationId)
@@ -241,17 +244,16 @@ export default {
         }
       }
     },
-    calculateMargin (item) {
-      return (item.priceSell / item.priceBuy).toFixed(3)
-    },
-    sortMarginPrices (items, index, isDescending) {
+    sortBuySellRatios (items, index, isDescending) {
       return items.sort((itemA, itemB) => {
         let valueA, valueB
         switch (index) {
-          case 'margin':
+          /*
+          case 'ratio':
             valueA = this.calculateMargin(itemA)
             valueB = this.calculateMargin(itemB)
             break
+            */
           default:
             valueA = itemA[index]
             valueB = itemB[index]
@@ -263,6 +265,9 @@ export default {
         if (valueA > valueB) {
           return isDescending ? 1 : -1
         }
+
+        // TODO:(pv) Secondary sorting...
+
         return 0
       })
     },

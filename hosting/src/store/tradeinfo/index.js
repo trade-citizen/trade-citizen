@@ -13,7 +13,8 @@ export default {
     anchorsMap: {},
     stationsMap: {},
     stationsList: [],
-    stationsCommoditiesPricesMap: {}
+    stationsCommoditiesPricesMap: {},
+    buySellRatios: []
   },
   mutations: {
     setSelectedStationId (state, payload) {
@@ -67,6 +68,9 @@ export default {
           return 0
         })
     },
+    _setBuySellRatios (state, payload) {
+      state.buySellRatios = payload
+    },
     _setStationCommodityPrices (state, { stationId, stationCommodityPrices }) {
       let stationCommodityPricesList = state.commoditiesList
         .map(commodity => {
@@ -118,12 +122,11 @@ export default {
           context.commit('setLoading', false)
         })
     },
-
     _gotCommodityCategories (context, querySnapshot) {
       let docChanges = querySnapshot.docChanges
       // console.log('_gotCommodityCategories docChanges', docChanges)
       if (docChanges.length === 0) {
-        // console.log('_gotCommodityCategories docChanges.length === 0 ignoring')
+        // console.warn('_gotCommodityCategories docChanges.length === 0 ignoring')
         return
       }
       // console.log('_gotCommodityCategories')
@@ -166,12 +169,11 @@ export default {
           context.commit('setLoading', false)
         })
     },
-
     _gotCommodities (context, querySnapshot) {
       let docChanges = querySnapshot.docChanges
       // console.log('_gotCommodities docChanges', docChanges)
       if (docChanges.length === 0) {
-        // console.log('_gotCommodities docChanges.length === 0 ignoring')
+        // console.warn('_gotCommodities docChanges.length === 0 ignoring')
         return
       }
       // console.log('_gotCommodities')
@@ -219,12 +221,11 @@ export default {
           context.commit('setLoading', false)
         })
     },
-
     _gotAnchors (context, querySnapshot) {
       let docChanges = querySnapshot.docChanges
       // console.log('_gotAnchors docChanges', docChanges)
       if (docChanges.length === 0) {
-        // console.log('_gotAnchors docChanges.length === 0 ignoring')
+        // console.warn('_gotAnchors docChanges.length === 0 ignoring')
         return
       }
       // console.log('_gotAnchors')
@@ -267,12 +268,11 @@ export default {
           context.commit('setLoading', false)
         })
     },
-
     _gotStations (context, querySnapshot) {
       let docChanges = querySnapshot.docChanges
       // console.log('_gotStations docChanges', docChanges)
       if (docChanges.length === 0) {
-        // console.log('_gotStations docChanges.length === 0 ignoring')
+        // console.warn('_gotStations docChanges.length === 0 ignoring')
         return
       }
       // console.log('_gotStations')
@@ -286,6 +286,8 @@ export default {
         if (// !fromCache ||
           context.state.stationsMap[stationId] === undefined) {
           let docData = doc.data()
+          // console.log(docData)
+
           let station = {
             id: stationId,
             name: docData.name,
@@ -299,6 +301,70 @@ export default {
           context.dispatch('_getStationCommodityPrices', stationId)
         }
       })
+
+      if (context.state.buySellRatios.length === 0) {
+        context.dispatch('_getBuySellRatios')
+      }
+    },
+
+    _getBuySellRatios (context) {
+      // console.log('_getBuySellRatios')
+      let path = ROOT + 'buySellRatios'
+      // console.log('_getBuySellRatios path', path)
+      firebase.firestore().collection(path)
+        .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
+          context.dispatch('_gotBuySellRatios', querySnapshot)
+        }, (error) => {
+          console.error('_getBuySellRatios', error)
+          context.commit('setLoading', false)
+        })
+    },
+    _gotBuySellRatios (context, querySnapshot) {
+      let docChanges = querySnapshot.docChanges
+      // console.log('_gotBuySellRatios docChanges', docChanges)
+      if (docChanges.length === 0) {
+        // console.warn('_gotBuySellRatios docChanges.length === 0 ignoring')
+        return
+      }
+      // console.log('_gotBuySellRatios')
+
+      let buySellRatios = []
+
+      docChanges.forEach((change) => {
+        // console.log('_gotBuySellRatios change.type', change.type)
+        let doc = change.doc
+        // console.log('_gotBuySellRatios doc', doc)
+        // let docId = doc.id
+        // let fromCache = doc.metadata.fromCache
+        // console.log('_gotBuySellRatios ' + docId + ' fromCache', fromCache)
+        let docData = doc.data()
+        // console.log('_gotBuySellRatios docData', docData)
+
+        let itemId = docData.itemId
+        let itemName = context.state.commoditiesMap[itemId].name
+        let buyStoreId = docData.buyStoreId
+        let buyStoreName = context.state.stationsMap[buyStoreId].name
+        let buyPrice = docData.buyPrice
+        let sellPrice = docData.sellPrice
+        let sellStoreId = docData.sellStoreId
+        let sellStoreName = context.state.stationsMap[sellStoreId].name
+
+        let ratio = sellPrice / buyPrice
+
+        let buySellRatio = {
+          itemName: itemName,
+          buyStoreName: buyStoreName,
+          buyPrice: buyPrice,
+          ratio: ratio,
+          sellPrice: sellPrice,
+          sellStoreName: sellStoreName
+        }
+        // console.log('_gotBuySellRatios buySellRatio', buySellRatio)
+        buySellRatios.push(buySellRatio)
+      })
+
+      // console.log('_gotBuySellRatios buySellRatios', buySellRatios)
+      context.commit('_setBuySellRatios', buySellRatios)
     },
 
     _getStationCommodityPrices (context, stationId) {
@@ -320,15 +386,15 @@ export default {
           }
         })
     },
-
     _gotStationCommodityPrices (context, { stationId, querySnapshot }) {
+      // let path = ROOT + 'stations/' + stationId + '/prices'
+      // console.log('_gotStationCommodityPrices path', path)
       let docChanges = querySnapshot.docChanges
       // console.log('_gotStationCommodityPrices docChanges', docChanges)
       if (docChanges.length === 0 && context.state.stationsCommoditiesPricesMap[stationId] !== undefined) {
-        // console.log('_gotStationCommodityPrices query /stations/' + stationId + '/prices docChanges.length === 0 ignoring')
+        // console.warn('_gotStationCommodityPrices ' + path + ' docChanges.length === 0 ignoring')
         return
       }
-      // console.log('_gotStationCommodityPrices query /stations/' + stationId + '/prices')
       let stationCommodityPrices = {}
       docChanges.forEach((change) => {
         // console.log('_gotStationCommodityPrices change.type', change.type)
@@ -340,7 +406,9 @@ export default {
         // let fromCache = doc.metadata.fromCache
         // console.log('_gotStationCommodityPrices fromCache', fromCache)
         let docData = doc.data()
+        // console.log('_gotStationCommodityPrices docData', docData)
         let prices = docData.prices
+        // console.log('_gotStationCommodityPrices prices', prices)
         if (prices) {
           Object.keys(prices).forEach(commodityId => {
             let stationCommodityPrice = prices[commodityId]
@@ -374,12 +442,15 @@ export default {
       if (!userId) {
         return
       }
+
       let docData = {
         // TODO:(pv) Remove this and set via server side function?
         userId: userId,
         prices: {}
       }
+
       stationCommodityPrices.forEach((stationCommodityPrice) => {
+        // console.log('stationCommodityPrice', stationCommodityPrice)
         let docDataPrice = {}
         let priceBuy = Number(stationCommodityPrice.priceBuy)
         if (!isNaN(priceBuy)) {
@@ -389,6 +460,7 @@ export default {
         if (!isNaN(priceSell)) {
           docDataPrice.priceSell = priceSell
         }
+        // console.log('docDataPrice', docDataPrice)
         if (Object.keys(docDataPrice).length !== 0) {
           docData.prices[stationCommodityPrice.id] = docDataPrice
         }
@@ -441,6 +513,9 @@ export default {
       return (stationId) => {
         return state.stationsCommoditiesPricesMap[stationId]
       }
+    },
+    buySellRatios (state) {
+      return state.buySellRatios
     }
   }
 }
