@@ -66,7 +66,7 @@
       >
       <v-flex
         xs4
-        v-for="stationCommodityPrice in stationCommodityPriceList"
+        v-for="(stationCommodityPrice, index) in stationCommodityPriceList"
         :key="stationCommodityPrice.id"
         >
         <v-card style="border:1px solid white; border-radius:6px;">
@@ -103,6 +103,8 @@
                   class="input-group--focused"
                   hide-details
                   label="Buy Price"
+                  autofocus="index === 0"
+                  @focus="$event.target.select()"
                   :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
                   :disabled="!userIsAuthenticated"
                   :value="stationCommodityPrice.priceBuy"
@@ -115,6 +117,7 @@
                   class="input-group--focused"
                   hide-details
                   label="Sell Price"
+                  @focus="$event.target.select()"
                   :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
                   :disabled="!userIsAuthenticated"
                   :value="stationCommodityPrice.priceSell"

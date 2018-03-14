@@ -76,7 +76,6 @@
           color="cyan lighten-2"
           append-icon="search"
           placeholder="Search"
-          autofocus
           solo-inverted
           autocomplete
           clearable
