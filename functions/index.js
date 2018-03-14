@@ -16,11 +16,9 @@ const firestoreClient = admin.firestore();
 // https://github.com/firebase/functions-samples
 //
 
-exports.onPriceCreated = firestoreServer
+exports.onStationPriceCreate = firestoreServer
   .document('/deployments/{deploymentId}/stations/{stationId}/prices/{priceId}')
-  .onCreate(onPriceCreated)
-  // TODO:(pv) .onUpdate, .onDelete, .onWrite?
-  ;
+  .onCreate(onStationPriceCreate);
 
 /*
  * https://firebase.google.com/docs/firestore/extend-with-functions#limitations_and_guarantees
@@ -38,17 +36,23 @@ exports.onPriceCreated = firestoreServer
  *  * Ordering is not guaranteed. It is possible that rapid changes could trigger function
  *    invocations in an unexpected order."
  */
-function onPriceCreated(event) {
-  // console.log('onPriceCreated event', event);
+function onStationPriceCreate(event) {
   const timestamp = new Date(event.timestamp);
+
   const params = event.params;
-  // console.log('onPriceCreated params', params);
+  // console.log('onStationPriceCreate params', params);
   const deploymentId = params.deploymentId;
   const stationId = params.stationId;
   const priceId = params.priceId;
-  const newValue = event.data.data();
-  // console.log('onPriceCreated #TEST newValue', newValue);
-  const prices = newValue.prices;
+
+  const newDocument = event.data.exists ? event.data.data() : null;
+  if (newDocument === null) {
+    console.error('onStationPriceCreate newDocument === null; unhandled document deletion');
+    return;
+  }
+  // console.log('onStationPriceCreate newDocument', newDocument);
+
+  const prices = newDocument.prices;
   let priceBuy = undefined;
   let priceSell = undefined;
   if (prices) {
@@ -60,63 +64,65 @@ function onPriceCreated(event) {
   }
   let hasPrices = Boolean(priceBuy || priceSell);
 
-  if (deploymentId === 'test') {
-    const path = '/deployments/' + deploymentId + '/stations';
-    firestoreClient
-      .collection(path)
-      .doc(stationId)
-      .set({
+  return firestoreClient.batch()
+    .set(event.data.ref, {
+      stationId: stationId,
+      hasPrices: hasPrices,
+      timestamp_priced: timestamp
+    }, { merge: true })
+    .set(firestoreClient
+      .collection('/deployments/' + deploymentId + '/stations')
+      .doc(stationId), {
         hasPrices: hasPrices,
         timestamp_last_priced: timestamp
-      }, { merge: true });
+      }, { merge: true })
+    .commit()
+    .then(results => {
 
-    createBuySellRatios(deploymentId);//, stationId, priceId, newValue);      
-  }
-
-  return event.data.ref.set({
-    hasPrices: hasPrices,
-    timestamp_priced: timestamp,
-  }, { merge: true });
+      if (deploymentId === 'test') {
+        updateBuySellRatios(deploymentId, stationId, priceId, prices);
+      }
+    })
+    .catch(reason => {
+      console.error('onStationPriceCreate exception', reason);
+    });
 }
 
-function createBuySellRatios(deploymentId) {
-  let stationCommodityPrices = {};
-  const path = '/deployments/' + deploymentId + '/stations';
-  firestoreClient.collection(path)
-    .where('hasPrices', '==', true)
-    .get()
-    .then(snapshotStations => {
-      snapshotStations.forEach(docStation => {
-        // console.log('docStation', docStation.data());
-        let stationId = docStation.id;
-        docStation.ref.collection('prices')
-          .where('hasPrices', '==', true)
-          .orderBy('timestamp_priced', 'desc')
-          .limit(1)
-          .get()
-          .then(snapshotPrices => {
-            snapshotPrices.forEach(docPrice => {
-              let docId = docPrice.id;
-              // console.log('stationId', stationId, 'docId', docId, 'docPrice', docPrice.data());
-              let prices = docPrice.get('prices');
-              // console.log('stationId', stationId, 'prices', prices);
-              if (!prices) {
-                // 'hasPrices' should prevent this from ever happening
-                return;
-              }
-              Object.keys(prices).forEach(commodityId => {
-                let price = prices[commodityId];
-                let priceBuy = price.priceBuy;
-                let priceSell = price.priceSell;
-                // console.log('stationId', stationId, 'commodityId', commodityId, 'priceBuy', priceBuy, 'priceSell', priceSell);
-                addStationCommodityPrice(stationCommodityPrices, stationId, commodityId, 'buy', priceBuy);
-                addStationCommodityPrice(stationCommodityPrices, stationId, commodityId, 'sell', priceSell);
+function updateBuySellRatios(deploymentId, stationId, priceId, prices) {
+  console.log('updateBuySellRatios deploymentId', deploymentId, 'stationId', stationId, 'priceId', priceId, 'prices', prices);
+
+    return firestoreClient.collection('/deployments/' + deploymentId + '/stations')
+      .where('hasPrices', '==', true)
+      .get()
+      .then(snapshotStations => {
+        snapshotStations.forEach(docStation => {
+          let stationId = docStation.id;
+          docStation.ref.collection('prices')
+            .where('hasPrices', '==', true)
+            .orderBy('timestamp_priced', 'desc')
+            .limit(1)
+            .get()
+            .then(snapshotPrices => {
+              let stationCommodityPrices = {};
+              snapshotPrices.forEach(docPrice => {
+                let docId = docPrice.id;
+                let prices = docPrice.get('prices');
+                if (!prices) {
+                  // 'hasPrices' should prevent this from ever happening
+                  return;
+                }
+                Object.keys(prices).forEach(commodityId => {
+                  let price = prices[commodityId];
+                  let priceBuy = price.priceBuy;
+                  let priceSell = price.priceSell;
+                  addStationCommodityPrice(stationCommodityPrices, stationId, commodityId, 'buy', priceBuy);
+                  addStationCommodityPrice(stationCommodityPrices, stationId, commodityId, 'sell', priceSell);
+                });
+                console.log('stationCommodityPrices', stationCommodityPrices);
               });
-              console.log('stationCommodityPrices', stationCommodityPrices);
             });
-          });
+        });
       });
-    });
 }
 
 function addStationCommodityPrice(stationCommodityPrices,
