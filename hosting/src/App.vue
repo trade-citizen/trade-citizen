@@ -199,7 +199,7 @@ export default {
         .map((station) => {
           let id = station.id
           let name = station.anchor.name + ' - ' + station.name
-          if (process.env.NODE_ENV === 'development') {
+          if (this.isDevelopment) {
             name += ' {' + id + '}'
           }
           return {
@@ -221,6 +221,9 @@ export default {
     }
   },
   methods: {
+    isDevelopment () {
+      return (process.env.NODE_ENV === 'development')
+    },
     signin () {
       this.editing = false
       this.$router.push('/signin')

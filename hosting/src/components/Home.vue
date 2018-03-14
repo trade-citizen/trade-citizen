@@ -88,7 +88,7 @@
                     <v-layout justify-left align-top>
                 -->
                 <v-card-title primary-title class="px-0 py-0">
-                  <h3 class="headline">{{ stationCommodityPrice.name }}</h3>
+                  <h3 class="headline">{{ (isDevelopment ? '{' + index + '} ' : '') + stationCommodityPrice.name }}</h3>
                 </v-card-title>
                 <div>{{ stationCommodityPrice.category }}</div>
                 <!--
@@ -103,8 +103,7 @@
                   class="input-group--focused"
                   hide-details
                   label="Buy Price"
-                  autofocus="index === 0"
-                  @focus="$event.target.select()"
+                  :autofocus="index === 0"
                   :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
                   :disabled="!userIsAuthenticated"
                   :value="stationCommodityPrice.priceBuy"
@@ -117,7 +116,6 @@
                   class="input-group--focused"
                   hide-details
                   label="Sell Price"
-                  @focus="$event.target.select()"
                   :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
                   :disabled="!userIsAuthenticated"
                   :value="stationCommodityPrice.priceSell"
@@ -226,6 +224,9 @@ export default {
     }
   },
   methods: {
+    isDevelopment () {
+      return (process.env.NODE_ENV === 'development')
+    },
     refresh () {
       // console.log('refresh()')
       if (!this.filter.illegal) {
