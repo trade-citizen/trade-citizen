@@ -199,7 +199,7 @@ function process() {
       // console.log('process', locationId, itemId, price)
       let priceBuy = price.priceBuy
       if (priceBuy) {
-        addPrice(locationId, itemId, 'Buy', priceBuy)
+        addPrice(locationId, itemId, 'Buy', priceBuy, true)
       }
       let priceSell = price.priceSell
       if (priceSell) {

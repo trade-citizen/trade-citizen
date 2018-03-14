@@ -129,9 +129,10 @@
       </template>
     </v-toolbar>
     <v-content>
-        <v-fade-transition mode="out-in">
-          <router-view></router-view>
-        </v-fade-transition>
+      <v-progress-linear :indeterminate="true" class="ma-0" v-if="loading"></v-progress-linear>      
+      <v-fade-transition mode="out-in">
+        <router-view></router-view>
+      </v-fade-transition>
     </v-content>
     <v-footer app class="pa-3">
       <v-spacer></v-spacer>
@@ -160,6 +161,9 @@ export default {
     })
   },
   computed: {
+    loading () {
+      return this.$store.getters.loading
+    },
     stationId: {
       get: function () {
         return this.$store.getters.getSelectedStationId
@@ -231,15 +235,16 @@ export default {
       this.$router.push('/')
     },
     editStation (editing) {
-      console.log('App editStation', arguments)
+      // console.log('App editStation editing', editing)
       this.editing = editing
-      this.$root.$emit('editStation', this.stationId, editing)
+      this.$root.$emit('editStation', this.stationId, this.editing)
     },
     saveStation () {
+      // console.log('App saveStation this.stationId:' + this.stationId)
       if (!(this.stationId && this.userIsAuthenticated)) {
         return
       }
-      this.editing = false
+      this.editStation(false)
       this.$root.$emit('saveStation', this.stationId)
     }
   }

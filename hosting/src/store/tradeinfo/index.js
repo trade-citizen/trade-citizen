@@ -396,15 +396,25 @@ export default {
       if (Object.keys(docData.prices).length === 0) {
         delete docData.prices
       }
-      let path = ROOT + 'stations/' + stationId + '/prices'
-      firebase.firestore().collection(path)
-        .add(docData)
-        .then((docRef) => {
-          console.log('saveStationCommodityPrices SUCCESS!')
-        })
-        .catch((error) => {
-          console.error('saveStationCommodityPrices ERROR', error)
-        })
+      // console.log('saveStationCommodityPrices docdata', docData)
+
+      context.commit('setLoading', true)
+      return new Promise((resolve, reject) => {
+        let path = ROOT + 'stations/' + stationId + '/prices'
+        // console.log('saveStationCommodityPrices add ' + path + '/%AUTO-ID%', docData)
+        firebase.firestore().collection(path)
+          .add(docData)
+          .then(docRef => {
+            console.log('saveStationCommodityPrices SUCCESS!')
+            context.commit('setLoading', false)
+            resolve()
+          })
+          .catch(error => {
+            console.error('saveStationCommodityPrices ERROR', error)
+            context.commit('setLoading', false)
+            reject(error)
+          })
+      })
     }
   },
   getters: {

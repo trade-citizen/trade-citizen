@@ -1,7 +1,8 @@
 <template>
   <v-container
     v-if="stationId == null"
-    class="pa-2"
+    fluid
+    class="pt-0"
     >
     <v-layout row d-flex align-center>
       <v-icon class="mx-2">filter_list</v-icon><span class="mr-2">Filter</span>
@@ -55,10 +56,13 @@
   <v-container
     v-else
     grid-list-md
+    fluid
+    class="pa-0"
     >
     <v-layout
       v-if="stationCommodityPriceList.length"
       row wrap
+      class="pa-2"
       >
       <v-flex
         xs4
@@ -129,6 +133,13 @@
       >
       <p class="pa-2">No prices set</p>
     </v-layout>
+    <v-snackbar
+      :timeout="toastTimeoutMillis"
+      bottom
+      v-model="toast"
+      >
+      {{ toastMessage }}
+    </v-snackbar>    
   </v-container>
 </template>
 
@@ -155,7 +166,10 @@ export default {
         stationsBuy: [],
         stationsSell: []
       },
-      editing: false
+      editing: false,
+      toast: false,
+      toastMessage: null,
+      toastTimeoutMillis: 3000
     }
   },
   mounted: function () {
@@ -254,14 +268,34 @@ export default {
     },
     editStation (stationId, editing) {
       // console.log('Home editStation stationId:' + stationId)
+      // console.log('Home editStation editing:' + editing)
       this.editing = editing
     },
     saveStation (stationId) {
-      // console.log('Home saveStation stationId:' + stationId)
-      this.$store.dispatch('saveStationCommodityPrices', {
+      // console.log('Home saveStation this.stationId:' + this.stationId)
+      // console.log('Home saveStation this.stationCommodityPriceList', this.stationCommodityPriceList)
+      let promise = this.$store.dispatch('saveStationCommodityPrices', {
         stationId: this.stationId,
         stationCommodityPrices: this.stationCommodityPriceList
       })
+      if (promise) {
+        promise
+          .then(result => {
+            console.log('saveStation SUCCESS!')
+            this.toastMessage = 'Prices Saved.'
+            this.toast = true
+          },
+          error => {
+            console.log('saveStation ERROR', error)
+            this.toastMessage = 'Error; Try Again.'
+            this.toast = true
+          })
+          .catch(error => {
+            console.log('saveStation ERROR', error)
+            this.toastMessage = 'Error; Try Again.'
+            this.toast = true
+          })
+      }
       this.editing = false
     },
     updateStationCommodityPrice (commodityId, priceId, value) {
