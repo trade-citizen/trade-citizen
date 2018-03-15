@@ -71,7 +71,7 @@ function onStationPriceCreate(event) {
       timestamp_priced: timestamp
     }, { merge: true })
     .set(firestoreClient
-      .collection('/deployments/' + deploymentId + '/stations')
+      .collection(`/deployments/${deploymentId}/stations`)
       .doc(stationId), {
         hasPrices: hasPrices,
         timestamp_last_priced: timestamp
@@ -80,65 +80,76 @@ function onStationPriceCreate(event) {
     .then(results => {
 
       if (deploymentId === 'test') {
-        updateBuySellRatios(deploymentId, stationId, priceId, prices);
+        rebuildBuySellRatios(deploymentId, stationId, priceId, prices);
       }
     })
-    .catch(reason => {
-      console.error('onStationPriceCreate exception', reason);
+    .catch(error => {
+      console.error('onStationPriceCreate error', error);
+      Promise.reject(error);
     });
 }
 
-function updateBuySellRatios(deploymentId, stationId, priceId, prices) {
-  console.log('updateBuySellRatios deploymentId', deploymentId, 'stationId', stationId, 'priceId', priceId, 'prices', prices);
+function rebuildBuySellRatios(deploymentId, stationId, priceId, prices) {
 
-    return firestoreClient.collection('/deployments/' + deploymentId + '/stations')
-      .where('hasPrices', '==', true)
+  console.log('rebuildBuySellRatios deploymentId', deploymentId, 'stationId', stationId, 'priceId', priceId, 'prices', prices);
+
+    return firestoreClient.collection(`/deployments/${deploymentId}/itemTypes`)
       .get()
-      .then(snapshotStations => {
-        snapshotStations.forEach(docStation => {
-          let stationId = docStation.id;
-          docStation.ref.collection('prices')
-            .where('hasPrices', '==', true)
-            .orderBy('timestamp_priced', 'desc')
-            .limit(1)
-            .get()
-            .then(snapshotPrices => {
-              let stationCommodityPrices = {};
-              snapshotPrices.forEach(docPrice => {
-                let docId = docPrice.id;
-                let prices = docPrice.get('prices');
-                if (!prices) {
-                  // 'hasPrices' should prevent this from ever happening
-                  return;
-                }
-                Object.keys(prices).forEach(commodityId => {
-                  let price = prices[commodityId];
-                  let priceBuy = price.priceBuy;
-                  let priceSell = price.priceSell;
-                  addStationCommodityPrice(stationCommodityPrices, stationId, commodityId, 'buy', priceBuy);
-                  addStationCommodityPrice(stationCommodityPrices, stationId, commodityId, 'sell', priceSell);
+      .then(snapshotItemTypes => {
+        let storeIds = [];
+        let itemIds = [];
+        snapshotItemTypes.forEach(docItemType => {
+          itemIds.push(docItemType.id);
+        })
+        firestoreClient.collection(`/deployments/${deploymentId}/stations`)
+          .get()
+          .then(snapshotStores => {
+            let buySellPrices = {};
+            let snapshotStoresSize = snapshotStores.size;
+            snapshotStores.forEach(docStore => {
+              let storeId = docStore.id;
+              storeIds.push(storeId);
+              docStore.ref.collection('prices')
+                .where('hasPrices', '==', true)
+                .orderBy('timestamp_priced', 'desc')
+                .limit(1)
+                .get()
+                .then(snapshotPrices => {
+                  snapshotPrices.forEach(docPrice => {
+                    let prices = docPrice.get('prices');
+                    itemIds.forEach(itemId => {
+                      let price = prices && prices[itemId];
+                      let priceBuy = price && price.priceBuy;
+                      let priceSell = price && price.priceSell;
+                      addBuySellPrice(buySellPrices, storeId, itemId, 'buy', priceBuy);
+                      addBuySellPrice(buySellPrices, storeId, itemId, 'sell', priceSell);
+                    });
+                  });
+
+                  if (storeIds.length < snapshotStoresSize) {
+                    return;
+                  }
+                  //
+                  // Reached the last store
+                  //
+                  writeBuySellRatios(deploymentId, storeIds, itemIds, buySellPrices);
                 });
-                console.log('stationCommodityPrices', stationCommodityPrices);
-              });
             });
-        });
+          });
       });
 }
 
-function addStationCommodityPrice(stationCommodityPrices,
-                                  stationId,
-                                  commodityId,
-                                  buyOrSell,
-                                  commodityPrice) {
-  if (!commodityPrice) {
-    return;
-  }
+function addBuySellPrice(buySellPrices,
+                         stationId,
+                         commodityId,
+                         buyOrSell,
+                         commodityPrice) {
   const side = 'price' + buyOrSell.charAt(0).toUpperCase() + buyOrSell.slice(1).toLowerCase();
   // console.log('side', side);
-  let thisStationCommodityPrices = stationCommodityPrices[stationId];
+  let thisStationCommodityPrices = buySellPrices[stationId];
   if (!thisStationCommodityPrices) {
     thisStationCommodityPrices = {};
-    stationCommodityPrices[stationId] = thisStationCommodityPrices;
+    buySellPrices[stationId] = thisStationCommodityPrices;
   }
   let commodityPrices = thisStationCommodityPrices[commodityId];
   if (!commodityPrices) {
@@ -146,4 +157,52 @@ function addStationCommodityPrice(stationCommodityPrices,
     thisStationCommodityPrices[commodityId] = commodityPrices;
   }
   commodityPrices[side] = commodityPrice;
+}
+
+function writeBuySellRatios(deploymentId, storeIds, itemIds, buySellPrices) {
+  let writeBatch = firestoreClient.batch();
+
+  storeIds.forEach(storeIdBuy => {
+
+    let itemPricesBuy = buySellPrices[storeIdBuy];
+
+    itemIds.forEach(itemId => {
+
+      let itemBuy = itemPricesBuy && itemPricesBuy[itemId];
+      let priceBuy = itemBuy && itemBuy.priceBuy;
+
+      storeIds.forEach(storeIdSell => {
+        if (storeIdSell === storeIdBuy) {
+          return;
+        }
+
+        let itemPricesSell = buySellPrices[storeIdSell];
+        let itemSell = itemPricesSell && itemPricesSell[itemId];
+        let priceSell = itemSell && itemSell.priceSell;
+
+        let docId = `${itemId}:${storeIdBuy}:${storeIdSell}`;
+        let docPath = `/deployments/${deploymentId}/buySellRatios/${docId}`;
+        let docRef = firestoreClient.doc(docPath);
+
+        let ratio = priceSell / priceBuy;
+
+        let docData = {
+          itemId: itemId,
+          buyStoreId: storeIdBuy,
+          buyPrice: priceBuy,
+          ratio: ratio,
+          sellPrice: priceSell,
+          sellStoreId: storeIdSell
+        }
+
+        writeBatch.set(docRef, docData);
+      });
+    });
+  });
+
+  console.log('writeBuySellRatios writeBatch COMMIT...', writeBatch);
+  return writeBatch.commit()
+    .then((results => {
+      console.log('writeBuySellRatios writeBatch COMMITTED!', results);
+    }));
 }
