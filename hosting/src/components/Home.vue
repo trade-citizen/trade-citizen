@@ -90,7 +90,7 @@
                     <v-layout justify-left align-top>
                 -->
                 <v-card-title primary-title class="px-0 py-0">
-                  <h3 class="headline">{{ (isDevelopment ? '{' + index + '} ' : '') + stationCommodityPrice.name }}</h3>
+                  <h3 class="headline">{{ stationCommodityPrice.name }}</h3>
                 </v-card-title>
                 <div>{{ stationCommodityPrice.category }}</div>
                 <!--

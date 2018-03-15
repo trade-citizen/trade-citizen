@@ -16,9 +16,9 @@ const firestoreClient = admin.firestore();
 // https://github.com/firebase/functions-samples
 //
 
-exports.onStationPriceCreate = firestoreServer
-  .document('/deployments/{deploymentId}/stations/{stationId}/prices/{priceId}')
-  .onCreate(onStationPriceCreate);
+exports.onStorePriceCreate = firestoreServer
+  .document('/deployments/{deploymentId}/stations/{storeId}/prices/{priceId}')
+  .onCreate(onStorePriceCreate);
 
 /*
  * https://firebase.google.com/docs/firestore/extend-with-functions#limitations_and_guarantees
@@ -36,157 +36,177 @@ exports.onStationPriceCreate = firestoreServer
  *  * Ordering is not guaranteed. It is possible that rapid changes could trigger function
  *    invocations in an unexpected order."
  */
-function onStationPriceCreate(event) {
-  const timestamp = new Date(event.timestamp);
+function onStorePriceCreate(event) {
+  console.log('onStorePriceCreate arguments', arguments);
+
+  const eventTimestamp = new Date(event.timestamp);
 
   const params = event.params;
-  // console.log('onStationPriceCreate params', params);
+  // console.log('onStorePriceCreate params', params);
   const deploymentId = params.deploymentId;
-  const stationId = params.stationId;
+  const storeId = params.storeId;
   const priceId = params.priceId;
 
   const newDocument = event.data.exists ? event.data.data() : null;
   if (newDocument === null) {
-    console.error('onStationPriceCreate newDocument === null; unhandled document deletion');
+    console.error('onStorePriceCreate newDocument === null; unhandled document deletion');
     return;
   }
-  // console.log('onStationPriceCreate newDocument', newDocument);
+  // console.log('onStorePriceCreate newDocument', newDocument);
 
   const prices = newDocument.prices;
-  let priceBuy = undefined;
-  let priceSell = undefined;
+  const priceBuy = undefined;
+  const priceSell = undefined;
   if (prices) {
-    Object.keys(prices).forEach(commodityId => {
-      const price = prices[commodityId];
+    for (const itemId of Object.keys(prices)) {
+      const price = prices[itemId];
       priceBuy = price.priceBuy;
       priceSell = price.priceSell;
-    });
+    }
   }
-  let hasPrices = Boolean(priceBuy || priceSell);
+  const hasPrices = Boolean(priceBuy || priceSell);
 
   return firestoreClient.batch()
     .set(event.data.ref, {
-      stationId: stationId,
+      storeId: storeId,
       hasPrices: hasPrices,
-      timestamp_priced: timestamp
+      timestamp_server_processed: eventTimestamp
     }, { merge: true })
-    .set(firestoreClient
-      .collection(`/deployments/${deploymentId}/stations`)
-      .doc(stationId), {
+    .set(firestoreClient.doc(`/deployments/${deploymentId}/stations/${storeId}`), {
         hasPrices: hasPrices,
-        timestamp_last_priced: timestamp
+        timestamp_server_processed: eventTimestamp
       }, { merge: true })
     .commit()
     .then(results => {
 
       if (deploymentId === 'test') {
-        rebuildBuySellRatios(deploymentId, stationId, priceId, prices);
+        return rebuildBuySellRatios(deploymentId, storeId, priceId, prices)
+          .then(result => {
+            return lastStep();
+          });
       }
+
+      return lastStep();
     })
     .catch(error => {
-      console.error('onStationPriceCreate error', error);
-      Promise.reject(error);
+      console.error('onStorePriceCreate error', error);
     });
 }
 
-function rebuildBuySellRatios(deploymentId, stationId, priceId, prices) {
 
-  console.log('rebuildBuySellRatios deploymentId', deploymentId, 'stationId', stationId, 'priceId', priceId, 'prices', prices);
+function lastStep() {
+  // TODO:(pv) Update statistical averages...
+  return Promise.resolve();
+}
+
+
+function rebuildBuySellRatios(deploymentId, storeId, priceId, prices) {
+  console.log('rebuildBuySellRatios deploymentId', deploymentId, 'storeId', storeId, 'priceId', priceId, 'prices', prices);
+
 
     return firestoreClient.collection(`/deployments/${deploymentId}/itemTypes`)
       .get()
       .then(snapshotItemTypes => {
-        let storeIds = [];
-        let itemIds = [];
+
+        const itemIds = [];
         snapshotItemTypes.forEach(docItemType => {
           itemIds.push(docItemType.id);
-        })
-        firestoreClient.collection(`/deployments/${deploymentId}/stations`)
+        });
+
+        return firestoreClient.collection(`/deployments/${deploymentId}/stations`)
           .get()
           .then(snapshotStores => {
-            let buySellPrices = {};
-            let snapshotStoresSize = snapshotStores.size;
+
+            const buySellPrices = {};
+            const snapshotStoresSize = snapshotStores.size;
+
+            const promises = [];
+
+            const storeIds = [];
             snapshotStores.forEach(docStore => {
-              let storeId = docStore.id;
-              storeIds.push(storeId);
-              docStore.ref.collection('prices')
-                .where('hasPrices', '==', true)
-                .orderBy('timestamp_priced', 'desc')
+              const docStoreId = docStore.id;
+
+              promises.push(docStore.ref.collection('prices')
+                //.where('hasPrices', '==', true)
+                .orderBy('timestamp_server_processed', 'desc')
                 .limit(1)
                 .get()
                 .then(snapshotPrices => {
                   snapshotPrices.forEach(docPrice => {
-                    let prices = docPrice.get('prices');
+                    const prices = docPrice.get('prices');
                     itemIds.forEach(itemId => {
-                      let price = prices && prices[itemId];
-                      let priceBuy = price && price.priceBuy;
-                      let priceSell = price && price.priceSell;
-                      addBuySellPrice(buySellPrices, storeId, itemId, 'buy', priceBuy);
-                      addBuySellPrice(buySellPrices, storeId, itemId, 'sell', priceSell);
+                      const price = prices && prices[itemId];
+                      const priceBuy = price && price.priceBuy;
+                      const priceSell = price && price.priceSell;
+                      addBuySellPrice(buySellPrices, docStoreId, itemId, 'buy', priceBuy);
+                      addBuySellPrice(buySellPrices, docStoreId, itemId, 'sell', priceSell);
                     });
                   });
 
+                  storeIds.push(docStoreId);
                   if (storeIds.length < snapshotStoresSize) {
-                    return;
+                    return Promise.resolve();
                   }
-                  //
-                  // Reached the last store
-                  //
-                  writeBuySellRatios(deploymentId, storeIds, itemIds, buySellPrices);
-                });
+
+                  return writeBuySellRatios(deploymentId, storeIds, itemIds, buySellPrices);
+                }));
             });
+
+            return Promise.all(promises);
           });
       });
 }
 
 function addBuySellPrice(buySellPrices,
-                         stationId,
-                         commodityId,
+                         storeId,
+                         itemId,
                          buyOrSell,
-                         commodityPrice) {
+                         itemPrice) {
   const side = 'price' + buyOrSell.charAt(0).toUpperCase() + buyOrSell.slice(1).toLowerCase();
   // console.log('side', side);
-  let thisStationCommodityPrices = buySellPrices[stationId];
-  if (!thisStationCommodityPrices) {
-    thisStationCommodityPrices = {};
-    buySellPrices[stationId] = thisStationCommodityPrices;
+  let thisStoreItemPrices = buySellPrices[storeId];
+  if (!thisStoreItemPrices) {
+    thisStoreItemPrices = {};
+    buySellPrices[storeId] = thisStoreItemPrices;
   }
-  let commodityPrices = thisStationCommodityPrices[commodityId];
-  if (!commodityPrices) {
-    commodityPrices = {};
-    thisStationCommodityPrices[commodityId] = commodityPrices;
+  let itemPrices = thisStoreItemPrices[itemId];
+  if (!itemPrices) {
+    itemPrices = {};
+    thisStoreItemPrices[itemId] = itemPrices;
   }
-  commodityPrices[side] = commodityPrice;
+  itemPrices[side] = itemPrice;
 }
 
 function writeBuySellRatios(deploymentId, storeIds, itemIds, buySellPrices) {
-  let writeBatch = firestoreClient.batch();
+  const buySellRatios = {};
 
-  storeIds.forEach(storeIdBuy => {
+  const writeBatch = firestoreClient.batch();
 
-    let itemPricesBuy = buySellPrices[storeIdBuy];
+  for (const storeIdBuy of storeIds) {
 
-    itemIds.forEach(itemId => {
+    const itemPricesBuy = buySellPrices[storeIdBuy];
 
-      let itemBuy = itemPricesBuy && itemPricesBuy[itemId];
-      let priceBuy = itemBuy && itemBuy.priceBuy;
+    for (const itemId of itemIds) {
 
-      storeIds.forEach(storeIdSell => {
+      const itemBuy = itemPricesBuy && itemPricesBuy[itemId];
+      const priceBuy = itemBuy && itemBuy.priceBuy;
+
+      for (const storeIdSell of storeIds) {
         if (storeIdSell === storeIdBuy) {
           return;
         }
 
-        let itemPricesSell = buySellPrices[storeIdSell];
-        let itemSell = itemPricesSell && itemPricesSell[itemId];
-        let priceSell = itemSell && itemSell.priceSell;
+        const itemPricesSell = buySellPrices[storeIdSell];
+        const itemSell = itemPricesSell && itemPricesSell[itemId];
+        const priceSell = itemSell && itemSell.priceSell;
 
-        let docId = `${itemId}:${storeIdBuy}:${storeIdSell}`;
-        let docPath = `/deployments/${deploymentId}/buySellRatios/${docId}`;
-        let docRef = firestoreClient.doc(docPath);
+        const docId = `${itemId}:${storeIdBuy}:${storeIdSell}`;
+        const docPath = `/deployments/${deploymentId}/buySellRatios/${docId}`;
+        const docRef = firestoreClient.doc(docPath);
 
-        let ratio = priceSell / priceBuy;
+        const ratio = priceSell / priceBuy;
 
-        let docData = {
+        const docData = {
           itemId: itemId,
           buyStoreId: storeIdBuy,
           buyPrice: priceBuy,
@@ -196,9 +216,9 @@ function writeBuySellRatios(deploymentId, storeIds, itemIds, buySellPrices) {
         }
 
         writeBatch.set(docRef, docData);
-      });
-    });
-  });
+      }
+    }
+  }
 
   console.log('writeBuySellRatios writeBatch COMMIT...', writeBatch);
   return writeBatch.commit()
