@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import * as firebase from 'firebase'
+import firebasePushId from './firebase-push-id'
 
 const ROOT = '/deployments/' + (process.env.NODE_ENV === 'production' ? 'production' : 'test') + '/'
 
@@ -472,10 +473,10 @@ export default {
 
       context.commit('setLoading', true)
       return new Promise((resolve, reject) => {
-        let path = ROOT + 'stations/' + stationId + '/prices'
-        // console.log('saveStationCommodityPrices add ' + path + '/%AUTO-ID%', docData)
-        firebase.firestore().collection(path)
-          .add(docData)
+        let path = ROOT + 'stations/' + stationId + '/prices/' + firebasePushId(true)
+        // console.log('saveStationCommodityPrices set ' + path, docData)
+        firebase.firestore().doc(path)
+          .set(docData)
           .then(docRef => {
             console.log('saveStationCommodityPrices SUCCESS!')
             context.commit('setLoading', false)
