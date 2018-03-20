@@ -13,7 +13,7 @@ admin.initializeApp({
 // TODO:(pv) Add anchorType/anchor
 // TODO:(pv) Add stationType/station
 
-function copyCollectionToDocument(srcCollection, destDocument) {
+function copyCollectionToCollection(srcCollection, destCollection) {
     let srcCollectionName = srcCollection.match(/([^\/]*)\/*$/)[1]
     console.log('srcCollectionName', srcCollectionName)
     var srcCollectionRef = admin
@@ -24,7 +24,7 @@ function copyCollectionToDocument(srcCollection, destDocument) {
             snapshot.forEach(doc => {
                 let docData = doc.data();
                 console.log(doc.id, '=>', docData);
-                let destPath = destDocument + '/' + srcCollectionName
+                let destPath = destCollection
                 console.log('destPath', destPath)
                 admin
                     .firestore()
@@ -67,14 +67,19 @@ function copyCollectionToDocument(srcCollection, destDocument) {
             });
         })
         .catch(err => {
-            console.error('copyCollectionToDocument ERROR', err);
+            console.error('copyCollectionToCollection ERROR', err);
         });
 }
 
-let deployment = '/deployments/test'
-copyCollectionToDocument('anchorTypes', deployment)
-copyCollectionToDocument('anchors', deployment)
-copyCollectionToDocument('itemCategories', deployment)
-copyCollectionToDocument('itemTypes', deployment)
-copyCollectionToDocument('stationTypes', deployment)
-copyCollectionToDocument('stations', deployment)
+/*
+let srcDeployment = '/deployments/production'
+let destDeployment = '/deployments/production'
+copyCollectionToCollection(srcDeployment + '/anchorTypes', destDeployment + '/anchorTypes')
+copyCollectionToCollection(srcDeployment + '/anchors', destDeployment + '/anchors')
+copyCollectionToCollection(srcDeployment + '/itemCategories', destDeployment + '/itemCategories')
+copyCollectionToCollection(srcDeployment + '/itemTypes', destDeployment + '/itemTypes')
+copyCollectionToCollection(srcDeployment + '/stationTypes', destDeployment + '/locationTypes')
+copyCollectionToCollection(srcDeployment + '/stations', destDeployment + '/locations')
+*/
+
+//copyCollectionToCollection('/deployments/test/stations', '/deployments/test/locations')

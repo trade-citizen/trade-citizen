@@ -1,6 +1,6 @@
 <template>
   <v-container
-    v-if="stationId == null"
+    v-if="locationId == null"
     fluid
     class="pt-0"
     >
@@ -46,11 +46,11 @@
         >
         <template slot="items" slot-scope="props">
           <td class="text-xs-right">{{ props.item.itemName }}</td>
-          <td class="text-xs-right">{{ props.item.buyStoreName }}</td>
+          <td class="text-xs-right">{{ props.item.buyLocationName }}</td>
           <td class="text-xs-right">{{ props.item.buyPrice.toFixed(3) }}</td>
           <td class="text-xs-center">{{ props.item.ratio.toFixed(3) }}</td>
           <td class="text-xs-left">{{ props.item.sellPrice.toFixed(3) }}</td>
-          <td class="text-xs-left">{{ props.item.sellStoreName }}</td>
+          <td class="text-xs-left">{{ props.item.sellLocationName }}</td>
         </template>
       </v-data-table>
     </v-layout>
@@ -62,14 +62,14 @@
     class="pa-0"
     >
     <v-layout
-      v-if="stationCommodityPriceList.length"
+      v-if="locationItemPriceList.length"
       row wrap
       class="pa-2"
       >
       <v-flex
         xs4
-        v-for="(stationCommodityPrice, index) in stationCommodityPriceList"
-        :key="stationCommodityPrice.id"
+        v-for="(locationItemPrice, index) in locationItemPriceList"
+        :key="locationItemPrice.id"
         >
         <v-card style="border:1px solid white; border-radius:6px;">
           <v-container fluid grid-list-lg>
@@ -90,9 +90,9 @@
                     <v-layout justify-left align-top>
                 -->
                 <v-card-title primary-title class="px-0 py-0">
-                  <h3 class="headline">{{ stationCommodityPrice.name }}</h3>
+                  <h3 class="headline">{{ locationItemPrice.name }}</h3>
                 </v-card-title>
-                <div>{{ stationCommodityPrice.category }}</div>
+                <div>{{ locationItemPrice.category }}</div>
                 <!--
                     </v-layout>
                   </v-container>
@@ -108,8 +108,8 @@
                   :autofocus="index === 0"
                   :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
                   :disabled="!userIsAuthenticated"
-                  :value="stationCommodityPrice.priceBuy"
-                  @input="updateStationCommodityPrice(stationCommodityPrice.id, 'priceBuy', $event)"
+                  :value="locationItemPrice.priceBuy"
+                  @input="updateLocationItemPrice(locationItemPrice.id, 'priceBuy', $event)"
                   >
                 </v-text-field>
               </v-flex>
@@ -120,8 +120,8 @@
                   label="Sell Price"
                   :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
                   :disabled="!userIsAuthenticated"
-                  :value="stationCommodityPrice.priceSell"
-                  @input="updateStationCommodityPrice(stationCommodityPrice.id, 'priceSell', $event)"
+                  :value="locationItemPrice.priceSell"
+                  @input="updateLocationItemPrice(locationItemPrice.id, 'priceSell', $event)"
                   >
                 </v-text-field>
               </v-flex>
@@ -152,11 +152,11 @@ export default {
     return {
       headers: [
         { sortable: true, align: 'right', text: 'Item', value: 'itemName' },
-        { sortable: true, align: 'right', text: 'Buy Store', value: 'buyStoreName' },
+        { sortable: true, align: 'right', text: 'Buy Location', value: 'buyLocationName' },
         { sortable: true, align: 'right', text: 'Buy Price', value: 'buyPrice' },
         { sortable: true, align: 'center', text: 'Ratio', value: 'ratio' },
         { sortable: true, align: 'left', text: 'Sell Price', value: 'sellPrice' },
-        { sortable: true, align: 'left', text: 'Sell Store', value: 'sellStoreName' }
+        { sortable: true, align: 'left', text: 'Sell Location', value: 'sellLocationName' }
       ],
       pagination: {
         sortBy: 'ratio',
@@ -166,8 +166,8 @@ export default {
         illegal: false,
         commodities: [],
         anchors: [],
-        stationsBuy: [],
-        stationsSell: []
+        locationsBuy: [],
+        locationsSell: []
       },
       editing: false,
       toast: false,
@@ -178,23 +178,23 @@ export default {
   mounted: function () {
     // console.log('Home mounted')
     var vm = this
-    vm.$root.$on('onStationChanged', function (stationId) {
-      // console.log('Home vm.onStationChanged stationId', stationId)
-      vm.onStationChanged(stationId)
+    vm.$root.$on('onSelectedLocationChanged', function (locationId) {
+      // console.log('Home vm.onSelectedLocationChanged locationId', locationId)
+      vm.onSelectedLocationChanged(locationId)
     })
-    vm.$root.$on('editStation', function (stationId, editing) {
-      // console.log('Home vm.editStation stationId:' + stationId)
-      vm.editStation(stationId, editing)
+    vm.$root.$on('editLocation', function (locationId, editing) {
+      // console.log('Home vm.editLocation locationId:' + locationId)
+      vm.editLocation(locationId, editing)
     })
-    vm.$root.$on('saveStation', function (stationId) {
-      // console.log('Home vm.saveStation stationId:' + stationId)
-      vm.saveStation(stationId)
+    vm.$root.$on('saveLocation', function (locationId) {
+      // console.log('Home vm.saveLocation locationId:' + locationId)
+      vm.saveLocation(locationId)
     })
   },
   computed: {
-    stationId: {
+    locationId: {
       get: function () {
-        return this.$store.getters.getSelectedStationId
+        return this.$store.getters.getSelectedLocationId
       }
     },
     userIsAuthenticated () {
@@ -215,15 +215,21 @@ export default {
     buySellRatios () {
       return this.$store.getters.buySellRatios
     },
-    stationCommodityPriceList () {
-      let stationCommodityPriceList = this.$store.getters.stationCommodityPriceList(this.stationId)
-      if (stationCommodityPriceList && !this.editing) {
-        let stationCommodityPriceListDefined = stationCommodityPriceList.filter((stationCommodityPrice) => {
-          return stationCommodityPrice.isPriceDefined
+    locationItemPriceList () {
+      let prices = this.$store.getters.locationItemPriceList(this.locationId)
+      if (prices && !this.editing) {
+        let pricesDefined = prices.filter((price) => {
+          return price.isPriceDefined
         })
-        stationCommodityPriceList = (stationCommodityPriceListDefined.length > 0 || !this.userIsAuthenticated) ? stationCommodityPriceListDefined : stationCommodityPriceList
+        prices = (pricesDefined.length > 0 || !this.userIsAuthenticated) ? pricesDefined : prices
       }
-      return stationCommodityPriceList
+      this.locationItemPriceListCopy = []
+      prices.forEach(price => {
+        // console.log('locationItemPriceListCopy item', item)
+        let copy = Object.assign({}, price)
+        this.locationItemPriceListCopy.push(copy)
+      })
+      return this.locationItemPriceListCopy
     }
   },
   methods: {
@@ -271,49 +277,57 @@ export default {
         return 0
       })
     },
-    onStationChanged (stationId) {
-      // console.log('Home onStationChanged stationId:' + stationId)
+    onSelectedLocationChanged (locationId) {
+      // console.log('Home onSelectedLocationChanged locationId:' + locationId)
       this.editing = false
     },
-    editStation (stationId, editing) {
-      // console.log('Home editStation stationId:' + stationId)
-      // console.log('Home editStation editing:' + editing)
+    editLocation (locationId, editing) {
+      // console.log('Home editLocation locationId:' + locationId)
+      // console.log('Home editLocation editing:' + editing)
       this.editing = editing
     },
-    saveStation (stationId) {
-      // console.log('Home saveStation this.stationId:' + this.stationId)
-      // console.log('Home saveStation this.stationCommodityPriceList', this.stationCommodityPriceList)
-      let promise = this.$store.dispatch('saveStationCommodityPrices', {
-        stationId: this.stationId,
-        stationCommodityPrices: this.stationCommodityPriceList
-      })
-      if (promise) {
-        promise
-          .then(result => {
-            console.log('saveStation SUCCESS!')
-            this.toastMessage = 'Prices Saved.'
-            this.toast = true
-          },
-          error => {
-            console.log('saveStation ERROR', error)
-            this.toastMessage = 'Error; Try Again.'
-            this.toast = true
-          })
-          .catch(error => {
-            console.log('saveStation ERROR', error)
-            this.toastMessage = 'Error; Try Again.'
-            this.toast = true
-          })
-      }
-      this.editing = false
+    saveLocation (locationId) {
+      // console.log('Home saveLocation this.locationId:' + this.locationId)
+      // console.log('Home saveLocation this.locationItemPriceListCopy', this.locationItemPriceListCopy)
+      this.$store
+        .dispatch('saveLocationItemPrices', {
+          locationId: this.locationId,
+          locationItemPrices: this.locationItemPriceListCopy
+        })
+        .then(result => {
+          // console.log('saveLocation SUCCESS!')
+          this.toastMessage = 'Prices Saved.'
+          this.toast = true
+        },
+        error => {
+          // console.log('saveLocation ERROR', error)
+          let toastMessage = error.message ? error.message : error
+          if (this.isDevelopment) {
+            if (error.itemId) {
+              toastMessage += ` {${error.itemId}} {${error.buyOrSell}}`
+            }
+          }
+          this.toastMessage = toastMessage
+          this.toast = true
+        })
+        .catch(error => {
+          console.log('saveLocation ERROR', error)
+          let toastMessage = error.message ? error.message : error
+          if (this.isDevelopment) {
+            if (error.itemId) {
+              toastMessage += ` {${error.itemId}} {${error.buyOrSell}}`
+            }
+          }
+          this.toastMessage = toastMessage
+          this.toast = true
+        })
     },
-    updateStationCommodityPrice (commodityId, priceId, value) {
-      this.$store.commit('updateStationCommodityPrice', {
-        stationId: this.stationId,
-        commodityId: commodityId,
-        priceId: priceId,
-        value: value
-      })
+    updateLocationItemPrice (itemId, priceId, value) {
+      let prices = this.locationItemPriceListCopy
+        .find(item => {
+          return item.id === itemId
+        })
+      prices[priceId] = value
     }
   }
 }

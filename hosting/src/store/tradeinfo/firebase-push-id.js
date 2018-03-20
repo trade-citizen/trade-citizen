@@ -10,6 +10,14 @@
  * 4. They're monotonically increasing.  Even if you generate more than one in the same timestamp, the
  *    latter ones will sort after the former ones.  We do this by using the previous random bits
  *    but "incrementing" them by 1 (only in the case of a timestamp collision).
+ *
+ * NOTE that these are considered "Legacy".
+ * (I once read a document that explained why pushids are effectively deprecated, but I cannot currenlty find it.)
+ * For a more modern "Firestore" implementation, see:
+ * https://github.com/firebase/firebase-js-sdk/blob/master/packages/firestore/src/util/misc.ts#L35
+ *
+ * Other references:
+ * https://firebase.googleblog.com/2015/02/the-2120-ways-to-ensure-unique_68.html
  */
 
 // Modeled after base64 web-safe chars, but ordered by ASCII.
