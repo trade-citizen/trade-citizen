@@ -76,19 +76,45 @@
           color="cyan lighten-2"
           append-icon="search"
           placeholder="Search"
-          autofocus
           solo-inverted
           autocomplete
           clearable
           :dense="$vuetify.breakpoint.xsOnly"
-          :items="stations"
+          :items="locations"
           item-text="name"
           item-value="id"
-          v-model="stationId"
+          v-model="locationId"
           >
         </v-select>
-        <template v-if="stationId != null">
-          <template v-if="!userIsAuthenticated">
+        <template v-if="locationId">
+          <template v-if="userIsAuthenticated">
+            <template v-if="showEdit">
+              <v-btn
+                v-if="editing"
+                icon
+                class="ml-0 mr-2"
+                @click="editLocation(false)"
+                >
+                <v-icon class="mx-1">cancel</v-icon>
+              </v-btn>
+              <v-btn
+                v-else
+                icon
+                class="ml-0 mr-2"
+                @click="editLocation(true)"
+                >
+                <v-icon class="mx-1">edit</v-icon>
+              </v-btn>
+            </template>
+            <v-btn
+              icon
+              class="ml-0 mr-2"
+              @click="saveLocation"
+              >
+              <v-icon class="mx-1">save</v-icon>
+            </v-btn>
+          </template>
+          <template v-else>
             <v-btn
               flat
               class="ml-0 mr-2"
@@ -98,43 +124,19 @@
               Sign in
             </v-btn>
           </template>
-          <template v-else>
-            <template v-if="showEdit">
-              <v-btn
-                v-if="editing"
-                icon
-                class="ml-0 mr-2"
-                @click="editStation(false)"
-                >
-                <v-icon class="mx-1">cancel</v-icon>
-              </v-btn>
-              <v-btn
-                v-else
-                icon
-                class="ml-0 mr-2"
-                @click="editStation(true)"
-                >
-                <v-icon class="mx-1">edit</v-icon>
-              </v-btn>
-            </template>
-            <v-btn
-              icon
-              class="ml-0 mr-2"
-              @keydown.native="handleKeyboard($event)"
-              @click="saveStation"
-              >
-              <v-icon class="mx-1">save</v-icon>
-            </v-btn>
-          </template>
         </template>
       </template>
     </v-toolbar>
     <v-content>
-        <v-fade-transition mode="out-in">
-          <router-view></router-view>
-        </v-fade-transition>
+      <v-progress-linear :indeterminate="true" class="ma-0" v-if="loading"></v-progress-linear>      
+      <v-fade-transition mode="out-in">
+        <router-view></router-view>
+      </v-fade-transition>
     </v-content>
     <v-footer app class="pa-3">
+      <div v-if="locationId">
+        {{ locationItemPriceTimestamp }}
+      </div>
       <v-spacer></v-spacer>
       <div>v{{ $PACKAGE_VERSION }} &copy; 2018</div>
     </v-footer>
@@ -150,15 +152,28 @@ export default {
       editing: false
     }
   },
+  mounted: function () {
+    var vm = this
+    window.addEventListener('keydown', function (event) {
+      // NOTE: metaKey == Command on Mac
+      if ((event.metaKey || event.ctrlKey) && event.keyCode === 'S'.charCodeAt(0)) {
+        event.preventDefault()
+        vm.saveLocation()
+      }
+    })
+  },
   computed: {
-    stationId: {
+    loading () {
+      return this.$store.getters.loading
+    },
+    locationId: {
       get: function () {
-        return this.$store.getters.getSelectedStationId
+        return this.$store.getters.getSelectedLocationId
       },
       set: function (value) {
         this.editing = false
-        this.$store.commit('setSelectedStationId', value)
-        this.$root.$emit('onStationChanged', value)
+        this.$store.commit('setSelectedLocationId', value)
+        this.$root.$emit('onSelectedLocationChanged', value)
       }
     },
     userIsAuthenticated () {
@@ -166,15 +181,15 @@ export default {
         this.$store.getters.user !== undefined
     },
     showEdit () {
-      if (!this.stationId) {
+      if (!this.locationId) {
         return false
       }
-      let stationCommodityPriceList = this.$store.getters.stationCommodityPriceList(this.stationId)
+      let locationItemPriceList = this.$store.getters.locationItemPriceList(this.locationId)
       let accumulator = 0
-      if (stationCommodityPriceList) {
-        accumulator = stationCommodityPriceList
-          .reduce((accumulator, stationCommodityPrice) => {
-            if (stationCommodityPrice.isPriceDefined) {
+      if (locationItemPriceList) {
+        accumulator = locationItemPriceList
+          .reduce((accumulator, locationItemPrice) => {
+            if (locationItemPrice.isPriceDefined) {
               accumulator++
             }
             return accumulator
@@ -182,12 +197,12 @@ export default {
       }
       return accumulator > 0
     },
-    stations () {
-      return this.$store.getters.stations
-        .map((station) => {
-          let id = station.id
-          let name = station.anchor.name + ' - ' + station.name
-          if (process.env.NODE_ENV === 'development') {
+    locations () {
+      return this.$store.getters.locations
+        .map((location) => {
+          let id = location.id
+          let name = location.anchor.name + ' - ' + location.name
+          if (this.isDevelopment) {
             name += ' {' + id + '}'
           }
           return {
@@ -206,9 +221,27 @@ export default {
           }
           return 0
         })
+    },
+    locationItemPriceTimestamp () {
+      let metadata = this.$store.getters.locationItemPriceMetadata(this.locationId)
+      let timestamp = metadata && metadata.timestamp
+      // console.log('timestamp', timestamp)
+      if (timestamp) {
+        timestamp = timestamp.getFullYear() + '/' + this.lpad(timestamp.getMonth() + 1, 2) + '/' + this.lpad(timestamp.getDate(), 2) +
+          ' ' + this.lpad(timestamp.getHours(), 2) + ':' + this.lpad(timestamp.getMinutes(), 2) + ':' + this.lpad(timestamp.getSeconds(), 2) + '.' + this.lpad(timestamp.getMilliseconds(), 3)
+      } else {
+        timestamp = 'Never'
+      }
+      return `Priced at: ${timestamp}`
     }
   },
   methods: {
+    lpad (value, width) {
+      return (value.toString().length > width) ? value : (new Array(width).join('0') + value).slice(-width)
+    },
+    isDevelopment () {
+      return (process.env.NODE_ENV === 'development')
+    },
     signin () {
       this.editing = false
       this.$router.push('/signin')
@@ -221,14 +254,18 @@ export default {
     home () {
       this.$router.push('/')
     },
-    editStation (editing) {
-      console.log('App editStation', arguments)
+    editLocation (editing) {
+      // console.log('App editLocation editing', editing)
       this.editing = editing
-      this.$root.$emit('editStation', this.stationId, editing)
+      this.$root.$emit('editLocation', this.locationId, this.editing)
     },
-    saveStation () {
-      this.editing = false
-      this.$root.$emit('saveStation', this.stationId)
+    saveLocation () {
+      // console.log('App saveLocation this.locationId:' + this.locationId)
+      if (!(this.locationId && this.userIsAuthenticated)) {
+        return
+      }
+      this.editLocation(false)
+      this.$root.$emit('saveLocation', this.locationId)
     }
   }
 }
