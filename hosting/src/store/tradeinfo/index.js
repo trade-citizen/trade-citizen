@@ -105,6 +105,8 @@ export default {
       Vue.set(state.locationsItemsPricesMap, locationId, locationItemPricesList)
       if (metadata) {
         Vue.set(state.locationsItemsPricesMetadataMap, locationId, metadata)
+      } else {
+        Vue.set(state.locationsItemsPricesMetadataMap, locationId, undefined)
       }
     }
   },

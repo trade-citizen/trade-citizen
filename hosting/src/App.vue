@@ -138,12 +138,16 @@
         {{ locationItemPriceTimestamp }}
       </div>
       <v-spacer></v-spacer>
-      <div>v{{ $PACKAGE_VERSION }} &copy; 2018</div>
+      <div>{{ offline ? 'OFFLINE' : '' }}</div>
+      <div class="pl-2">v{{ $PACKAGE_VERSION }} &copy; 2018</div>
     </v-footer>
   </v-app>
 </template>
 
 <script>
+
+console.log('process.env.NODE_ENV', process.env.NODE_ENV)
+
 export default {
   data () {
     return {
@@ -152,17 +156,27 @@ export default {
       editing: false
     }
   },
-  mounted: function () {
-    var vm = this
-    window.addEventListener('keydown', function (event) {
-      // NOTE: metaKey == Command on Mac
-      if ((event.metaKey || event.ctrlKey) && event.keyCode === 'S'.charCodeAt(0)) {
-        event.preventDefault()
-        vm.saveLocation()
-      }
+
+  mounted () {
+    const vm = this
+    window.addEventListener('load', function () {
+      vm.updateOnlineStatus()
+      window.addEventListener('online', vm.updateOnlineStatus)
+      window.addEventListener('offline', vm.updateOnlineStatus)
+      window.addEventListener('keydown', vm.onKeyDown)
     })
   },
+
+  beforeDestroy () {
+    window.removeEventListener('keydown', this.onKeyDown)
+    window.removeEventListener('online', this.updateOnlineStatus)
+    window.removeEventListener('offline', this.updateOnlineStatus)
+  },
+
   computed: {
+    offline () {
+      return this.$store.getters.offline
+    },
     loading () {
       return this.$store.getters.loading
     },
@@ -236,11 +250,21 @@ export default {
     }
   },
   methods: {
+    isDevelopment () {
+      return this.$store.getters.isDevelopment
+    },
+    updateOnlineStatus () {
+      this.$store.commit('setOffline', !(navigator.onLine))
+    },
+    onKeyDown (event) {
+      // NOTE: metaKey == Command on Mac
+      if ((event.metaKey || event.ctrlKey) && event.keyCode === 'S'.charCodeAt(0)) {
+        event.preventDefault()
+        this.saveLocation()
+      }
+    },
     lpad (value, width) {
       return (value.toString().length > width) ? value : (new Array(width).join('0') + value).slice(-width)
-    },
-    isDevelopment () {
-      return (process.env.NODE_ENV === 'development')
     },
     signin () {
       this.editing = false
@@ -260,8 +284,8 @@ export default {
       this.$root.$emit('editLocation', this.locationId, this.editing)
     },
     saveLocation () {
-      // console.log('App saveLocation this.locationId:' + this.locationId)
-      if (!(this.locationId && this.userIsAuthenticated)) {
+      // console.log('App saveLocation this.locationId', this.locationId)
+      if (!this.userIsAuthenticated || !this.locationId || this.offline) {
         return
       }
       this.editLocation(false)

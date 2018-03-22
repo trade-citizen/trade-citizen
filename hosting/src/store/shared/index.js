@@ -1,9 +1,13 @@
 export default {
   state: {
+    offline: false,
     loading: false,
     error: null
   },
   mutations: {
+    setOffline (state, payload) {
+      state.offline = payload
+    },
     setLoading (state, payload) {
       state.loading = payload
     },
@@ -20,6 +24,12 @@ export default {
     }
   },
   getters: {
+    isDevelopment (state) {
+      return process.env.NODE_ENV === 'development'
+    },
+    offline (state) {
+      return state.offline
+    },
     loading (state) {
       return state.loading
     },
