@@ -355,12 +355,11 @@ export default {
         // console.log('_gotBuySellRatios buyLocationId', buyLocationId)
         let buyLocationName = context.state.locationsMap[buyLocationId].name
         let buyPrice = docData.buyPrice
+        let ratio = docData.ratio
         let sellPrice = docData.sellPrice
         let sellLocationId = docData.sellLocationId
         // console.log('_gotBuySellRatios sellLocationId', sellLocationId)
         let sellLocationName = context.state.locationsMap[sellLocationId].name
-
-        let ratio = sellPrice / buyPrice
 
         let buySellRatio = {
           itemName: itemName,
