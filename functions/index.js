@@ -5,13 +5,13 @@
 //      https://cloud.google.com/nodejs/docs/reference/firestore/latest/
 //
 
-const functions = require('firebase-functions');
+const functions = require('firebase-functions')
 const firestoreServer = functions.firestore
-const admin = require('firebase-admin');
-admin.initializeApp(functions.config().firebase);
-const firestoreClient = admin.firestore();
+const admin = require('firebase-admin')
+admin.initializeApp(functions.config().firebase)
+const firestoreClient = admin.firestore()
 
-const FIELD_TIMESTAMP_SERVER_PRICED = 'timestamp_server_priced';
+const FIELD_TIMESTAMP_SERVER_PRICED = 'timestamp_server_priced'
 
 //
 // https://firebase.google.com/docs/functions/write-firebase-functions
@@ -21,7 +21,7 @@ const FIELD_TIMESTAMP_SERVER_PRICED = 'timestamp_server_priced';
 
 exports.onLocationPriceCreate = firestoreServer
   .document('/deployments/{deploymentId}/locations/{locationId}/prices/{priceId}')
-  .onCreate(onLocationPriceCreate);
+  .onCreate(onLocationPriceCreate)
 
 /*
  * https://firebase.google.com/docs/firestore/extend-with-functions#limitations_and_guarantees
@@ -40,24 +40,26 @@ exports.onLocationPriceCreate = firestoreServer
  *    invocations in an unexpected order."
  */
 function onLocationPriceCreate(event) {
-  console.log('onLocationPriceCreate arguments', arguments);
+  console.log('onLocationPriceCreate arguments', arguments)
 
-  const eventTimestamp = new Date(event.timestamp);
+  const eventTimestamp = new Date(event.timestamp)
 
-  const params = event.params;
-  // console.log('onLocationPriceCreate params', params);
-  const deploymentId = params.deploymentId;
-  const locationId = params.locationId;
-  const priceId = params.priceId;
+  const params = event.params
+  // console.log('onLocationPriceCreate params', params)
+  const deploymentId = params.deploymentId
+  const locationId = params.locationId
+  const priceId = params.priceId
 
-  const newDocumentSnapshot = event.data;
-  const newDocumentData = newDocumentSnapshot.exists ? newDocumentSnapshot.data() : null;
+  const newDocumentSnapshot = event.data
+  console.log('onLocationPriceCreate newDocumentSnapshot', newDocumentSnapshot)
+  const newDocumentData = newDocumentSnapshot.exists ? newDocumentSnapshot.data() : null
+  console.log('onLocationPriceCreate newDocumentData', newDocumentData)
   if (newDocumentData === null) {
-    return;
+    return
   }
-  const newDocumentRef = newDocumentSnapshot.ref;
+  const newDocumentRef = newDocumentSnapshot.ref
 
-  const newPrices = newDocumentData.prices;
+  const newPrices = newDocumentData.prices
 
   // For now we rely on the client getting pushed the latest prices and self-validating setting any prices
 
@@ -77,48 +79,48 @@ function onLocationPriceCreate(event) {
         //
         return rebuildBuySellRatios(deploymentId, locationId, priceId, newPrices)
           .then(result => {
-            return lastStep();
-          });
+            return lastStep()
+          })
       }
 
-      return lastStep();
+      return lastStep()
     })
     .catch(error => {
-      console.error('onLocationPriceCreate error', error);
-    });
+      console.error('onLocationPriceCreate error', error)
+    })
 }
 
 
 function lastStep() {
   // TODO:(pv) Update statistical averages...
-  return Promise.resolve();
+  return Promise.resolve()
 }
 
 
 function rebuildBuySellRatios(deploymentId, locationId, priceId, prices) {
-  console.log('rebuildBuySellRatios deploymentId', deploymentId, 'locationId', locationId, 'priceId', priceId, 'prices', prices);
+  console.log('rebuildBuySellRatios deploymentId', deploymentId, 'locationId', locationId, 'priceId', priceId, 'prices', prices)
 
   return firestoreClient.collection(`/deployments/${deploymentId}/itemTypes`)
     .get()
     .then(snapshotItemTypes => {
 
-      const itemIds = [];
+      const itemIds = []
       snapshotItemTypes.forEach(docItemType => {
-        itemIds.push(docItemType.id);
-      });
+        itemIds.push(docItemType.id)
+      })
 
       return firestoreClient.collection(`/deployments/${deploymentId}/locations`)
         .get()
         .then(snapshotLocations => {
 
-          const buySellPrices = {};
-          const snapshotLocationsSize = snapshotLocations.size;
+          const buySellPrices = {}
+          const snapshotLocationsSize = snapshotLocations.size
 
-          const promises = [];
+          const promises = []
 
-          const locationIds = [];
+          const locationIds = []
           snapshotLocations.forEach(docLocation => {
-            const docLocationId = docLocation.id;
+            const docLocationId = docLocation.id
 
             promises.push(docLocation.ref.collection('prices')
               //.where('hasPrices', '==', true)
@@ -127,28 +129,28 @@ function rebuildBuySellRatios(deploymentId, locationId, priceId, prices) {
               .get()
               .then(snapshotPrices => {
                 snapshotPrices.forEach(docPrice => {
-                  const prices = docPrice.get('prices');
+                  const prices = docPrice.get('prices')
                   itemIds.forEach(itemId => {
-                    const price = prices && prices[itemId];
-                    const priceBuy = price && price.priceBuy;
-                    const priceSell = price && price.priceSell;
-                    addBuySellPrice(buySellPrices, docLocationId, itemId, 'buy', priceBuy);
-                    addBuySellPrice(buySellPrices, docLocationId, itemId, 'sell', priceSell);
-                  });
-                });
+                    const price = prices && prices[itemId]
+                    const priceBuy = price && price.priceBuy
+                    const priceSell = price && price.priceSell
+                    addBuySellPrice(buySellPrices, docLocationId, itemId, 'buy', priceBuy)
+                    addBuySellPrice(buySellPrices, docLocationId, itemId, 'sell', priceSell)
+                  })
+                })
 
-                locationIds.push(docLocationId);
+                locationIds.push(docLocationId)
                 if (locationIds.length < snapshotLocationsSize) {
-                  return Promise.resolve();
+                  return Promise.resolve()
                 }
 
-                return writeBuySellRatios(deploymentId, locationIds, itemIds, buySellPrices);
-              }));
-          });
+                return writeBuySellRatios(deploymentId, locationIds, itemIds, buySellPrices)
+              }))
+          })
 
-          return Promise.all(promises);
-        });
-    });
+          return Promise.all(promises)
+        })
+    })
 }
 
 function addBuySellPrice(buySellPrices,
@@ -156,50 +158,51 @@ function addBuySellPrice(buySellPrices,
                          itemId,
                          buyOrSell,
                          itemPrice) {
-  const side = 'price' + buyOrSell.charAt(0).toUpperCase() + buyOrSell.slice(1).toLowerCase();
-  // console.log('side', side);
-  let thisLocationItemPrices = buySellPrices[locationId];
+  const side = 'price' + buyOrSell.charAt(0).toUpperCase() + buyOrSell.slice(1).toLowerCase()
+  // console.log('side', side)
+  let thisLocationItemPrices = buySellPrices[locationId]
   if (!thisLocationItemPrices) {
-    thisLocationItemPrices = {};
-    buySellPrices[locationId] = thisLocationItemPrices;
+    thisLocationItemPrices = {}
+    buySellPrices[locationId] = thisLocationItemPrices
   }
-  let itemPrices = thisLocationItemPrices[itemId];
+  let itemPrices = thisLocationItemPrices[itemId]
   if (!itemPrices) {
-    itemPrices = {};
+    itemPrices = {}
+    thisLocationItemPrices[itemId] = itemPrices
   }
-  itemPrices[side] = itemPrice;
+  itemPrices[side] = itemPrice
 }
 
 function writeBuySellRatios(deploymentId, locationIds, itemIds, buySellPrices) {
-  console.log('writeBuySellRatios', buySellPrices);
+  console.log('writeBuySellRatios', buySellPrices)
 
-  const buySellRatios = {};
+  const buySellRatios = {}
 
-  const writeBatch = firestoreClient.batch();
+  const writeBatch = firestoreClient.batch()
 
   for (const locationIdBuy of locationIds) {
 
-    const itemPricesBuy = buySellPrices[locationIdBuy];
+    const itemPricesBuy = buySellPrices[locationIdBuy]
 
     for (const itemId of itemIds) {
 
-      const itemBuy = itemPricesBuy && itemPricesBuy[itemId];
-      const priceBuy = itemBuy && itemBuy.priceBuy;
+      const itemBuy = itemPricesBuy && itemPricesBuy[itemId]
+      const priceBuy = itemBuy && itemBuy.priceBuy
 
       for (const locationIdSell of locationIds) {
         if (locationIdSell === locationIdBuy) {
-          return;
+          return
         }
 
-        const itemPricesSell = buySellPrices[locationIdSell];
-        const itemSell = itemPricesSell && itemPricesSell[itemId];
-        const priceSell = itemSell && itemSell.priceSell;
+        const itemPricesSell = buySellPrices[locationIdSell]
+        const itemSell = itemPricesSell && itemPricesSell[itemId]
+        const priceSell = itemSell && itemSell.priceSell
 
-        const docId = `${itemId}:${locationIdBuy}:${locationIdSell}`;
-        const docPath = `/deployments/${deploymentId}/buySellRatios/${docId}`;
-        const docRef = firestoreClient.doc(docPath);
+        const docId = `${itemId}:${locationIdBuy}:${locationIdSell}`
+        const docPath = `/deployments/${deploymentId}/buySellRatios/${docId}`
+        const docRef = firestoreClient.doc(docPath)
 
-        const ratio = priceSell / priceBuy;
+        const ratio = priceSell / priceBuy
 
         const docData = {
           itemId: itemId,
@@ -210,14 +213,14 @@ function writeBuySellRatios(deploymentId, locationIds, itemIds, buySellPrices) {
           sellLocationId: locationIdSell
         }
 
-        writeBatch.set(docRef, docData);
+        writeBatch.set(docRef, docData)
       }
     }
   }
 
-  console.log('writeBuySellRatios writeBatch COMMIT...', writeBatch);
+  console.log('writeBuySellRatios writeBatch COMMIT...', writeBatch)
   return writeBatch.commit()
     .then((results => {
-      console.log('writeBuySellRatios writeBatch COMMITTED!', results);
-    }));
+      console.log('writeBuySellRatios writeBatch COMMITTED!', results)
+    }))
 }
