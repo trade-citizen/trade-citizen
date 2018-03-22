@@ -9,9 +9,11 @@ export default {
       state.offline = payload
     },
     setLoading (state, payload) {
+      // console.log('setLoading', payload)
       state.loading = payload
     },
     setError (state, payload) {
+      // console.log('setError', payload)
       state.error = payload
     },
     clearError (state) {

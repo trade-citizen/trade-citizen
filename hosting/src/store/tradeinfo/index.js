@@ -11,7 +11,8 @@ class PriceError extends Error {
 }
 
 const ROOT = '/deployments/' + (process.env.NODE_ENV === 'production' ? 'production' : 'test')
-const FIELD_TIMESTAMP_SERVER_PRICED = 'timestamp_server_priced'
+const FIELD_IS_TIMESTAMPED = 'isTimestamped'
+const FIELD_TIMESTAMP_SERVER_PRICED = 'timestampServerPriced'
 
 export default {
   state: {
@@ -382,7 +383,7 @@ export default {
       let path = `${ROOT}/locations/${locationId}/prices`
       // console.log('_getLocationItemPrices path', path)
       firebase.firestore().collection(path)
-        // .where('hasPrices', '==', true)
+        .where(FIELD_IS_TIMESTAMPED, '==', true)
         .orderBy(FIELD_TIMESTAMP_SERVER_PRICED, 'desc')
         .limit(1)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
@@ -533,6 +534,7 @@ export default {
       console.log(`saveLocationItemPrices firestore.doc(${path}).set(${docData})...`)
       return firebase.firestore().doc(path)
         .set(docData)
+        // NOTE:(pv) IF OFFLINE, THEN THE PROMISE DOES NOT RESOLVE UNTIL ONLINE
         .then(result => {
           console.log('saveLocationItemPrices SUCCESS!')
           context.commit('setLoading', false)

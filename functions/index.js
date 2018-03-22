@@ -11,7 +11,8 @@ const admin = require('firebase-admin')
 admin.initializeApp(functions.config().firebase)
 const firestoreClient = admin.firestore()
 
-const FIELD_TIMESTAMP_SERVER_PRICED = 'timestamp_server_priced'
+const FIELD_IS_TIMESTAMPED = 'isTimestamped'
+const FIELD_TIMESTAMP_SERVER_PRICED = 'timestampServerPriced'
 
 //
 // https://firebase.google.com/docs/functions/write-firebase-functions
@@ -65,11 +66,13 @@ function onLocationPriceCreate(event) {
 
   return firestoreClient.batch()
     .set(event.data.ref, {
+      [FIELD_IS_TIMESTAMPED]: true,
       [FIELD_TIMESTAMP_SERVER_PRICED]: eventTimestamp
     }, { merge: true })
     .set(firestoreClient.doc(`/deployments/${deploymentId}/locations/${locationId}`), {
-        [FIELD_TIMESTAMP_SERVER_PRICED]: eventTimestamp
-      }, { merge: true })
+      [FIELD_IS_TIMESTAMPED]: true,
+      [FIELD_TIMESTAMP_SERVER_PRICED]: eventTimestamp
+    }, { merge: true })
     .commit()
     .then(results => {
 
