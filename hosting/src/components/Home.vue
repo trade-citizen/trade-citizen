@@ -107,7 +107,7 @@
                   label="Buy Price"
                   :autofocus="index === 0"
                   :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
-                  :disabled="!userIsAuthenticated"
+                  :disabled="!userIsAuthenticated || offline"
                   :value="locationItemPrice.priceBuy"
                   @input="updateLocationItemPrice(locationItemPrice.id, 'priceBuy', $event)"
                   >
@@ -119,7 +119,7 @@
                   hide-details
                   label="Sell Price"
                   :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
-                  :disabled="!userIsAuthenticated"
+                  :disabled="!userIsAuthenticated || offline"
                   :value="locationItemPrice.priceSell"
                   @input="updateLocationItemPrice(locationItemPrice.id, 'priceSell', $event)"
                   >
@@ -142,6 +142,12 @@
       v-model="toast"
       >
       {{ toastMessage }}
+      <v-btn
+        icon
+        @click.native="toast = false"
+        >
+        <v-icon>close</v-icon>
+      </v-btn>
     </v-snackbar>    
   </v-container>
 </template>
@@ -192,6 +198,9 @@ export default {
     })
   },
   computed: {
+    offline () {
+      return this.$store.getters.offline
+    },
     locationId: {
       get: function () {
         return this.$store.getters.getSelectedLocationId
@@ -234,7 +243,7 @@ export default {
   },
   methods: {
     isDevelopment () {
-      return (process.env.NODE_ENV === 'development')
+      return this.$store.getters.isDevelopment
     },
     refresh () {
       // console.log('refresh()')
