@@ -198,6 +198,9 @@ export default {
     })
   },
   computed: {
+    isDevelopment () {
+      return this.$store.getters.isDevelopment
+    },
     offline () {
       return this.$store.getters.offline
     },
@@ -242,9 +245,6 @@ export default {
     }
   },
   methods: {
-    isDevelopment () {
-      return this.$store.getters.isDevelopment
-    },
     refresh () {
       // console.log('refresh()')
       if (!this.filter.illegal) {

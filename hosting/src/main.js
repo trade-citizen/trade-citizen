@@ -50,6 +50,18 @@ function firebaseInitialize (vue) {
     })
     .catch(function (err) {
       console.log('enablePersistence ERROR', err)
+      let offlineDisabled = false
+      if (err.code === 'failed-precondition') {
+        // Multiple tabs open, persistence can only be enabled
+        // in one tab at a a time.
+        offlineDisabled = true
+      } else if (err.code === 'unimplemented') {
+        // The current browser does not support all of the
+        // features required to enable persistence.
+        offlineDisabled = true
+      }
+      if (offlineDisabled) {
+      }
       initializeUser(vue)
     })
 }
