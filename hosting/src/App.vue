@@ -174,6 +174,9 @@ export default {
   },
 
   computed: {
+    isDevelopment () {
+      return this.$store.getters.isDevelopment
+    },
     offline () {
       return this.$store.getters.offline
     },
@@ -250,9 +253,6 @@ export default {
     }
   },
   methods: {
-    isDevelopment () {
-      return this.$store.getters.isDevelopment
-    },
     updateOnlineStatus () {
       this.$store.commit('setOffline', !(navigator.onLine))
     },

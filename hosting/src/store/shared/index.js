@@ -6,6 +6,7 @@ export default {
   },
   mutations: {
     setOffline (state, payload) {
+      // console.log('setOffline', payload)
       state.offline = payload
     },
     setLoading (state, payload) {
