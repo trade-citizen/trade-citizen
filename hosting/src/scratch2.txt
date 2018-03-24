@@ -1,0 +1,21 @@
+
+Agricum
+Gallette	Buy 5	Sell 3
+Hickes		Buy 4	Sell 2
+Terra		Buy 6	Sell 3
+Tram		Buy 9	Sell 5
+
+Commodity	Buy Station	Buy Price	Margin	Sell Price	Sell Station
+Agricum		Gallette	5		0.4	2		Hickes
+Agricum		Gallette	5		0.6	3		Terra
+Agricum		Gallette	5		1.0	5		Tram
+Agricum		Hickes		4		0.75	3		Gallette
+Agricum		Hickes		4		0.75	3		Terra
+Agricum		Hickes		4		1.25	5		Tram
+Agricum		Terra		6		0.5	3		Gallette
+Agricum		Terra		6		0.33	2		Hickes
+Agricum		Terra		6		0.83	5		Tram
+Agricum		Tram		9		0.33	3		Gallette
+Agricum		Tram		9		0.22	2		Hickes
+Agricum		Tram		9		0.33	3		Terra
+
