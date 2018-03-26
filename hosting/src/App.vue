@@ -101,6 +101,7 @@
                 v-else
                 icon
                 class="ml-0 mr-2"
+                :disabled="!saveable"
                 @click="editLocation(true)"
                 >
                 <v-icon class="mx-1">edit</v-icon>
@@ -109,6 +110,7 @@
             <v-btn
               icon
               class="ml-0 mr-2"
+              :disabled="!saveable"
               @click="saveLocation"
               >
               <v-icon class="mx-1">save</v-icon>
@@ -118,6 +120,7 @@
             <v-btn
               flat
               class="ml-0 mr-2"
+              :disabled="offline"
               @click="signin"
               >
               <v-icon class="mx-1">lock_open</v-icon>
@@ -128,7 +131,7 @@
       </template>
     </v-toolbar>
     <v-content>
-      <v-progress-linear :indeterminate="true" class="ma-0" v-if="loading"></v-progress-linear>      
+      <v-progress-linear :indeterminate="true" class="ma-0" v-if="showProgress"></v-progress-linear>      
       <v-fade-transition mode="out-in">
         <router-view></router-view>
       </v-fade-transition>
@@ -178,8 +181,13 @@ export default {
     offline () {
       return this.$store.getters.offline
     },
-    loading () {
-      return this.$store.getters.loading
+    showProgress () {
+      let showProgress = this.$store.getters.initializing || this.$store.getters.saving
+      return showProgress
+    },
+    saveable () {
+      let saveable = !this.offline && !this.showProgress
+      return saveable
     },
     locationId: {
       get: function () {

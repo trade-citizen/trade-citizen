@@ -67,11 +67,11 @@ function firebaseInitialize (vue) {
 }
 
 function initializeUser (vue) {
-  firebase.auth().onAuthStateChanged((user) => {
+  firebase.auth().onAuthStateChanged(user => {
     // console.log('onAuthStateChanged', user)
     if (user) {
       vue.$store.dispatch('autoSignIn', user)
     }
-    vue.$store.dispatch('fetchTradeinfo')
+    vue.$store.dispatch('initialize')
   })
 }

@@ -17,6 +17,7 @@ const firestoreServer = functions.firestore
 const admin = require('firebase-admin')
 admin.initializeApp(functions.config().firebase)
 const firestoreClient = admin.firestore()
+const firebasePushId = require('./firebase-push-id').firebasePushId
 
 const FIELD_IS_TIMESTAMPED = 'isTimestamped'
 const FIELD_TIMESTAMP_SERVER_PRICED = 'timestampServerPriced'
@@ -45,6 +46,74 @@ const FIELD_CACHED_BUY_SELL_INFO = '_cachedBuySellInfo'
  *    invocations in an unexpected order."
  */
 
+// https://firebase.google.com/docs/functions/callable
+// https://firebase.google.com/docs/reference/functions/functions.https.HttpsError
+// https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto
+exports.addLocationPrice = functions.https.onCall((data, context) => {
+  console.log('addLocationPrice data', data, 'context', context)
+
+  const timestampNew = new Date()
+
+  const userId = context.auth.uid
+  if (!userId) {
+    throw new functions.https.HttpsError('unauthenticated', 'Not authenticated')
+  }
+  
+  const deploymentId = 'test'
+  const locationId = data.locationId
+  console.log('addLocationPrice locationId', locationId)
+  const pricesNew = data.prices
+  console.log('addLocationPrice pricesNew', pricesNew)
+  console.log('addLocationPrice timestampNew', timestampNew)
+
+  return firestoreClient.collection(`/deployments/${deploymentId}/locations/${locationId}/prices`)
+    .where(FIELD_IS_TIMESTAMPED, '==', true)
+    .orderBy(FIELD_TIMESTAMP_SERVER_PRICED, 'desc')
+    .limit(1)
+    .get()
+    .then(snapshotPrices => {
+      const snapshotPricesSize = snapshotPrices.size
+      let changed
+      switch (snapshotPricesSize) {
+        case 0:
+          changed = true
+          break
+        case 1:
+          const docPriceOld = snapshotPrices.docs[0]
+          const pricesOld = docPriceOld.get('prices')
+          console.log('addLocationPrice pricesOld', pricesOld)
+          const timestampOld = docPriceOld.get(FIELD_TIMESTAMP_SERVER_PRICED)
+          console.log('addLocationPrice timestampOld', timestampOld)
+          changes = diff(pricesOld, pricesNew)
+          console.log('addLocationPrice changes', changes)
+          changed = !!changes
+          break
+        default:
+          throw new functions.https.HttpsError('internal', `Unexpected limit(1) returned ${snapshotPricesSize} items`)
+      }
+      if (!changed) {
+        throw new functions.https.HttpsError('cancelled', 'No prices changed')
+      }
+
+      const docPath = `/deployments/${deploymentId}/locations/${locationId}/prices/${firebasePushId(true)}`
+      const docData = {
+        userId,
+        prices: pricesNew,
+        [FIELD_IS_TIMESTAMPED]: true,
+        [FIELD_TIMESTAMP_SERVER_PRICED]: timestampNew
+      }
+      return firestoreClient.doc(docPath)
+        .set(docData)
+        .then(result => {
+          // console.log('addLocationPrice result', result)
+          return { path: docPath, data: docData }
+        })
+    })
+})
+
+// To Test:
+//  firebase > onLocationPriceCreate( { prices: { '4PqeXIFIa47BFsKsjKLa': { priceBuy: 7, priceSell: 3 } } }, { params: { deploymentId: 'test', locationId: 'zsrxhjHzhfXxUCPs73EF', priceId: 'zdqkRhVhBcw8E9TvpCU4' } })
+//  firebase > onLocationPriceCreate( { prices: { '4PqeXIFIa47BFsKsjKLa': { priceBuy: 7, priceSell: 4 } } }, { params: { deploymentId: 'test', locationId: 'zsrxhjHzhfXxUCPs73EF', priceId: 'zdqkRhVhBcw8E9TvpCU4' } })
 exports.onLocationPriceCreate = firestoreServer
   .document('/deployments/{deploymentId}/locations/{locationId}/prices/{priceId}')
   .onCreate(onLocationPriceCreate)

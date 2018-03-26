@@ -1,17 +1,12 @@
 export default {
   state: {
     offline: false,
-    loading: false,
     error: null
   },
   mutations: {
     setOffline (state, payload) {
       // console.log('setOffline', payload)
       state.offline = payload
-    },
-    setLoading (state, payload) {
-      // console.log('setLoading', payload)
-      state.loading = payload
     },
     setError (state, payload) {
       // console.log('setError', payload)
@@ -32,9 +27,6 @@ export default {
     },
     offline (state) {
       return state.offline
-    },
-    loading (state) {
-      return state.loading
     },
     error (state) {
       return state.error
