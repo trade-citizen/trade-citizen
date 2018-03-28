@@ -19,6 +19,7 @@
  * Other references:
  * https://firebase.googleblog.com/2015/02/the-2120-ways-to-ensure-unique_68.html
  */
+'use strict'
 
 // Modeled after base64 web-safe chars, but ordered by ASCII.
 const PUSH_CHARS = '-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz'

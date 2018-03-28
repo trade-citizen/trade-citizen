@@ -38,10 +38,7 @@ function firebaseInitialize (vue) {
   firebase.initializeApp({
     apiKey: 'AIzaSyDfKA77M6vyodG8_BprKviSgNtB0zLoVDU',
     authDomain: 'trade-citizen.firebaseapp.com',
-    databaseURL: 'https://trade-citizen.firebaseio.com',
-    projectId: 'trade-citizen',
-    storageBucket: 'trade-citizen.appspot.com',
-    messagingSenderId: '676462601414'
+    projectId: 'trade-citizen'
   })
   firebase.firestore().enablePersistence()
     .then(function () {

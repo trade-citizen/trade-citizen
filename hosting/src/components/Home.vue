@@ -36,11 +36,12 @@
       -->
       <v-data-table
         class="elevation-1"
-        hide-actions
         must-sort
-        v-bind:pagination.sync="pagination"
         :headers="headers"
-        :custom-sort="sortBuySellRatios"
+        :pagination.sync="buySellRatiosPagination"
+        :rows-per-page-items="buySellRatiosPagination.rowsPerPageItems"
+        rows-per-page-text="Max Results"
+        :total-items="buySellRatiosPagination.totalItems"
         :items="buySellRatios"
         no-data-text="Soon™..."
         >
@@ -164,10 +165,6 @@ export default {
         { sortable: true, align: 'left', text: 'Sell Price', value: 'sellPrice' },
         { sortable: true, align: 'left', text: 'Sell Location', value: 'sellLocationName' }
       ],
-      pagination: {
-        sortBy: 'ratio',
-        descending: false
-      },
       filter: {
         illegal: false,
         commodities: [],
@@ -179,6 +176,15 @@ export default {
       toast: false,
       toastMessage: null,
       toastTimeoutMillis: 3000
+    }
+  },
+  watch: {
+    buySellRatiosPagination: {
+      handler () {
+        // console.log('watch buySellRatiosPagination queryBuySellRatios')
+        this.$store.dispatch('queryBuySellRatios')
+      },
+      deep: true
     }
   },
   mounted: function () {
@@ -226,6 +232,14 @@ export default {
     },
     buySellRatios () {
       return this.$store.getters.buySellRatios
+    },
+    buySellRatiosPagination: {
+      get: function () {
+        return this.$store.getters.buySellRatiosPagination
+      },
+      set: function (value) {
+        this.$store.commit('setBuySellRatiosPagination', value)
+      }
     },
     locationItemPriceList () {
       let prices = this.$store.getters.locationItemPriceList(this.locationId)

@@ -2,14 +2,30 @@ import * as firebase from 'firebase'
 
 export default {
   state: {
+    loading: false,
+    error: null,
     user: null
   },
   mutations: {
+    setLoading (state, payload) {
+      // console.log('setLoading', payload)
+      state.loading = payload
+    },
+    setError (state, payload) {
+      // console.log('setError', payload)
+      state.error = payload
+    },
+    clearError (state) {
+      state.error = null
+    },
     setUser (state, payload) {
       state.user = payload
     }
   },
   actions: {
+    clearError ({commit}) {
+      commit('clearError')
+    },
     signUserUp ({commit}, payload) {
       commit('setLoading', true)
       commit('clearError')
@@ -168,6 +184,9 @@ export default {
     }
   },
   getters: {
+    error (state) {
+      return state.error
+    },
     user (state) {
       return state.user
     }

@@ -11,12 +11,17 @@
 //  firebase > onLocationPriceCreate( { prices: { '4PqeXIFIa47BFsKsjKLa': { priceBuy: 7, priceSell: 3 } } }, { params: { deploymentId: 'test', locationId: 'zsrxhjHzhfXxUCPs73EF', priceId: 'zdqkRhVhBcw8E9TvpCU4' } })
 //  firebase > onLocationPriceCreate( { prices: { '4PqeXIFIa47BFsKsjKLa': { priceBuy: 7, priceSell: 4 } } }, { params: { deploymentId: 'test', locationId: 'zsrxhjHzhfXxUCPs73EF', priceId: 'zdqkRhVhBcw8E9TvpCU4' } })
 //
-
+'use strict'
 const functions = require('firebase-functions')
-const firestoreServer = functions.firestore
 const admin = require('firebase-admin')
 admin.initializeApp(functions.config().firebase)
+
+exports.hello = functions.https.onRequest((req, res) => {
+  res.send('world')
+})
+
 const firestoreClient = admin.firestore()
+const firestoreServer = functions.firestore
 const firebasePushId = require('./firebase-push-id').firebasePushId
 
 const FIELD_IS_TIMESTAMPED = 'isTimestamped'
@@ -59,9 +64,13 @@ exports.addLocationPrice = functions.https.onCall((data, context) => {
     throw new functions.https.HttpsError('unauthenticated', 'Not authenticated')
   }
   
-  const deploymentId = 'test'
+  const deploymentId = data.deploymentId
+  // console.log('addLocationPrice deploymentId', deploymentId)
   const locationId = data.locationId
-  console.log('addLocationPrice locationId', locationId)
+  // console.log('addLocationPrice locationId', locationId)
+  if (!deploymentId || !locationId) {
+    throw new functions.https.HttpsError('invalid-argument', 'Invalid argument(s)')
+  }
   const pricesNew = data.prices
   console.log('addLocationPrice pricesNew', pricesNew)
   console.log('addLocationPrice timestampNew', timestampNew)
@@ -95,7 +104,8 @@ exports.addLocationPrice = functions.https.onCall((data, context) => {
         throw new functions.https.HttpsError('cancelled', 'No prices changed')
       }
 
-      const docPath = `/deployments/${deploymentId}/locations/${locationId}/prices/${firebasePushId(true)}`
+      const priceId = firebasePushId(true)
+      const docPath = `/deployments/${deploymentId}/locations/${locationId}/prices/${priceId}`
       const docData = {
         userId,
         prices: pricesNew,
@@ -106,7 +116,24 @@ exports.addLocationPrice = functions.https.onCall((data, context) => {
         .set(docData)
         .then(result => {
           // console.log('addLocationPrice result', result)
-          return { path: docPath, data: docData }
+          const event = {
+            timestamp: timestampNew,
+            params: {
+              deploymentId,
+              locationId,
+              priceId
+            },
+            data: {
+              exists: true,
+              data () {
+                return docData
+              }
+            }
+          }
+          return onLocationPriceCreate(event)
+            .then(result => {
+              return { path: docPath, data: docData }
+            })
         })
     })
 })
@@ -129,31 +156,35 @@ function onLocationPriceCreate(event) {
   const locationId = params.locationId
   const priceId = params.priceId
 
-  const newDocumentSnapshot = event.data
-  // console.log('onLocationPriceCreate newDocumentSnapshot', newDocumentSnapshot)
-  const newDocumentData = newDocumentSnapshot.exists ? newDocumentSnapshot.data() : null
-  // console.log('onLocationPriceCreate newDocumentData', newDocumentData)
-  if (newDocumentData === null) {
-    console.error('onLocationPriceCreate newDocumentData === null; unhandled document deletion')
+  const newPricesDocumentSnapshot = event.data
+  // console.log('onLocationPriceCreate newPricesDocumentSnapshot', newPricesDocumentSnapshot)
+  const newPricesDocumentData = newPricesDocumentSnapshot.exists ? newPricesDocumentSnapshot.data() : null
+  // console.log('onLocationPriceCreate newPricesDocumentData', newPricesDocumentData)
+  if (newPricesDocumentData === null) {
+    console.error('onLocationPriceCreate newPricesDocumentData === null; unhandled document deletion')
     return
   }
-  const newDocumentRef = newDocumentSnapshot.ref
 
-  const newPrices = newDocumentData.prices
+  const newPrices = newPricesDocumentData.prices
   console.log('onLocationPriceCreate newPrices', newPrices)
 
-  // For now we rely on the client getting pushed the latest prices and self-validating setting any prices
+  const batch = firestoreClient.batch()
 
-  return firestoreClient.batch()
-    .set(event.data.ref, {
+  const newPricesDocumentRef = newPricesDocumentSnapshot.ref
+  if (newPricesDocumentRef) {
+    batch.set(newPricesDocumentRef, {
       [FIELD_IS_TIMESTAMPED]: true,
       [FIELD_TIMESTAMP_SERVER_PRICED]: eventTimestamp
     }, { merge: true })
-    .set(firestoreClient.doc(`/deployments/${deploymentId}/locations/${locationId}`), {
-      [FIELD_IS_TIMESTAMPED]: true,
-      [FIELD_TIMESTAMP_SERVER_PRICED]: eventTimestamp
-    }, { merge: true })
-    .commit()
+  }
+
+  const locationDocumentRef = firestoreClient.doc(`/deployments/${deploymentId}/locations/${locationId}`)
+  batch.set(locationDocumentRef, {
+    [FIELD_IS_TIMESTAMPED]: true,
+    [FIELD_TIMESTAMP_SERVER_PRICED]: eventTimestamp
+  }, { merge: true })
+
+  return batch.commit()
     .then(results => {
       // console.log('onLocationPriceCreate batch timestamp commited; next step...')
 
@@ -246,6 +277,7 @@ function updateBuySellInfo(eventTimestamp, deploymentId, locationId, priceId, ne
   //            '_cachedBuySellInfo', _cachedBuySellInfo)
 
   const pathBuySellInfo = `/deployments/${deploymentId}`
+
   if (!_cachedBuySellInfo) {
     return firestoreClient.doc(pathBuySellInfo)
       .get()
@@ -344,7 +376,7 @@ function updateBuySellInfo(eventTimestamp, deploymentId, locationId, priceId, ne
 
         const docId = `${itemId}:${locationIdBuy}:${locationIdSell}`
 
-        let buySellRatio = {
+        const buySellRatio = {
           itemId: itemId,
           buyLocationId: locationIdBuy,
           buyPrice: priceBuy,
@@ -390,9 +422,37 @@ function updateBuySellInfo(eventTimestamp, deploymentId, locationId, priceId, ne
     })
   }
 
+  //
+  //
+  //
+
+  //
+  // PROBLEM: Firestore documents are limited to 1MiB in size!
+  // https://firebase.google.com/docs/firestore/quotas#limits
+  // https://firebase.google.com/docs/firestore/storage-size
+  //
+  // TODO:(pv) Compute the size of _cachedBuySellInfo
+  // TODO:(pv) If the size of _cachedBuySellInfo gets near 1MiB then design sharding solution
+  //  https://firebase.google.com/docs/firestore/solutions/counters
+  // 
   writeBatch.set(firestoreClient.doc(pathBuySellInfo), {
       [FIELD_CACHED_BUY_SELL_INFO]: _cachedBuySellInfo
     }, { merge: true })
+
+  //
+  //
+  //
+
+  const buySellRatiosCount = Object.keys(buySellRatiosNew).length
+
+  const pathBuySellRatiosCount = `/deployments/${deploymentId}`
+  writeBatch.set(firestoreClient.doc(pathBuySellRatiosCount), {
+    buySellRatiosCount: buySellRatiosCount
+  }, { merge: true })
+
+  //
+  //
+  //
 
   console.log('updateBuySellInfo writeBatch COMMIT...')//, writeBatch)
   return writeBatch.commit() 

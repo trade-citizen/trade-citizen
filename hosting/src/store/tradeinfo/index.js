@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import * as firebase from 'firebase'
+import 'firebase/firestore'
 import 'firebase/functions'
-import firebasePushId from './firebase-push-id'
 
 class PriceError extends Error {
   constructor (itemId, buyOrSell, message) {
@@ -11,12 +11,41 @@ class PriceError extends Error {
   }
 }
 
-const ROOT = '/deployments/' + (process.env.NODE_ENV === 'production' ? 'production' : 'test')
+const IS_PRODUCTION = process.env.NODE_ENV === 'production'
+const DEPLOYMENT_ID = IS_PRODUCTION ? 'production' : 'test'
+const ROOT = `/deployments/${DEPLOYMENT_ID}`
 const FIELD_IS_TIMESTAMPED = 'isTimestamped'
 const FIELD_TIMESTAMP_SERVER_PRICED = 'timestampServerPriced'
+/*
+ * This is weird: import 'firebase/firestore' does not support Query.offset(...)...
+ * https://firebase.google.com/docs/reference/js/firebase.firestore.Query
+ * ...but import 'firebase-admin' does:
+ * https://cloud.google.com/nodejs/docs/reference/firestore/0.13.x/Query#offset
+ *
+ * import 'firebase-admin' actually results in import '@google-cloud/firestore'.
+ *
+ * Maybe there is a [safe] way to use that or firebase-admin here.
+ *
+ * NOTE that there is also some '@firebase/firestore' package too:
+ * https://www.npmjs.com/package/@firebase/firestore
+ * But this appears to resolve to the same thing as import 'firebase/firestore'
+ *
+ * Set this to true if they ever add "offset" to Firestore's Web SDK.
+ *
+ * Finally, consider this problem too:
+ * https://firebase.google.com/docs/firestore/pricing#operations
+ * "Managing large result sets"
+ * "... when you send a query that includes an offset, you are charged a read for each skipped document."
+ * THAT SUCKS!
+ * So, IS_QUERY_OFFSET_SUPPORTED may never be enabled for pricing reasons alone.
+ */
+const IS_QUERY_OFFSET_SUPPORTED = false
 
 export default {
   state: {
+    initializing: true,
+    initialized: false,
+    saving: false,
     selectedLocationId: null,
     itemCategoriesMap: {},
     itemCategoriesList: [],
@@ -27,10 +56,16 @@ export default {
     locationsList: [],
     locationsItemsPricesMap: {},
     locationsItemsPricesMetadataMap: {},
-    buySellRatios: [],
-    initializing: true,
-    initialized: false,
-    saving: false
+    buySellRatiosPagination: {
+      descending: true,
+      page: 1,
+      rowsPerPage: 10,
+      sortBy: 'ratio',
+      totalItems: 0,
+      rowsPerPageItems: [5, 10, 25, 50, 100]
+    },
+    buySellRatiosUnsubscribe: null,
+    buySellRatios: []
   },
   mutations: {
     setSelectedLocationId (state, payload) {
@@ -93,9 +128,6 @@ export default {
           return 0
         })
     },
-    _setBuySellRatios (state, payload) {
-      state.buySellRatios = payload
-    },
     _setLocationItemPrices (state, { locationId, locationItemPrices, metadata }) {
       let locationItemPricesList = state.itemsList
         .map(item => {
@@ -122,6 +154,19 @@ export default {
       } else {
         Vue.set(state.locationsItemsPricesMetadataMap, locationId, undefined)
       }
+    },
+
+    setBuySellRatiosPagination (state, payload) {
+      // console.log('setBuySellRatiosPagination payload', payload)
+      state.buySellRatiosPagination = payload
+    },
+    _setBuySellRatiosUnsubscribe (state, payload) {
+      state.buySellRatiosUnsubscribe = payload
+    },
+    _setBuySellRatios (state, payload) {
+      state.buySellRatios = payload
+      let totalItems = payload ? payload.length : 0
+      Vue.set(state.buySellRatiosPagination, 'totalItems', totalItems)
     }
   },
   actions: {
@@ -319,66 +364,6 @@ export default {
       })
     },
 
-    queryBuySellRatios (context) {
-      // console.log('queryBuySellRatios')
-      let path = `${ROOT}/buySellRatios`
-      // console.log('_getBuySellRatios path', path)
-      firebase.firestore().collection(path)
-        .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
-          context.dispatch('_onQueriedBuySellRatios', querySnapshot)
-        }, (error) => {
-          console.error('queryBuySellRatios', error)
-        })
-    },
-    _onQueriedBuySellRatios (context, querySnapshot) {
-      let docChanges = querySnapshot.docChanges
-      // console.log('_onQueriedBuySellRatios docChanges', docChanges)
-      if (docChanges.length === 0) {
-        // console.warn('_onQueriedBuySellRatios docChanges.length === 0 ignoring')
-        return
-      }
-      // console.log('_onQueriedBuySellRatios')
-
-      let buySellRatios = []
-
-      docChanges.forEach((change) => {
-        // console.log('_gotBuySellRatios change.type', change.type)
-        let doc = change.doc
-        // console.log('_onQueriedBuySellRatios doc', doc)
-        // let docId = doc.id
-        // let fromCache = doc.metadata.fromCache
-        // console.log('_onQueriedBuySellRatios ' + docId + ' fromCache', fromCache)
-        let docData = doc.data()
-        // console.log('_gotBuySellRatios docData', docData)
-
-        let itemId = docData.itemId
-        let itemName = context.state.itemsMap[itemId].name
-        let buyLocationId = docData.buyLocationId
-        // console.log('_onQueriedBuySellRatios buyLocationId', buyLocationId)
-        let buyLocationName = context.state.locationsMap[buyLocationId].name
-        let buyPrice = docData.buyPrice
-        let ratio = docData.ratio
-        let sellPrice = docData.sellPrice
-        let sellLocationId = docData.sellLocationId
-        // console.log('_onQueriedBuySellRatios sellLocationId', sellLocationId)
-        let sellLocationName = context.state.locationsMap[sellLocationId].name
-
-        let buySellRatio = {
-          itemName: itemName,
-          buyLocationName: buyLocationName,
-          buyPrice: buyPrice,
-          ratio: ratio,
-          sellPrice: sellPrice,
-          sellLocationName: sellLocationName
-        }
-        // console.log('_onQueriedBuySellRatios buySellRatio', buySellRatio)
-        buySellRatios.push(buySellRatio)
-      })
-
-      // console.log('_onQueriedBuySellRatios buySellRatios', buySellRatios)
-      context.commit('_setBuySellRatios', buySellRatios)
-    },
-
     _queryLocationItemPrices (context, locationId) {
       // console.log('_queryLocationItemPrices locationId', locationId)
       let path = `${ROOT}/locations/${locationId}/prices`
@@ -450,7 +435,7 @@ export default {
       if (!context.state.initialized &&
         Object.keys(context.state.locationsItemsPricesMap).length === context.state.locationsList.length) {
         // Only _setInitialized after all prices have come back
-        // console.info('%c_onQueriedLocationItemPrices INITIALIZED!', 'color: green;')
+        // console.info('%c_testIfInitialized INITIALIZED!', 'color: green;')
         context.commit('_setInitialized')
 
         if (context.state.buySellRatios.length === 0) {
@@ -459,9 +444,121 @@ export default {
       }
     },
 
+    queryBuySellRatios (context) {
+      if (!context.state.initialized) {
+        // console.log('queryBuySellRatios initialized == false; ignoring')
+        return
+      }
+
+      let buySellRatiosUnsubscribe = context.state.buySellRatiosUnsubscribe
+      if (buySellRatiosUnsubscribe) {
+        // console.log('queryBuySellRatios buySellRatiosUnsubscribe()')
+        buySellRatiosUnsubscribe()
+      }
+
+      //
+      // https://vuetifyjs.com/en/components/data-tables#example-server
+      // https://github.com/vuetifyjs/vuetify/blob/master/src/mixins/data-iterable.js#L27
+      //
+      let buySellRatiosPagination = context.state.buySellRatiosPagination
+      // console.log('queryBuySellRatios buySellRatiosPagination', buySellRatiosPagination)
+      let orderBy = buySellRatiosPagination.sortBy
+      switch (orderBy) {
+        case 'itemName':
+          orderBy = 'itemId'
+          break
+        case 'buyLocationName':
+          orderBy = 'buyLocationId'
+          break
+        case 'sellLocationName':
+          orderBy = 'sellLocationId'
+          break
+      }
+      let descending = buySellRatiosPagination.descending
+      let direction = descending ? 'desc' : 'asc'
+      let limit = buySellRatiosPagination.rowsPerPage
+      let pageNumber = buySellRatiosPagination.page
+      let offset
+      if (IS_QUERY_OFFSET_SUPPORTED) {
+        offset = (pageNumber - 1) * limit
+      }
+      let path = `${ROOT}/buySellRatios`
+      // console.log('queryBuySellRatios path', path, 'orderBy', orderBy, 'direction', direction, 'offset', offset, 'limit', limit)
+      let query = firebase.firestore().collection(path)
+        .orderBy(orderBy, direction)
+      if (offset) {
+        query.offset(offset)
+      }
+      buySellRatiosUnsubscribe = query
+        .limit(limit)
+        .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
+          context.dispatch('_onQueriedBuySellRatios', querySnapshot)
+        }, (error) => {
+          console.error('queryBuySellRatios', error)
+        })
+      context.commit('_setBuySellRatiosUnsubscribe', buySellRatiosUnsubscribe)
+    },
+    _onQueriedBuySellRatios (context, querySnapshot) {
+      // console.log('_onQueriedBuySellRatios querySnapshot', querySnapshot)
+      let docChanges = querySnapshot.docChanges
+      // console.log('_onQueriedBuySellRatios docChanges', docChanges)
+      if (docChanges.length === 0) {
+        // console.warn('_onQueriedBuySellRatios docChanges.length === 0 ignoring')
+        return
+      }
+      // console.log('_onQueriedBuySellRatios')
+
+      let buySellRatios = []
+
+      docChanges.forEach((change) => {
+        // console.log('_onQueriedBuySellRatios change', change)
+        let doc = change.doc
+        // console.log('_onQueriedBuySellRatios doc', doc)
+        // let docId = doc.id
+        // let fromCache = doc.metadata.fromCache
+        // console.log('_onQueriedBuySellRatios ' + docId + ' fromCache', fromCache)
+        let docData = doc.data()
+        // console.log('_onQueriedBuySellRatios docData', docData)
+
+        let itemId = docData.itemId
+        let itemName = context.state.itemsMap[itemId].name
+        let buyLocationId = docData.buyLocationId
+        // console.log('_onQueriedBuySellRatios buyLocationId', buyLocationId)
+        let buyLocationName = context.state.locationsMap[buyLocationId].name
+        let buyPrice = docData.buyPrice
+        let ratio = docData.ratio
+        let sellPrice = docData.sellPrice
+        let sellLocationId = docData.sellLocationId
+        // console.log('_onQueriedBuySellRatios sellLocationId', sellLocationId)
+        let sellLocationName = context.state.locationsMap[sellLocationId].name
+
+        let buySellRatio = {
+          itemName: itemName,
+          buyLocationName: buyLocationName,
+          buyPrice: buyPrice,
+          ratio: ratio,
+          sellPrice: sellPrice,
+          sellLocationName: sellLocationName
+        }
+        // console.log('_onQueriedBuySellRatios buySellRatio', buySellRatio)
+        buySellRatios.push(buySellRatio)
+      })
+
+      // console.log('_onQueriedBuySellRatios buySellRatios', buySellRatios)
+      context.commit('_setBuySellRatios', buySellRatios)
+    },
+
     saveLocationItemPrices (context, { locationId, locationItemPrices }) {
       // console.log('saveLocationItemPrices locationId:', locationId)
       // console.log('saveLocationItemPrices locationItemPrices:', locationItemPrices)
+
+      let user = context.rootState.user.user
+      // console.log('saveLocationItemPrices user', user)
+      let userId = user && user.id
+      // console.log('saveLocationItemPrices userId', userId)
+      if (!userId) {
+        return Promise.reject(new Error('Not authenticated'))
+      }
 
       let prices = {}
 
@@ -519,27 +616,27 @@ export default {
         return Promise.reject(new Error('No prices changed'))
       }
 
-      // eslint-disable-next-line no-constant-condition
-      if (true) {
-        let data = {
-          locationId
-        }
-        if (Object.keys(prices).length) {
-          data.prices = prices
-        }
-        // console.log('saveLocationItemPrices data', data)
-        context.commit('_setSaving', true)
-        return firebase.functions().httpsCallable('addLocationPrice')(data)
-          .then(result => {
-            console.log('addLocationPrice result', result)
-            context.commit('_setSaving', false)
-            return Promise.resolve(result)
-          }, error => {
-            context.commit('_setSaving', false)
-            return Promise.reject(error)
-          })
+      let data = {
+        deploymentId: DEPLOYMENT_ID,
+        locationId
       }
+      if (Object.keys(prices).length) {
+        data.prices = prices
+      }
+      // console.log('saveLocationItemPrices data', data)
+      context.commit('_setSaving', true)
+      return firebase.functions().httpsCallable('addLocationPrice')(data)
+        .then(result => {
+          // console.log('addLocationPrice result', result)
+          context.commit('_setSaving', false)
+          return Promise.resolve(result)
+        }, error => {
+          console.error('addLocationPrice ERROR', error)
+          context.commit('_setSaving', false)
+          return Promise.reject(error)
+        })
 
+      /*
       let docData = {
         userId: userId
       }
@@ -563,6 +660,7 @@ export default {
           context.commit('setSaving', false)
           return Promise.reject(error)
         })
+        */
     }
   },
   getters: {
@@ -603,6 +701,9 @@ export default {
       return (locationId) => {
         return state.locationsItemsPricesMetadataMap[locationId]
       }
+    },
+    buySellRatiosPagination (state) {
+      return state.buySellRatiosPagination
     },
     buySellRatios (state) {
       return state.buySellRatios
