@@ -540,19 +540,23 @@ export default {
         // console.log('_onQueriedBuySellRatios buyLocationId', buyLocationId)
         let buyLocationName = context.state.locationsMap[buyLocationId].name
         let buyPrice = docData.buyPrice
+        let buyTimestamp = docData.buyTimestamp
         let ratio = docData.ratio
         let sellPrice = docData.sellPrice
+        let sellTimestamp = docData.sellTimestamp
         let sellLocationId = docData.sellLocationId
         // console.log('_onQueriedBuySellRatios sellLocationId', sellLocationId)
         let sellLocationName = context.state.locationsMap[sellLocationId].name
 
         let buySellRatio = {
-          itemName: itemName,
-          buyLocationName: buyLocationName,
-          buyPrice: buyPrice,
-          ratio: ratio,
-          sellPrice: sellPrice,
-          sellLocationName: sellLocationName
+          itemName,
+          buyLocationName,
+          buyPrice,
+          buyTimestamp,
+          ratio,
+          sellPrice,
+          sellTimestamp,
+          sellLocationName
         }
         // console.log('_onQueriedBuySellRatios buySellRatio', buySellRatio)
         buySellRatios.push(buySellRatio)
