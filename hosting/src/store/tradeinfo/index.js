@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import * as firebase from 'firebase'
-import firebasePushId from './firebase-push-id'
+import 'firebase/firestore'
+import 'firebase/functions'
 
 class PriceError extends Error {
   constructor (itemId, buyOrSell, message) {
@@ -10,12 +11,41 @@ class PriceError extends Error {
   }
 }
 
-const ROOT = '/deployments/' + (process.env.NODE_ENV === 'production' ? 'production' : 'test')
-const FIELD_IS_TIMESTAMPED = 'isTimestamped'
-const FIELD_TIMESTAMP_SERVER_PRICED = 'timestampServerPriced'
+const IS_PRODUCTION = process.env.NODE_ENV === 'production'
+const DEPLOYMENT_ID = IS_PRODUCTION ? 'production' : 'test'
+const ROOT = `/deployments/${DEPLOYMENT_ID}`
+const FIELD_TIMESTAMPED = 'timestamped'
+const FIELD_TIMESTAMP = 'timestamp'
+/*
+ * This is weird: import 'firebase/firestore' does not support Query.offset(...)...
+ * https://firebase.google.com/docs/reference/js/firebase.firestore.Query
+ * ...but import 'firebase-admin' does:
+ * https://cloud.google.com/nodejs/docs/reference/firestore/0.13.x/Query#offset
+ *
+ * import 'firebase-admin' actually results in import '@google-cloud/firestore'.
+ *
+ * Maybe there is a [safe] way to use that or firebase-admin here.
+ *
+ * NOTE that there is also some '@firebase/firestore' package too:
+ * https://www.npmjs.com/package/@firebase/firestore
+ * But this appears to resolve to the same thing as import 'firebase/firestore'
+ *
+ * Set this to true if they ever add "offset" to Firestore's Web SDK.
+ *
+ * Finally, consider this problem too:
+ * https://firebase.google.com/docs/firestore/pricing#operations
+ * "Managing large result sets"
+ * "... when you send a query that includes an offset, you are charged a read for each skipped document."
+ * THAT SUCKS!
+ * So, IS_QUERY_OFFSET_SUPPORTED may never be enabled for pricing reasons alone.
+ */
+const IS_QUERY_OFFSET_SUPPORTED = false
 
 export default {
   state: {
+    initializing: true,
+    initialized: false,
+    saving: false,
     selectedLocationId: null,
     itemCategoriesMap: {},
     itemCategoriesList: [],
@@ -26,11 +56,29 @@ export default {
     locationsList: [],
     locationsItemsPricesMap: {},
     locationsItemsPricesMetadataMap: {},
+    buySellRatiosPagination: {
+      descending: true,
+      page: 1,
+      rowsPerPage: 10,
+      sortBy: 'ratio',
+      totalItems: 0,
+      rowsPerPageItems: [5, 10, 25, 50, 100]
+    },
+    buySellRatiosUnsubscribe: null,
     buySellRatios: []
   },
   mutations: {
     setSelectedLocationId (state, payload) {
       state.selectedLocationId = payload
+    },
+    _setInitialized (state) {
+      // console.log('_setInitialized')
+      state.initializing = false
+      state.initialized = true
+    },
+    _setSaving (state, payload) {
+      // console.log('_setSaving', payload)
+      state.saving = payload
     },
     _addItemCategory (state, payload) {
       Vue.set(state.itemCategoriesMap, payload.id, payload)
@@ -80,9 +128,6 @@ export default {
           return 0
         })
     },
-    _setBuySellRatios (state, payload) {
-      state.buySellRatios = payload
-    },
     _setLocationItemPrices (state, { locationId, locationItemPrices, metadata }) {
       let locationItemPricesList = state.itemsList
         .map(item => {
@@ -109,43 +154,56 @@ export default {
       } else {
         Vue.set(state.locationsItemsPricesMetadataMap, locationId, undefined)
       }
+    },
+
+    setBuySellRatiosPagination (state, payload) {
+      // console.log('setBuySellRatiosPagination payload', payload)
+      state.buySellRatiosPagination = payload
+    },
+    _setBuySellRatiosUnsubscribe (state, payload) {
+      state.buySellRatiosUnsubscribe = payload
+    },
+    _setBuySellRatios (state, payload) {
+      state.buySellRatios = payload
+      let totalItems = payload ? payload.length : 0
+      Vue.set(state.buySellRatiosPagination, 'totalItems', totalItems)
+    },
+    _setBuySellRatiosCount (state, payload) {
+      Vue.set(state.buySellRatiosPagination, 'totalItems', payload)
     }
   },
   actions: {
 
-    fetchTradeinfo (context) {
-      context.commit('setLoading', true)
-
-      context.dispatch('_getItemCategories')
+    initialize (context) {
+      context.dispatch('_queryItemCategories')
     },
 
-    _getItemCategories (context) {
-      // console.log('_getItemCategories')
+    _queryItemCategories (context) {
+      // console.log('_queryItemCategories')
       let path = `${ROOT}/itemCategories`
-      // console.log('_getItemCategories path', path)
+      // console.log('_queryItemCategories path', path)
       firebase.firestore().collection(path)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
-          context.dispatch('_gotItemCategories', querySnapshot)
+          context.dispatch('_onQueriedItemCategories', querySnapshot)
         }, (error) => {
-          console.error('_getItemCategories', error)
-          context.commit('setLoading', false)
+          console.error('_queryItemCategories', error)
         })
     },
-    _gotItemCategories (context, querySnapshot) {
+    _onQueriedItemCategories (context, querySnapshot) {
       let docChanges = querySnapshot.docChanges
-      // console.log('_gotItemCategories docChanges', docChanges)
+      // console.log('_onQueriedItemCategories docChanges', docChanges)
       if (docChanges.length === 0) {
-        // console.warn('_gotItemCategories docChanges.length === 0 ignoring')
+        // console.warn('_onQueriedItemCategories docChanges.length === 0 ignoring')
         return
       }
-      // console.log('_gotItemCategories')
+      // console.log('_onQueriedItemCategories')
       docChanges.forEach((change) => {
-        // console.log('_gotItemCategories change.type', change.type)
+        // console.log('_onQueriedItemCategories change.type', change.type)
         let doc = change.doc
-        // console.log('_gotItemCategories doc', doc)
+        // console.log('_onQueriedItemCategories doc', doc)
         let itemCategoryId = doc.id
         // let fromCache = doc.metadata.fromCache
-        // console.log('_gotItemCategories ' + itemCategoryId + ' fromCache', fromCache)
+        // console.log('_onQueriedItemCategories ' + itemCategoryId + ' fromCache', fromCache)
         if (// !fromCache ||
           context.state.itemCategoriesMap[itemCategoryId] === undefined) {
           let docData = doc.data()
@@ -162,37 +220,36 @@ export default {
       })
 
       if (context.state.itemsList.length === 0) {
-        context.dispatch('_getItems')
+        context.dispatch('_queryItems')
       }
     },
 
-    _getItems (context) {
-      // console.log('_getItems')
+    _queryItems (context) {
+      // console.log('_queryItems')
       let path = `${ROOT}/itemTypes`
-      // console.log('_getItems path', path)
+      // console.log('_queryItems path', path)
       firebase.firestore().collection(path)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
-          context.dispatch('_gotItems', querySnapshot)
+          context.dispatch('_onQueriedItems', querySnapshot)
         }, (error) => {
-          console.error('_getItems', error)
-          context.commit('setLoading', false)
+          console.error('_queryItems', error)
         })
     },
-    _gotItems (context, querySnapshot) {
+    _onQueriedItems (context, querySnapshot) {
       let docChanges = querySnapshot.docChanges
-      // console.log('_gotItems docChanges', docChanges)
+      // console.log('_onQueriedItems docChanges', docChanges)
       if (docChanges.length === 0) {
-        // console.warn('_gotItems docChanges.length === 0 ignoring')
+        // console.warn('_onQueriedItems docChanges.length === 0 ignoring')
         return
       }
-      // console.log('_gotItems')
+      // console.log('_onQueriedItems')
       docChanges.forEach((change) => {
-        // console.log('_gotItems change.type', change.type)
+        // console.log('_onQueriedItems change.type', change.type)
         let doc = change.doc
-        // console.log('_gotItems doc', doc)
+        // console.log('_onQueriedItems doc', doc)
         let itemId = doc.id
         // let fromCache = doc.metadata.fromCache
-        // console.log('_gotItems ' + itemId + ' fromCache', fromCache)
+        // console.log('_onQueriedItems ' + itemId + ' fromCache', fromCache)
         if (// !fromCache ||
           context.state.itemsMap[itemId] === undefined) {
           let docData = doc.data()
@@ -214,41 +271,40 @@ export default {
       })
 
       if (Object.keys(context.state.anchorsMap).length === 0) {
-        context.dispatch('_getAnchors')
+        context.dispatch('_queryAnchors')
       }
     },
 
-    _getAnchors (context) {
-      // console.log('_getAnchors')
+    _queryAnchors (context) {
+      // console.log('_queryAnchors')
       let path = `${ROOT}/anchors`
-      // console.log('_getAnchors path', path)
+      // console.log('_queryAnchors path', path)
       firebase.firestore().collection(path)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
-          context.dispatch('_gotAnchors', querySnapshot)
+          context.dispatch('_onQueriedAnchors', querySnapshot)
         }, (error) => {
-          console.error('_getAnchors', error)
-          context.commit('setLoading', false)
+          console.error('_queryAnchors', error)
         })
     },
-    _gotAnchors (context, querySnapshot) {
+    _onQueriedAnchors (context, querySnapshot) {
       let docChanges = querySnapshot.docChanges
-      // console.log('_gotAnchors docChanges', docChanges)
+      // console.log('_onQueriedAnchors docChanges', docChanges)
       if (docChanges.length === 0) {
-        // console.warn('_gotAnchors docChanges.length === 0 ignoring')
+        // console.warn('_onQueriedAnchors docChanges.length === 0 ignoring')
         return
       }
-      // console.log('_gotAnchors')
+      // console.log('_onQueriedAnchors')
       docChanges.forEach((change) => {
-        // console.log('_gotAnchors change.type', change.type)
+        // console.log('_onQueriedAnchors change.type', change.type)
         let doc = change.doc
-        // console.log('_gotAnchors doc', doc)
+        // console.log('_onQueriedAnchors doc', doc)
         let anchorId = doc.id
         // let fromCache = doc.metadata.fromCache
-        // console.log('_gotAnchors ' + anchorId + ' fromCache', fromCache)
+        // console.log('_onQueriedAnchors ' + anchorId + ' fromCache', fromCache)
         if (// !fromCache ||
           context.state.anchorsMap[anchorId] === undefined) {
           let docData = doc.data()
-          // console.log('_gotAnchors docData', docData)
+          // console.log('_onQueriedAnchors docData', docData)
           let anchor = {
             id: anchorId,
             name: docData.name,
@@ -261,37 +317,36 @@ export default {
       })
 
       if (context.state.locationsList.length === 0) {
-        context.dispatch('_getLocations')
+        context.dispatch('_queryLocations')
       }
     },
 
-    _getLocations (context) {
-      // console.log('_getLocations')
+    _queryLocations (context) {
+      // console.log('_queryLocations')
       let path = `${ROOT}/locations`
-      // console.log('_getLocations path', path)
+      // console.log('_queryLocations path', path)
       firebase.firestore().collection(path)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
-          context.dispatch('_gotLocations', querySnapshot)
+          context.dispatch('_onQueriedLocations', querySnapshot)
         }, (error) => {
-          console.error('_getLocations', error)
-          context.commit('setLoading', false)
+          console.error('_queryLocations', error)
         })
     },
-    _gotLocations (context, querySnapshot) {
+    _onQueriedLocations (context, querySnapshot) {
       let docChanges = querySnapshot.docChanges
-      // console.log('_gotLocations docChanges', docChanges)
+      // console.log('_onQueriedLocations docChanges', docChanges)
       if (docChanges.length === 0) {
-        // console.warn('_gotLocations docChanges.length === 0 ignoring')
+        // console.warn('_onQueriedLocations docChanges.length === 0 ignoring')
         return
       }
-      // console.log('_gotLocations')
+      // console.log('_onQueriedLocations')
       docChanges.forEach((change) => {
-        // console.log('_gotLocations change.type', change.type)
+        // console.log('_onQueriedLocations change.type', change.type)
         let doc = change.doc
-        // console.log('_gotLocations doc', doc)
+        // console.log('_onQueriedLocations doc', doc)
         let locationId = doc.id
         // let fromCache = doc.metadata.fromCache
-        // console.log('_gotLocations ' + locationId + ' fromCache', fromCache)
+        // console.log('_onQueriedLocations ' + locationId + ' fromCache', fromCache)
         if (// !fromCache ||
           context.state.locationsMap[locationId] === undefined) {
           let docData = doc.data()
@@ -307,121 +362,53 @@ export default {
           // console.log('location.name:' + location.name)
           context.commit('_addLocation', location)
 
-          context.dispatch('_getLocationItemPrices', locationId)
+          context.dispatch('_queryLocationItemPrices', locationId)
         }
       })
-
-      if (context.state.buySellRatios.length === 0) {
-        context.dispatch('_getBuySellRatios')
-      }
     },
 
-    _getBuySellRatios (context) {
-      // console.log('_getBuySellRatios')
-      let path = `${ROOT}/buySellRatios`
-      // console.log('_getBuySellRatios path', path)
-      firebase.firestore().collection(path)
-        .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
-          context.dispatch('_gotBuySellRatios', querySnapshot)
-        }, (error) => {
-          console.error('_getBuySellRatios', error)
-          context.commit('setLoading', false)
-        })
-    },
-    _gotBuySellRatios (context, querySnapshot) {
-      let docChanges = querySnapshot.docChanges
-      // console.log('_gotBuySellRatios docChanges', docChanges)
-      if (docChanges.length === 0) {
-        // console.warn('_gotBuySellRatios docChanges.length === 0 ignoring')
-        return
-      }
-      // console.log('_gotBuySellRatios')
-
-      let buySellRatios = []
-
-      docChanges.forEach((change) => {
-        // console.log('_gotBuySellRatios change.type', change.type)
-        let doc = change.doc
-        // console.log('_gotBuySellRatios doc', doc)
-        // let docId = doc.id
-        // let fromCache = doc.metadata.fromCache
-        // console.log('_gotBuySellRatios ' + docId + ' fromCache', fromCache)
-        let docData = doc.data()
-        // console.log('_gotBuySellRatios docData', docData)
-
-        let itemId = docData.itemId
-        let itemName = context.state.itemsMap[itemId].name
-        let buyLocationId = docData.buyLocationId
-        // console.log('_gotBuySellRatios buyLocationId', buyLocationId)
-        let buyLocationName = context.state.locationsMap[buyLocationId].name
-        let buyPrice = docData.buyPrice
-        let ratio = docData.ratio
-        let sellPrice = docData.sellPrice
-        let sellLocationId = docData.sellLocationId
-        // console.log('_gotBuySellRatios sellLocationId', sellLocationId)
-        let sellLocationName = context.state.locationsMap[sellLocationId].name
-
-        let buySellRatio = {
-          itemName: itemName,
-          buyLocationName: buyLocationName,
-          buyPrice: buyPrice,
-          ratio: ratio,
-          sellPrice: sellPrice,
-          sellLocationName: sellLocationName
-        }
-        // console.log('_gotBuySellRatios buySellRatio', buySellRatio)
-        buySellRatios.push(buySellRatio)
-      })
-
-      // console.log('_gotBuySellRatios buySellRatios', buySellRatios)
-      context.commit('_setBuySellRatios', buySellRatios)
-    },
-
-    _getLocationItemPrices (context, locationId) {
-      // console.log('_getLocationItemPrices locationId', locationId)
+    _queryLocationItemPrices (context, locationId) {
+      // console.log('_queryLocationItemPrices locationId', locationId)
       let path = `${ROOT}/locations/${locationId}/prices`
-      // console.log('_getLocationItemPrices path', path)
+      // console.log('_queryLocationItemPrices path', path)
       firebase.firestore().collection(path)
-        .where(FIELD_IS_TIMESTAMPED, '==', true)
-        .orderBy(FIELD_TIMESTAMP_SERVER_PRICED, 'desc')
+        .where(FIELD_TIMESTAMPED, '==', true)
+        .orderBy(FIELD_TIMESTAMP, 'desc')
         .limit(1)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
-          context.dispatch('_gotLocationItemPrices', { locationId, querySnapshot })
+          context.dispatch('_onQueriedLocationItemPrices', { locationId, querySnapshot })
         }, (error) => {
-          console.error('_getLocationItemPrices', error)
+          console.error('_queryLocationItemPrices', error)
           context.commit('_setLocationItemPrices', { locationId: locationId, locationItemPrices: undefined })
-          if (Object.keys(context.state.locationsItemsPricesMap).length === context.state.locationsList.length) {
-            // Only setLoading false after all prices have come back
-            context.commit('setLoading', false)
-          }
+          context.dispatch('_testIfInitialized')
         })
     },
-    _gotLocationItemPrices (context, { locationId, querySnapshot }) {
+    _onQueriedLocationItemPrices (context, { locationId, querySnapshot }) {
       // let path = `${ROOT}/locations/${locationId}/prices`
-      // console.log('_gotLocationItemPrices path', path)
+      // console.log('_onQueriedLocationItemPrices path', path)
       let docChanges = querySnapshot.docChanges
-      // console.log('_gotLocationItemPrices docChanges', docChanges)
+      // console.log('_onQueriedLocationItemPrices docChanges', docChanges)
       if (docChanges.length === 0 && context.state.locationsItemsPricesMap[locationId] !== undefined) {
-        // console.warn('_gotLocationItemPrices ' + path + ' docChanges.length === 0 ignoring')
+        // console.warn('_onQueriedLocationItemPrices ' + path + ' docChanges.length === 0 ignoring')
         return
       }
       let locationItemPrices = {}
       let metadata = {}
       docChanges.forEach((change) => {
-        // console.log('_gotLocationItemPrices change.type', change.type)
+        // console.log('_onQueriedLocationItemPrices change.type', change.type)
         if (change.type === 'removed' && docChanges.length !== 1) {
           return
         }
         let doc = change.doc
-        // console.log('_gotLocationItemPrices doc', doc)
+        // console.log('_onQueriedLocationItemPrices doc', doc)
         // let fromCache = doc.metadata.fromCache
-        // console.log('_gotLocationItemPrices fromCache', fromCache)
+        // console.log('_onQueriedLocationItemPrices fromCache', fromCache)
         let docData = doc.data()
-        // console.log('_gotLocationItemPrices docData', docData)
-        metadata.timestamp = docData[FIELD_TIMESTAMP_SERVER_PRICED]
+        // console.log('_onQueriedLocationItemPrices docData', docData)
+        metadata.timestamp = docData[FIELD_TIMESTAMP]
         metadata.userId = docData.userId
         let prices = docData.prices
-        // console.log('_gotLocationItemPrices prices', prices)
+        // console.log('_onQueriedLocationItemPrices prices', prices)
         if (prices) {
           Object.keys(prices).forEach(itemId => {
             let locationItemPrice = prices[itemId]
@@ -441,15 +428,142 @@ export default {
           })
         }
       })
-      // console.log('_gotLocationItemPrices locationItemPrices', locationItemPrices)
+      // console.log('_onQueriedLocationItemPrices locationItemPrices', locationItemPrices)
       context.commit('_setLocationItemPrices', { locationId, locationItemPrices, metadata })
 
-      if (context.rootState.shared.loading &&
+      context.dispatch('_testIfInitialized')
+    },
+
+    _testIfInitialized (context) {
+      if (!context.state.initialized &&
         Object.keys(context.state.locationsItemsPricesMap).length === context.state.locationsList.length) {
-        // Only setLoading false after all prices have come back
-        // console.info('%c_gotLocationItemPrices LOADED!', 'color: green;')
-        context.commit('setLoading', false)
+        // Only _setInitialized after all prices have come back
+        // console.info('%c_testIfInitialized INITIALIZED!', 'color: green;')
+        context.commit('_setInitialized')
+
+        if (context.state.buySellRatios.length === 0) {
+          context.dispatch('queryBuySellRatios')
+        }
       }
+    },
+
+    queryBuySellRatios (context) {
+      if (!context.state.initialized) {
+        // console.log('queryBuySellRatios initialized == false; ignoring')
+        return
+      }
+
+      let buySellRatiosUnsubscribe = context.state.buySellRatiosUnsubscribe
+      if (buySellRatiosUnsubscribe) {
+        // console.log('queryBuySellRatios buySellRatiosUnsubscribe()')
+        buySellRatiosUnsubscribe()
+      }
+
+      //
+      // https://vuetifyjs.com/en/components/data-tables#example-server
+      // https://github.com/vuetifyjs/vuetify/blob/master/src/mixins/data-iterable.js#L27
+      //
+      let buySellRatiosPagination = context.state.buySellRatiosPagination
+      // console.log('queryBuySellRatios buySellRatiosPagination', buySellRatiosPagination)
+      let orderBy = buySellRatiosPagination.sortBy
+      switch (orderBy) {
+        case 'itemName':
+          orderBy = 'itemId'
+          break
+        case 'buyLocationName':
+          orderBy = 'buyLocationId'
+          break
+        case 'sellLocationName':
+          orderBy = 'sellLocationId'
+          break
+      }
+      let descending = buySellRatiosPagination.descending
+      let direction = descending ? 'desc' : 'asc'
+      let limit = buySellRatiosPagination.rowsPerPage
+      let pageNumber = buySellRatiosPagination.page
+      let offset
+      if (IS_QUERY_OFFSET_SUPPORTED) {
+        offset = (pageNumber - 1) * limit
+      }
+      let path = `${ROOT}/buySellRatios`
+      // console.log('queryBuySellRatios path', path, 'orderBy', orderBy, 'direction', direction, 'offset', offset, 'limit', limit)
+      let query = firebase.firestore().collection(path)
+        .orderBy(orderBy, direction)
+      if (offset) {
+        query.offset(offset)
+      }
+      buySellRatiosUnsubscribe = query
+        .limit(limit)
+        .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
+          context.dispatch('_onQueriedBuySellRatios', querySnapshot)
+        }, (error) => {
+          console.error('queryBuySellRatios', error)
+        })
+      context.commit('_setBuySellRatiosUnsubscribe', buySellRatiosUnsubscribe)
+
+      if (IS_QUERY_OFFSET_SUPPORTED) {
+        firebase.firestore().doc(`${ROOT}`)
+          .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (docSnapshot) => {
+            // console.log(`queryBuySellRatios ${ROOT} docSnapshot`, docSnapshot)
+            let buySellRatiosCount = docSnapshot.get('buySellRatiosCount')
+            context.commit('_setBuySellRatiosCount', buySellRatiosCount)
+          }, (error) => {
+            console.error(`queryBuySellRatios ${ROOT}`, error)
+          })
+      }
+    },
+    _onQueriedBuySellRatios (context, querySnapshot) {
+      // console.log('_onQueriedBuySellRatios querySnapshot', querySnapshot)
+      let docChanges = querySnapshot.docChanges
+      // console.log('_onQueriedBuySellRatios docChanges', docChanges)
+      if (docChanges.length === 0) {
+        // console.warn('_onQueriedBuySellRatios docChanges.length === 0 ignoring')
+        return
+      }
+      // console.log('_onQueriedBuySellRatios')
+
+      let buySellRatios = []
+
+      docChanges.forEach((change) => {
+        // console.log('_onQueriedBuySellRatios change', change)
+        let doc = change.doc
+        // console.log('_onQueriedBuySellRatios doc', doc)
+        // let docId = doc.id
+        // let fromCache = doc.metadata.fromCache
+        // console.log('_onQueriedBuySellRatios ' + docId + ' fromCache', fromCache)
+        let docData = doc.data()
+        // console.log('_onQueriedBuySellRatios docData', docData)
+
+        let itemId = docData.itemId
+        let itemName = context.state.itemsMap[itemId].name
+        let buyLocationId = docData.buyLocationId
+        // console.log('_onQueriedBuySellRatios buyLocationId', buyLocationId)
+        let buyLocationName = context.state.locationsMap[buyLocationId].name
+        let buyPrice = docData.buyPrice
+        let buyTimestamp = docData.buyTimestamp
+        let ratio = docData.ratio
+        let sellPrice = docData.sellPrice
+        let sellTimestamp = docData.sellTimestamp
+        let sellLocationId = docData.sellLocationId
+        // console.log('_onQueriedBuySellRatios sellLocationId', sellLocationId)
+        let sellLocationName = context.state.locationsMap[sellLocationId].name
+
+        let buySellRatio = {
+          itemName,
+          buyLocationName,
+          buyPrice,
+          buyTimestamp,
+          ratio,
+          sellPrice,
+          sellTimestamp,
+          sellLocationName
+        }
+        // console.log('_onQueriedBuySellRatios buySellRatio', buySellRatio)
+        buySellRatios.push(buySellRatio)
+      })
+
+      // console.log('_onQueriedBuySellRatios buySellRatios', buySellRatios)
+      context.commit('_setBuySellRatios', buySellRatios)
     },
 
     saveLocationItemPrices (context, { locationId, locationItemPrices }) {
@@ -520,31 +634,37 @@ export default {
         return Promise.reject(new Error('No prices changed'))
       }
 
-      let docData = {
-        userId: userId
+      let data = {
+        deploymentId: DEPLOYMENT_ID,
+        locationId
       }
       if (Object.keys(prices).length) {
-        docData.prices = prices
+        data.prices = prices
       }
-      // console.log('saveLocationItemPrices docdata', docData)
-
-      context.commit('setLoading', true)
-      let path = `${ROOT}/locations/${locationId}/prices/${firebasePushId(true)}`
-      console.log(`saveLocationItemPrices firestore.doc(${path}).set(${docData})...`)
-      return firebase.firestore().doc(path)
-        .set(docData)
-        // NOTE:(pv) IF OFFLINE, THEN THE PROMISE DOES NOT RESOLVE UNTIL ONLINE
+      // console.log('saveLocationItemPrices data', data)
+      context.commit('_setSaving', true)
+      return firebase.functions().httpsCallable('addLocationPrice')(data)
         .then(result => {
-          console.log('saveLocationItemPrices SUCCESS!')
-          context.commit('setLoading', false)
+          // console.log('addLocationPrice result', result)
+          context.commit('_setSaving', false)
+          return Promise.resolve(result)
         }, error => {
-          console.error('saveLocationItemPrices ERROR', error)
-          context.commit('setLoading', false)
+          console.error('addLocationPrice ERROR', error)
+          context.commit('_setSaving', false)
           return Promise.reject(error)
         })
     }
   },
   getters: {
+    initializing (state) {
+      return state.initializing
+    },
+    initialized (state) {
+      return state.initialized
+    },
+    saving (state) {
+      return state.saving
+    },
     getSelectedLocationId (state) {
       return state.selectedLocationId
     },
@@ -573,6 +693,9 @@ export default {
       return (locationId) => {
         return state.locationsItemsPricesMetadataMap[locationId]
       }
+    },
+    buySellRatiosPagination (state) {
+      return state.buySellRatiosPagination
     },
     buySellRatios (state) {
       return state.buySellRatios

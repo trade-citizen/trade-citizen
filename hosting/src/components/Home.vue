@@ -36,20 +36,31 @@
       -->
       <v-data-table
         class="elevation-1"
-        hide-actions
         must-sort
-        v-bind:pagination.sync="pagination"
         :headers="headers"
-        :custom-sort="sortBuySellRatios"
+        :pagination.sync="buySellRatiosPagination"
+        :rows-per-page-items="buySellRatiosPagination.rowsPerPageItems"
+        rows-per-page-text="Max Results"
+        :total-items="buySellRatiosPagination.totalItems"
         :items="buySellRatios"
         no-data-text="Soon™..."
         >
         <template slot="items" slot-scope="props">
           <td class="text-xs-right">{{ props.item.itemName }}</td>
           <td class="text-xs-right">{{ props.item.buyLocationName }}</td>
-          <td class="text-xs-right">{{ props.item.buyPrice.toFixed(3) }}</td>
+          <td class="text-xs-right">
+            <v-tooltip bottom>
+              <span slot="activator">{{ props.item.buyPrice.toFixed(3) }}</span>
+              <span>{{ formatDateYMDHMS(props.item.buyTimestamp) }}</span>
+            </v-tooltip>
+          </td>
           <td class="text-xs-center">{{ props.item.ratio.toFixed(3) }}</td>
-          <td class="text-xs-left">{{ props.item.sellPrice.toFixed(3) }}</td>
+          <td class="text-xs-left">
+            <v-tooltip bottom>
+              <span slot="activator">{{ props.item.sellPrice.toFixed(3) }}</span>
+              <span>{{ formatDateYMDHMS(props.item.sellTimestamp) }}</span>
+            </v-tooltip>
+          </td>
           <td class="text-xs-left">{{ props.item.sellLocationName }}</td>
         </template>
       </v-data-table>
@@ -153,6 +164,9 @@
 </template>
 
 <script>
+
+import * as utils from '../utils'
+
 export default {
   data () {
     return {
@@ -164,10 +178,6 @@ export default {
         { sortable: true, align: 'left', text: 'Sell Price', value: 'sellPrice' },
         { sortable: true, align: 'left', text: 'Sell Location', value: 'sellLocationName' }
       ],
-      pagination: {
-        sortBy: 'ratio',
-        descending: false
-      },
       filter: {
         illegal: false,
         commodities: [],
@@ -179,6 +189,15 @@ export default {
       toast: false,
       toastMessage: null,
       toastTimeoutMillis: 3000
+    }
+  },
+  watch: {
+    buySellRatiosPagination: {
+      handler () {
+        // console.log('watch buySellRatiosPagination queryBuySellRatios')
+        this.$store.dispatch('queryBuySellRatios')
+      },
+      deep: true
     }
   },
   mounted: function () {
@@ -227,6 +246,14 @@ export default {
     buySellRatios () {
       return this.$store.getters.buySellRatios
     },
+    buySellRatiosPagination: {
+      get: function () {
+        return this.$store.getters.buySellRatiosPagination
+      },
+      set: function (value) {
+        this.$store.commit('setBuySellRatiosPagination', value)
+      }
+    },
     locationItemPriceList () {
       let prices = this.$store.getters.locationItemPriceList(this.locationId)
       if (prices && !this.editing) {
@@ -245,6 +272,9 @@ export default {
     }
   },
   methods: {
+    formatDateYMDHMS (date) {
+      return utils.formatDateYMDHMS(date)
+    },
     refresh () {
       // console.log('refresh()')
       if (!this.filter.illegal) {
@@ -259,33 +289,6 @@ export default {
         }
       }
     },
-    sortBuySellRatios (items, index, isDescending) {
-      return items.sort((itemA, itemB) => {
-        let valueA, valueB
-        switch (index) {
-          /*
-          case 'ratio':
-            valueA = this.calculateMargin(itemA)
-            valueB = this.calculateMargin(itemB)
-            break
-            */
-          default:
-            valueA = itemA[index]
-            valueB = itemB[index]
-        }
-
-        if (valueA < valueB) {
-          return isDescending ? -1 : 1
-        }
-        if (valueA > valueB) {
-          return isDescending ? 1 : -1
-        }
-
-        // TODO:(pv) Secondary sorting...
-
-        return 0
-      })
-    },
     onSelectedLocationChanged (locationId) {
       // console.log('Home onSelectedLocationChanged locationId:' + locationId)
       this.editing = false
@@ -298,6 +301,7 @@ export default {
     saveLocation (locationId) {
       // console.log('Home saveLocation this.locationId:' + this.locationId)
       // console.log('Home saveLocation this.locationItemPriceListCopy', this.locationItemPriceListCopy)
+      this.editing = false
       this.$store
         .dispatch('saveLocationItemPrices', {
           locationId: this.locationId,

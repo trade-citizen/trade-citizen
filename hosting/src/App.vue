@@ -101,6 +101,7 @@
                 v-else
                 icon
                 class="ml-0 mr-2"
+                :disabled="!saveable"
                 @click="editLocation(true)"
                 >
                 <v-icon class="mx-1">edit</v-icon>
@@ -109,6 +110,7 @@
             <v-btn
               icon
               class="ml-0 mr-2"
+              :disabled="!saveable"
               @click="saveLocation"
               >
               <v-icon class="mx-1">save</v-icon>
@@ -118,6 +120,7 @@
             <v-btn
               flat
               class="ml-0 mr-2"
+              :disabled="offline"
               @click="signin"
               >
               <v-icon class="mx-1">lock_open</v-icon>
@@ -128,7 +131,7 @@
       </template>
     </v-toolbar>
     <v-content>
-      <v-progress-linear :indeterminate="true" class="ma-0" v-if="loading"></v-progress-linear>      
+      <v-progress-linear :indeterminate="true" class="ma-0" v-if="showProgress"></v-progress-linear>      
       <v-fade-transition mode="out-in">
         <router-view></router-view>
       </v-fade-transition>
@@ -146,7 +149,7 @@
 
 <script>
 
-console.log('process.env.NODE_ENV', process.env.NODE_ENV)
+import * as utils from './utils'
 
 export default {
   data () {
@@ -180,8 +183,13 @@ export default {
     offline () {
       return this.$store.getters.offline
     },
-    loading () {
-      return this.$store.getters.loading
+    showProgress () {
+      let showProgress = this.$store.getters.initializing || this.$store.getters.saving
+      return showProgress
+    },
+    saveable () {
+      let saveable = !this.offline && !this.showProgress
+      return saveable
     },
     locationId: {
       get: function () {
@@ -243,10 +251,8 @@ export default {
       let metadata = this.$store.getters.locationItemPriceMetadata(this.locationId)
       let timestamp = metadata && metadata.timestamp
       // console.log('timestamp', timestamp)
-      if (timestamp) {
-        timestamp = timestamp.getFullYear() + '/' + this.lpad(timestamp.getMonth() + 1, 2) + '/' + this.lpad(timestamp.getDate(), 2) +
-          ' ' + this.lpad(timestamp.getHours(), 2) + ':' + this.lpad(timestamp.getMinutes(), 2) + ':' + this.lpad(timestamp.getSeconds(), 2) + '.' + this.lpad(timestamp.getMilliseconds(), 3)
-      } else {
+      timestamp = utils.formatDateYMDHMS(timestamp)
+      if (!timestamp) {
         timestamp = 'Never'
       }
       return `Priced at: ${timestamp}`
@@ -262,9 +268,6 @@ export default {
         event.preventDefault()
         this.saveLocation()
       }
-    },
-    lpad (value, width) {
-      return (value.toString().length > width) ? value : (new Array(width).join('0') + value).slice(-width)
     },
     signin () {
       this.editing = false
