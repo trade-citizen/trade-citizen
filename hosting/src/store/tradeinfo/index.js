@@ -14,8 +14,8 @@ class PriceError extends Error {
 const IS_PRODUCTION = process.env.NODE_ENV === 'production'
 const DEPLOYMENT_ID = IS_PRODUCTION ? 'production' : 'test'
 const ROOT = `/deployments/${DEPLOYMENT_ID}`
-const FIELD_IS_TIMESTAMPED = 'isTimestamped'
-const FIELD_TIMESTAMP_SERVER_PRICED = 'timestampServerPriced'
+const FIELD_TIMESTAMPED = 'timestamped'
+const FIELD_TIMESTAMP = 'timestamp'
 /*
  * This is weird: import 'firebase/firestore' does not support Query.offset(...)...
  * https://firebase.google.com/docs/reference/js/firebase.firestore.Query
@@ -167,6 +167,9 @@ export default {
       state.buySellRatios = payload
       let totalItems = payload ? payload.length : 0
       Vue.set(state.buySellRatiosPagination, 'totalItems', totalItems)
+    },
+    _setBuySellRatiosCount (state, payload) {
+      Vue.set(state.buySellRatiosPagination, 'totalItems', payload)
     }
   },
   actions: {
@@ -369,8 +372,8 @@ export default {
       let path = `${ROOT}/locations/${locationId}/prices`
       // console.log('_queryLocationItemPrices path', path)
       firebase.firestore().collection(path)
-        .where(FIELD_IS_TIMESTAMPED, '==', true)
-        .orderBy(FIELD_TIMESTAMP_SERVER_PRICED, 'desc')
+        .where(FIELD_TIMESTAMPED, '==', true)
+        .orderBy(FIELD_TIMESTAMP, 'desc')
         .limit(1)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
           context.dispatch('_onQueriedLocationItemPrices', { locationId, querySnapshot })
@@ -402,7 +405,7 @@ export default {
         // console.log('_onQueriedLocationItemPrices fromCache', fromCache)
         let docData = doc.data()
         // console.log('_onQueriedLocationItemPrices docData', docData)
-        metadata.timestamp = docData[FIELD_TIMESTAMP_SERVER_PRICED]
+        metadata.timestamp = docData[FIELD_TIMESTAMP]
         metadata.userId = docData.userId
         let prices = docData.prices
         // console.log('_onQueriedLocationItemPrices prices', prices)
@@ -497,6 +500,17 @@ export default {
           console.error('queryBuySellRatios', error)
         })
       context.commit('_setBuySellRatiosUnsubscribe', buySellRatiosUnsubscribe)
+
+      if (IS_QUERY_OFFSET_SUPPORTED) {
+        firebase.firestore().doc(`${ROOT}`)
+          .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (docSnapshot) => {
+            // console.log(`queryBuySellRatios ${ROOT} docSnapshot`, docSnapshot)
+            let buySellRatiosCount = docSnapshot.get('buySellRatiosCount')
+            context.commit('_setBuySellRatiosCount', buySellRatiosCount)
+          }, (error) => {
+            console.error(`queryBuySellRatios ${ROOT}`, error)
+          })
+      }
     },
     _onQueriedBuySellRatios (context, querySnapshot) {
       // console.log('_onQueriedBuySellRatios querySnapshot', querySnapshot)
@@ -635,32 +649,6 @@ export default {
           context.commit('_setSaving', false)
           return Promise.reject(error)
         })
-
-      /*
-      let docData = {
-        userId: userId
-      }
-      if (Object.keys(prices).length) {
-        docData.prices = prices
-      }
-      // console.log('saveLocationItemPrices docdata', docData)
-
-      context.commit('setSaving', true)
-      let path = `${ROOT}/locations/${locationId}/prices/${firebasePushId(true)}`
-      console.log(`saveLocationItemPrices firestore.doc(${path}).set(${docData})...`)
-      return firebase.firestore().doc(path)
-        .set(docData)
-        // NOTE:(pv) IF OFFLINE, THEN THE PROMISE DOES NOT RESOLVE UNTIL ONLINE
-        .then(result => {
-          console.log('saveLocationItemPrices SUCCESS!')
-          context.commit('setSaving', false)
-          return Promise.resolve(result)
-        }, error => {
-          console.error('saveLocationItemPrices ERROR', error)
-          context.commit('setSaving', false)
-          return Promise.reject(error)
-        })
-        */
     }
   },
   getters: {

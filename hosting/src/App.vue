@@ -149,6 +149,8 @@
 
 <script>
 
+import * as utils from './utils'
+
 export default {
   data () {
     return {
@@ -249,10 +251,8 @@ export default {
       let metadata = this.$store.getters.locationItemPriceMetadata(this.locationId)
       let timestamp = metadata && metadata.timestamp
       // console.log('timestamp', timestamp)
-      if (timestamp) {
-        timestamp = timestamp.getFullYear() + '/' + this.lpad(timestamp.getMonth() + 1, 2) + '/' + this.lpad(timestamp.getDate(), 2) +
-          ' ' + this.lpad(timestamp.getHours(), 2) + ':' + this.lpad(timestamp.getMinutes(), 2) + ':' + this.lpad(timestamp.getSeconds(), 2) + '.' + this.lpad(timestamp.getMilliseconds(), 3)
-      } else {
+      timestamp = utils.formatDateYMDHMS(timestamp)
+      if (!timestamp) {
         timestamp = 'Never'
       }
       return `Priced at: ${timestamp}`
@@ -268,9 +268,6 @@ export default {
         event.preventDefault()
         this.saveLocation()
       }
-    },
-    lpad (value, width) {
-      return (value.toString().length > width) ? value : (new Array(width).join('0') + value).slice(-width)
     },
     signin () {
       this.editing = false

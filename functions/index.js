@@ -1,39 +1,26 @@
 //
-// NOTE:(pv) There are two "firestore" classes.
-//  1) firestoreServer: Manages the server-side function hooks
-//  2) firestoreClient: Full firestore client
-//      https://cloud.google.com/nodejs/docs/reference/firestore/latest/
-//
 // To Test:
 //  https://firebase.google.com/docs/functions/local-emulator
 //  https://firebase.google.com/docs/functions/local-emulator#invoke_firestore_functions
 //  $ firebase experimental:functions:shell
-//  firebase > onLocationPriceCreate( { prices: { '4PqeXIFIa47BFsKsjKLa': { priceBuy: 7, priceSell: 3 } } }, { params: { deploymentId: 'test', locationId: 'zsrxhjHzhfXxUCPs73EF', priceId: 'zdqkRhVhBcw8E9TvpCU4' } })
-//  firebase > onLocationPriceCreate( { prices: { '4PqeXIFIa47BFsKsjKLa': { priceBuy: 7, priceSell: 4 } } }, { params: { deploymentId: 'test', locationId: 'zsrxhjHzhfXxUCPs73EF', priceId: 'zdqkRhVhBcw8E9TvpCU4' } })
+//  firebase > 
 //
+
 'use strict'
 const functions = require('firebase-functions')
 const admin = require('firebase-admin')
 admin.initializeApp(functions.config().firebase)
 
-exports.hello = functions.https.onRequest((req, res) => {
-  res.send('world')
-})
-
-const firestoreClient = admin.firestore()
-const firestoreServer = functions.firestore
-const firebasePushId = require('./firebase-push-id').firebasePushId
-
-const FIELD_IS_TIMESTAMPED = 'isTimestamped'
-const FIELD_TIMESTAMP_SERVER_PRICED = 'timestampServerPriced'
-const FIELD_CACHED_BUY_SELL_INFO = '_cachedBuySellInfo'
+const addLocationPrice = require('./TradeCitizen').addLocationPrice
 
 //
 // https://firebase.google.com/docs/functions/write-firebase-functions
 // https://firebase.google.com/docs/firestore/extend-with-functions
 // https://github.com/firebase/functions-samples
+// https://firebase.google.com/docs/functions/callable
+// https://firebase.google.com/docs/reference/functions/functions.https.HttpsError
+// https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto
 //
-
 /*
  * https://firebase.google.com/docs/firestore/extend-with-functions#limitations_and_guarantees
  * "While developing your applications, keep in mind that both Cloud Firestore and Cloud Functions
@@ -51,559 +38,40 @@ const FIELD_CACHED_BUY_SELL_INFO = '_cachedBuySellInfo'
  *    invocations in an unexpected order."
  */
 
-// https://firebase.google.com/docs/functions/callable
-// https://firebase.google.com/docs/reference/functions/functions.https.HttpsError
-// https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto
+//
+// To Test:
+//  firebase > helloRequest()
+//
+exports.helloRequest = functions.https.onRequest((req, res) => {
+  res.send('world')
+})
+
+//
+// To Test:
+//  firebase > helloCall(?!?!?!!?)
+//
+exports.helloCall = functions.https.onCall((data, context) => {
+  return {}
+})
+
+//
+// To Test:
+//  firebase > addLocationPrice(?!?!?!!?)
+//
 exports.addLocationPrice = functions.https.onCall((data, context) => {
-  console.log('addLocationPrice data', data, 'context', context)
-
-  const timestampNew = new Date()
-
   const userId = context.auth.uid
-  if (!userId) {
-    throw new functions.https.HttpsError('unauthenticated', 'Not authenticated')
-  }
-  
-  const deploymentId = data.deploymentId
-  // console.log('addLocationPrice deploymentId', deploymentId)
-  const locationId = data.locationId
-  // console.log('addLocationPrice locationId', locationId)
-  if (!deploymentId || !locationId) {
-    throw new functions.https.HttpsError('invalid-argument', 'Invalid argument(s)')
-  }
-  const pricesNew = data.prices
-  console.log('addLocationPrice pricesNew', pricesNew)
-  console.log('addLocationPrice timestampNew', timestampNew)
-
-  return firestoreClient.collection(`/deployments/${deploymentId}/locations/${locationId}/prices`)
-    .where(FIELD_IS_TIMESTAMPED, '==', true)
-    .orderBy(FIELD_TIMESTAMP_SERVER_PRICED, 'desc')
-    .limit(1)
-    .get()
-    .then(snapshotPrices => {
-      const snapshotPricesSize = snapshotPrices.size
-      let changed
-      switch (snapshotPricesSize) {
-        case 0:
-          changed = true
-          break
-        case 1:
-          const docPriceOld = snapshotPrices.docs[0]
-          const pricesOld = docPriceOld.get('prices')
-          console.log('addLocationPrice pricesOld', pricesOld)
-          const timestampOld = docPriceOld.get(FIELD_TIMESTAMP_SERVER_PRICED)
-          console.log('addLocationPrice timestampOld', timestampOld)
-          changes = diff(pricesOld, pricesNew)
-          console.log('addLocationPrice changes', changes)
-          changed = !!changes
-          break
-        default:
-          throw new functions.https.HttpsError('internal', `Unexpected limit(1) returned ${snapshotPricesSize} items`)
-      }
-      if (!changed) {
-        throw new functions.https.HttpsError('cancelled', 'No prices changed')
-      }
-
-      const priceId = firebasePushId(true)
-      const docPath = `/deployments/${deploymentId}/locations/${locationId}/prices/${priceId}`
-      const docData = {
-        userId,
-        prices: pricesNew,
-        [FIELD_IS_TIMESTAMPED]: true,
-        [FIELD_TIMESTAMP_SERVER_PRICED]: timestampNew
-      }
-      return firestoreClient.doc(docPath)
-        .set(docData)
-        .then(result => {
-          // console.log('addLocationPrice result', result)
-          const event = {
-            timestamp: timestampNew,
-            params: {
-              deploymentId,
-              locationId,
-              priceId
-            },
-            data: {
-              exists: true,
-              data () {
-                return docData
-              }
-            }
-          }
-          return onLocationPriceCreate(event)
-            .then(result => {
-              return { path: docPath, data: docData }
-            })
-        })
+  return addLocationPrice(userId, data)
+    .then(result => {
+      console.log('addLocationPrice success!')
+      return {}//{ path: docPath, data: docData }
     })
 })
 
+/*
 // To Test:
 //  firebase > onLocationPriceCreate( { prices: { '4PqeXIFIa47BFsKsjKLa': { priceBuy: 7, priceSell: 3 } } }, { params: { deploymentId: 'test', locationId: 'zsrxhjHzhfXxUCPs73EF', priceId: 'zdqkRhVhBcw8E9TvpCU4' } })
 //  firebase > onLocationPriceCreate( { prices: { '4PqeXIFIa47BFsKsjKLa': { priceBuy: 7, priceSell: 4 } } }, { params: { deploymentId: 'test', locationId: 'zsrxhjHzhfXxUCPs73EF', priceId: 'zdqkRhVhBcw8E9TvpCU4' } })
-exports.onLocationPriceCreate = firestoreServer
+exports.onLocationPriceCreate = functions.firestore
   .document('/deployments/{deploymentId}/locations/{locationId}/prices/{priceId}')
   .onCreate(onLocationPriceCreate)
-
-function onLocationPriceCreate(event) {
-  // console.log('onLocationPriceCreate arguments', arguments)
-
-  const eventTimestamp = new Date(event.timestamp)
-
-  const params = event.params
-  // console.log('onLocationPriceCreate params', params)
-  const deploymentId = params.deploymentId
-  const locationId = params.locationId
-  const priceId = params.priceId
-
-  const newPricesDocumentSnapshot = event.data
-  // console.log('onLocationPriceCreate newPricesDocumentSnapshot', newPricesDocumentSnapshot)
-  const newPricesDocumentData = newPricesDocumentSnapshot.exists ? newPricesDocumentSnapshot.data() : null
-  // console.log('onLocationPriceCreate newPricesDocumentData', newPricesDocumentData)
-  if (newPricesDocumentData === null) {
-    console.error('onLocationPriceCreate newPricesDocumentData === null; unhandled document deletion')
-    return
-  }
-
-  const newPrices = newPricesDocumentData.prices
-  console.log('onLocationPriceCreate newPrices', newPrices)
-
-  const batch = firestoreClient.batch()
-
-  const newPricesDocumentRef = newPricesDocumentSnapshot.ref
-  if (newPricesDocumentRef) {
-    batch.set(newPricesDocumentRef, {
-      [FIELD_IS_TIMESTAMPED]: true,
-      [FIELD_TIMESTAMP_SERVER_PRICED]: eventTimestamp
-    }, { merge: true })
-  }
-
-  const locationDocumentRef = firestoreClient.doc(`/deployments/${deploymentId}/locations/${locationId}`)
-  batch.set(locationDocumentRef, {
-    [FIELD_IS_TIMESTAMPED]: true,
-    [FIELD_TIMESTAMP_SERVER_PRICED]: eventTimestamp
-  }, { merge: true })
-
-  return batch.commit()
-    .then(results => {
-      // console.log('onLocationPriceCreate batch timestamp commited; next step...')
-
-      if (deploymentId === 'test') {
-        //
-        // The price can be deleted; it is simplest to rebuild the entire BuySellInfo every time.
-        //
-        return updateBuySellInfo(eventTimestamp, deploymentId, locationId, priceId, newPrices)
-          .then(result => {
-            return lastStep()
-          })
-      }
-
-      return lastStep()
-    })
-    .catch(error => {
-      console.error('onLocationPriceCreate error', error)
-    })
-}
-
-
-/**
- * "BuySellRatios" is a paginateable *LIST* of all item buy/sell combinations across all locations.
- * This list format is efficient to display, but not very efficient to update.
- * It is in this format so that the client can easily paginate through the sortable values.
- * There is little to no real way to direct access elements and "update row X column Y" whenever a single price is changed.
- * I have asked about this here:
- * https://stackoverflow.com/q/49202059/252308 (Stupid stackoverflow mizers poo-pooed on it)
- * I am stll looking for a lightweight way to calculate this, but so far have not thought of one.
- * The current technique is to build the list from scratch every time the price data changes.
- * Hopefully, before the matrix gets too big, I will come up with a way to update only affected values.
- * 
- * Example (2 items sold in 2 locations):
- * Item 1 ,  Location A ,  4.000 ,  0.500 ,  2.000 ,  Location B
- * Item 1 ,  Location B ,  6.000 ,  0.667 ,  4.000 ,  Location A
- * Item 2 ,  Location A ,  3.000 ,  0.333 ,  1.000 ,  Location B
- * Item 2 ,  Location B ,  3.000 ,  0.667 ,  2.000 ,  Location A
- * {
- *  'item1:buyLocationA:sellLocationB':
- *  {
- *    item: 'Item 1',
- *    buyLocation: 'Location A',
- *    buyPrice: 4,
- *    ratio: 2 / 4,
- *    sellPrice: 2,
- *    sellLocation: 'Location B',
- *    timePriced: '20180314 12:01PM...'
- *    timeUpdated: ?
- *    _timeUpdated: ?
- *  },
- *  'item1:buyLocationB:sellLocationA':
- *  {
- *    item: 'Item 1',
- *    buyLocation: 'Location B',
- *    buyPrice: 6,
- *    ratio: 4 / 6,
- *    sellPrice: 4,
- *    sellLocation: 'Location A',
- *    timePriced: '20180314 12:01PM...'
- *  },
- *  'item2:buyLocationA:sellLocationB':
- *  {
- *    item: 'Item 1',
- *    buyLocation: 'Location A',
- *    buyPrice: 3,
- *    ratio: 1 / 3,
- *    sellPrice: 1,
- *    sellLocation: 'Location B',
- *    timePriced: '20180314 12:01PM...'
- *  },
- *  'item2:buyLocationB:sellLocationA':
- *  {
- *    item: 'Item 1',
- *    buyLocation: 'Location B',
- *    buyPrice: 3,
- *    ratio: 2 / 3,
- *    sellPrice: 2,
- *    sellLocation: 'Location A',
- *    timePriced: '20180314 12:01PM...'
- *  }
- * }
- * @param {*} deploymentId 
- * @param {*} locationId
- * @param {*} priceId
- * @param {*} newPrices
- * @param {*} _cachedBuySellInfo
- */
-function updateBuySellInfo(eventTimestamp, deploymentId, locationId, priceId, newPrices, _cachedBuySellInfo) {
-  // console.log('updateBuySellInfo eventTimestamp', eventTimestamp, 'deploymentId', deploymentId, 'locationId', locationId, 'priceId', priceId, 'newPrices', newPrices,
-  //            '_cachedBuySellInfo', _cachedBuySellInfo)
-
-  const pathBuySellInfo = `/deployments/${deploymentId}`
-
-  if (!_cachedBuySellInfo) {
-    return firestoreClient.doc(pathBuySellInfo)
-      .get()
-      .then(snapshotBuySellInfo => {
-        let _cachedBuySellInfo = snapshotBuySellInfo.get(FIELD_CACHED_BUY_SELL_INFO)
-        // console.log('updateBuySellInfo _cachedBuySellInfo', _cachedBuySellInfo)
-        if (_cachedBuySellInfo) {
-          return updateBuySellInfo(eventTimestamp, deploymentId, locationId, priceId, newPrices, _cachedBuySellInfo)
-        } else {
-          return createBuySellInfoCache(deploymentId)
-            .then(results => {
-              // console.log('updateBuySellInfo createBuySellInfoCache result', results)
-              _cachedBuySellInfo = results.find(item => {
-                return item && item._cachedBuySellInfo
-              })._cachedBuySellInfo
-              // console.log('updateBuySellInfo createBuySellInfoCache _cachedBuySellInfo', _cachedBuySellInfo)
-              return firestoreClient.doc(pathBuySellInfo)
-                .set({
-                  [FIELD_CACHED_BUY_SELL_INFO]: _cachedBuySellInfo
-                }, { merge: true })
-                .then(result => {
-                  return updateBuySellInfo(eventTimestamp, deploymentId, locationId, priceId, newPrices)
-                })
-            })
-        }
-      })
-  }
-
-  // console.log('updateBuySellInfo _cachedBuySellInfo', _cachedBuySellInfo)
-
-  const locationIds = _cachedBuySellInfo.locationIds
-  // console.log('updateBuySellInfo locationIds', locationIds)
-  const itemIds = _cachedBuySellInfo.itemIds
-  // console.log('updateBuySellInfo itemIds', itemIds)
-  const buySellPrices = _cachedBuySellInfo.buySellPrices
-  // console.log('updateBuySellInfo buySellPrices', buySellPrices)
-  const buySellRatiosPrevious = _cachedBuySellInfo.buySellRatios
-  console.log('updateBuySellInfo buySellRatiosPrevious', buySellRatiosPrevious)
-
-  if (newPrices) {
-    // console.log('updateBuySellInfo locationId', locationId, 'newPrices', newPrices)
-    itemIds.forEach(itemId => {
-      const newPrice = newPrices && newPrices[itemId]
-      const priceBuy = newPrice && newPrice.priceBuy
-      const priceSell = newPrice && newPrice.priceSell
-      if (priceBuy || priceSell) {
-        console.log('updateBuySellInfo locationId', locationId, 'itemId', itemId, 'priceBuy', priceBuy, 'priceSell', priceSell)
-      }
-      addBuySellPrice(buySellPrices, locationId, itemId, 'buy', priceBuy, eventTimestamp)
-      addBuySellPrice(buySellPrices, locationId, itemId, 'sell', priceSell, eventTimestamp)
-    })
-  } else {
-    buySellPrices[locationId] = { timestamp: eventTimestamp }
-  }
-
-  const buySellRatiosNew = {}
-
-  for (const locationIdBuy of locationIds) {
-    // console.log('updateBuySellInfo locationIdBuy', locationIdBuy)
-    const itemPricesBuy = buySellPrices[locationIdBuy]
-    // console.log('updateBuySellInfo itemPricesBuy', itemPricesBuy)
-    if (!itemPricesBuy) {
-      // console.warn(`No prices @ ${locationIdBuy}`)
-      continue
-    }
-
-    for (const locationIdSell of locationIds) {
-      // console.log('updateBuySellInfo locationIdSell', locationIdSell)
-      if (locationIdSell === locationIdBuy) {
-        continue
-      }
-      const itemPricesSell = buySellPrices[locationIdSell]
-      // console.log('updateBuySellInfo itemPricesSell', itemPricesSell)
-      if (!itemPricesSell) {
-        // console.warn(`No prices @ ${locationIdSell}`)
-        continue
-      }
-  
-      for (const itemId of itemIds) {
-        // console.log('updateBuySellInfo itemId', itemId)
-        const itemBuy = itemPricesBuy && itemPricesBuy[itemId]
-        const priceBuy = itemBuy && itemBuy.priceBuy
-        const timestampBuy = itemPricesBuy.timestamp
-        if (!priceBuy) {
-          continue
-        }
-
-        const itemSell = itemPricesSell && itemPricesSell[itemId]
-        const priceSell = itemSell && itemSell.priceSell
-        const timestampSell = itemPricesSell.timestamp
-        if (!priceSell) {
-          continue
-        }
-
-        const ratio = priceSell / priceBuy
-
-        const docId = `${itemId}:${locationIdBuy}:${locationIdSell}`
-
-        const buySellRatio = {
-          itemId: itemId,
-          buyLocationId: locationIdBuy,
-          buyPrice: priceBuy,
-          buyTimestamp: timestampBuy,
-          ratio: ratio,
-          sellPrice: priceSell,
-          sellTimestamp: timestampSell,
-          sellLocationId: locationIdSell
-        }
-        // console.log('updateBuySellInfo buySellRatio', buySellRatio)
-
-        buySellRatiosNew[docId] = buySellRatio
-      }
-    }
-  }
-  console.log('updateBuySellInfo buySellRatiosNew', buySellRatiosNew)
-
-  _cachedBuySellInfo.buySellRatios = buySellRatiosNew
-
-  let changes = diff(buySellRatiosPrevious, buySellRatiosNew)
-  console.log('updateBuySellInfo changes', changes)
-
-  const writeBatch = firestoreClient.batch()
-  
-  if (changes) {
-    if (changes.right && !changes.left) {
-      changes = changes.right
-    }
-    Object.keys(changes).forEach(key => {
-      const change = changes[key]
-      // console.log('updateBuySellInfo key', key, 'change', change)
-      const docId = `/deployments/${deploymentId}/buySellRatios/${key}`
-      // console.log('updateBuySellInfo docId', docId)
-      const docRef = firestoreClient.doc(docId)
-      if (change && change.left && !change.right) {
-        console.log('updateBuySellInfo delete', docId)
-        writeBatch.delete(docRef)
-      } else {
-        const docData = buySellRatiosNew[key]
-        console.log('updateBuySellInfo set', docId, docData)
-        writeBatch.set(docRef, docData)
-      }
-    })
-  }
-
-  //
-  //
-  //
-
-  //
-  // PROBLEM: Firestore documents are limited to 1MiB in size!
-  // https://firebase.google.com/docs/firestore/quotas#limits
-  // https://firebase.google.com/docs/firestore/storage-size
-  //
-  // TODO:(pv) Compute the size of _cachedBuySellInfo
-  // TODO:(pv) If the size of _cachedBuySellInfo gets near 1MiB then design sharding solution
-  //  https://firebase.google.com/docs/firestore/solutions/counters
-  // 
-  writeBatch.set(firestoreClient.doc(pathBuySellInfo), {
-      [FIELD_CACHED_BUY_SELL_INFO]: _cachedBuySellInfo
-    }, { merge: true })
-
-  //
-  //
-  //
-
-  const buySellRatiosCount = Object.keys(buySellRatiosNew).length
-
-  const pathBuySellRatiosCount = `/deployments/${deploymentId}`
-  writeBatch.set(firestoreClient.doc(pathBuySellRatiosCount), {
-    buySellRatiosCount: buySellRatiosCount
-  }, { merge: true })
-
-  //
-  //
-  //
-
-  console.log('updateBuySellInfo writeBatch COMMIT...')//, writeBatch)
-  return writeBatch.commit() 
-    .then((results => { 
-      console.log('updateBuySellInfo writeBatch COMMITTED!')//, results) 
-      return Promise.resolve()
-    }))     
-}
-
-function diff(left, right) {
-  // console.log('diff left', left, 'right', right)
-  let changes = {}
-  if (left !== right) {
-    // console.log('left !== right')
-    if (typeof left == 'object' && typeof right == 'object') {
-      // console.log('object')
-      let keys = new Set(Object.keys(left).concat(Object.keys(right)))
-      // console.log('diff keys', keys)
-      for (const key of keys) {
-        const valueLeft = left[key]
-        const valueRight = right[key]
-        // console.log('diff key', key, 'valueLeft', valueLeft, 'valueRight', valueRight)
-        const temp = diff(valueLeft, valueRight)
-        // console.log('diff temp', temp)
-        if (temp) {
-          changes[key] = temp
-        }
-      }
-    } else {
-      // console.log('not object')
-      changes = {
-        left: left,
-        right: right
-      }
-    }
-  }
-  // console.log('diff changes', changes)
-  if (!Object.keys(changes).length) {
-    changes = undefined
-  }
-  return changes
-}
-
-function createBuySellInfoCache(deploymentId) {
-  // console.log('createBuySellInfoCache deploymentId', deploymentId)
-  return firestoreClient.collection(`/deployments/${deploymentId}/itemTypes`)
-    .get()
-    .then(snapshotItemTypes => {
-
-      const itemIds = []
-      snapshotItemTypes.forEach(docItemType => {
-        itemIds.push(docItemType.id)
-      })
-
-      return firestoreClient.collection(`/deployments/${deploymentId}/locations`)
-        .get()
-        .then(snapshotLocations => {
-          // console.log('createBuySellInfoCache snapshotLocations', snapshotLocations)
-
-          const buySellPrices = {}
-          const snapshotLocationsSize = snapshotLocations.size
-
-          const promises = []
-
-          const locationIds = []
-          snapshotLocations.forEach(docLocation => {
-            const docLocationId = docLocation.id
-            // console.log('createBuySellInfoCache docLocation.data()', docLocation.data())
-            
-            promises.push(docLocation.ref.collection('prices')
-              .where(FIELD_IS_TIMESTAMPED, '==', true)
-              .orderBy(FIELD_TIMESTAMP_SERVER_PRICED, 'desc')
-              .limit(1)
-              .get()
-              .then(snapshotPrices => {
-                // console.log('createBuySellInfoCache snapshotPrices', snapshotPrices)
-                snapshotPrices.forEach(docPrice => {
-                  // const docPriceId = docPrice.id
-                  // console.log('createBuySellInfoCache docLocationId', docLocationId, 'docPriceId', docPriceId, 'docPrice', docPrice.data())
-                  const prices = docPrice.get('prices')
-                  const timestamp = docPrice.get(FIELD_TIMESTAMP_SERVER_PRICED)
-                  // console.log('createBuySellInfoCache docLocationId', docLocationId, 'prices', prices)
-                  itemIds.forEach(itemId => {
-                    const price = prices && prices[itemId]
-                    const priceBuy = price && price.priceBuy
-                    const priceSell = price && price.priceSell
-                    // console.log('createBuySellInfoCache docLocationId', docLocationId, 'itemId', itemId, 'priceBuy', priceBuy, 'priceSell', priceSell)
-                    addBuySellPrice(buySellPrices, docLocationId, itemId, 'buy', priceBuy, timestamp)
-                    addBuySellPrice(buySellPrices, docLocationId, itemId, 'sell', priceSell, timestamp)
-                  })
-                })
-
-                locationIds.push(docLocationId)
-                if (locationIds.length < snapshotLocationsSize) {
-                  return Promise.resolve()
-                }
-
-                // console.log('createBuySellInfoCache read last location')
-
-                const _cachedBuySellInfo = {
-                  comment: 'TODO:(pv) Explain the purpose of the _cachedBuySellInfo field and how to maintain it...',
-                  locationIds: locationIds,
-                  itemIds: itemIds,
-                  buySellPrices: buySellPrices
-                }
-                // console.log('createBuySellInfoCache _cachedBuySellInfo', _cachedBuySellInfo)
-
-                return Promise.resolve({ _cachedBuySellInfo })
-              }))
-          })
-
-          // console.log('createBuySellInfoCache Promise.all(promises)', promises)
-          return Promise.all(promises)
-        })
-    })
-}
-
-function addBuySellPrice(buySellPrices,
-                         locationId,
-                         itemId,
-                         buyOrSell,
-                         itemPrice,
-                         timestamp) {
-  const side = 'price' + buyOrSell.charAt(0).toUpperCase() + buyOrSell.slice(1).toLowerCase()
-  // console.log('side', side)
-
-  let thisLocationItemPrices = buySellPrices[locationId]
-  if (!thisLocationItemPrices) {
-    thisLocationItemPrices = {}
-    buySellPrices[locationId] = thisLocationItemPrices
-  }
-
-  thisLocationItemPrices.timestamp = timestamp
-
-  let itemPrices = thisLocationItemPrices[itemId]
-  if (!itemPrices) {
-    if (!itemPrice) {
-      return
-    }
-    itemPrices = {}
-    thisLocationItemPrices[itemId] = itemPrices
-  }
-
-  if (itemPrice) {
-    itemPrices[side] = itemPrice
-  } else {
-    delete itemPrices[side]
-  }
-}
-
-
-function lastStep() {
-  return Promise.resolve()
-}
+*/
