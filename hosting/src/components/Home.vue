@@ -5,8 +5,12 @@
     class="pt-0"
     >
     <!--
+    NOTE: With "Max Results" logic paradigm it is even more important to get this working...
+    -->
     <v-layout row d-flex align-center>
+      <!--
       <v-icon class="mx-2">filter_list</v-icon><span class="mr-2">Filter</span>
+      -->
       <v-select
         label="Item"
         clearable
@@ -14,8 +18,9 @@
         single-line
         hide-details
         hide-selected
+        dense
         :items="items"
-        v-model="filter.items"
+        v-model="buySellRatiosFilter.items"
         item-value="id"
         item-text="name"
         return-object
@@ -29,7 +34,7 @@
         multiple
         hide-details
         :items="anchors"
-        v-model="filter.anchors"
+        v-model="buySellRatiosFilter.anchors"
         >
       </v-select>
       -->
@@ -40,8 +45,9 @@
         single-line
         hide-details
         hide-selected
+        dense
         :items="locations"
-        v-model="filter.locationsBuy"
+        v-model="buySellRatiosFilter.locationsBuy"
         item-value="id"
         item-text="name"
         return-object
@@ -51,9 +57,12 @@
         label="Sell Location"
         clearable
         multiple
+        single-line
         hide-details
+        hide-selected
+        dense
         :items="locations"
-        v-model="filter.locationsSell"
+        v-model="buySellRatiosFilter.locationsSell"
         item-value="id"
         item-text="name"
         return-object
@@ -62,7 +71,7 @@
       <!--
       <v-checkbox
         label="Illegal"
-        v-model="filter.illegal"
+        v-model="buySellRatiosFilter.illegal"
         @change="refresh()"
         hide-details
         >
@@ -217,11 +226,9 @@ export default {
         { sortable: true, align: 'left', text: 'Sell Price', value: 'sellPrice' },
         { sortable: true, align: 'left', text: 'Sell Location', value: 'sellLocationName' }
       ],
-      filter: {
-        items: [],
-        locationsBuy: [],
-        locationsSell: []
-      },
+      buySellRatiosFilter: Object.assign({}, this.$store.getters.buySellRatiosFilter),
+      buySellRatiosPagination: Object.assign({}, this.$store.getters.buySellRatiosPagination),
+      buySellRatiosPaginationOld: Object.assign({}, this.$store.getters.buySellRatiosPagination),
       editing: false,
       toast: false,
       toastMessage: null,
@@ -231,7 +238,30 @@ export default {
   watch: {
     buySellRatiosPagination: {
       handler () {
-        // console.log('watch buySellRatiosPagination queryBuySellRatios')
+        // console.error('watch buySellRatiosPagination arguments', arguments)
+        // console.error('watch buySellRatiosPagination buySellRatiosPagination', this.buySellRatiosPagination)
+        // console.error('watch buySellRatiosPagination buySellRatiosPaginationOld', this.buySellRatiosPaginationOld)
+        let buySellRatiosPagination = this.buySellRatiosPagination
+        let buySellRatiosPaginationOld = this.buySellRatiosPaginationOld
+        if (buySellRatiosPagination.sortBy !== buySellRatiosPaginationOld.sortBy ||
+            buySellRatiosPagination.descending !== buySellRatiosPaginationOld.descending ||
+            buySellRatiosPagination.rowsPerPage !== buySellRatiosPaginationOld.rowsPerPage ||
+            buySellRatiosPagination.page !== buySellRatiosPaginationOld.page) {
+          // console.log('watch buySellRatiosPagination changed; setBuySellRatiosPagination && queryBuySellRatios')
+          this.$store.commit('setBuySellRatiosPagination', Object.assign({}, this.buySellRatiosPagination))
+          this.$store.dispatch('queryBuySellRatios')
+        } else {
+          // console.log('watch buySellRatiosPagination unchanged; ignore')
+        }
+        this.buySellRatiosPaginationOld = this.buySellRatiosPagination
+      },
+      deep: true
+    },
+    buySellRatiosFilter: {
+      handler () {
+        // console.error('watch buySellRatiosFilter arguments', arguments)
+        // console.error('watch buySellRatiosFilter setBuySellRatiosFilter && queryBuySellRatios')
+        this.$store.commit('setBuySellRatiosFilter', Object.assign({}, this.buySellRatiosFilter))
         this.$store.dispatch('queryBuySellRatios')
       },
       deep: true
@@ -270,27 +300,59 @@ export default {
         this.$store.getters.user !== undefined
     },
     items () {
-      let items = this.$store.getters.items
-      let result = []
-      Object.keys(items).forEach(itemId => {
-        let item = items[itemId]
-        result.push({ id: itemId, name: item.name })
-      })
-      return result
+      return this.$store.getters.items
+        .map(item => {
+          // if (item.illegal && !this.buySellRatiosFilter.illegal) {
+          //   return
+          // }
+          let id = item.id
+          let name = item.name
+          /*
+          if (this.isDevelopment) {
+            name += ' {' + id + '}'
+          }
+          */
+          return { id, name }
+        })
+        .sort((a, b) => {
+          let aName = a.name.toLowerCase()
+          let bName = b.name.toLowerCase()
+          if (aName < bName) {
+            return -1
+          }
+          if (aName > bName) {
+            return 1
+          }
+          return 0
+        })
     },
     locations () {
       return this.$store.getters.locations
+        .map(location => {
+          let id = location.id
+          let name = location.name
+          // name = location.anchor.name + ' - ' + name
+          /*
+          if (this.isDevelopment) {
+            name += ' {' + id + '}'
+          }
+          */
+          return { id, name }
+        })
+        .sort((a, b) => {
+          let aName = a.name.toLowerCase()
+          let bName = b.name.toLowerCase()
+          if (aName < bName) {
+            return -1
+          }
+          if (aName > bName) {
+            return 1
+          }
+          return 0
+        })
     },
     buySellRatios () {
       return this.$store.getters.buySellRatios
-    },
-    buySellRatiosPagination: {
-      get: function () {
-        return this.$store.getters.buySellRatiosPagination
-      },
-      set: function (value) {
-        this.$store.commit('setBuySellRatiosPagination', value)
-      }
     },
     locationItemPriceList () {
       let prices = this.$store.getters.locationItemPriceList(this.locationId)
@@ -315,14 +377,14 @@ export default {
     },
     refresh () {
       // console.log('refresh()')
-      if (!this.filter.illegal) {
-        // Clear illegal items from this.filter.items
+      if (!this.buySellRatiosFilter.illegal) {
+        // Clear illegal items from this.buySellRatiosFilter.items
         let items = this.$store.getters.items
-        let i = this.filter.items.length
+        let i = this.buySellRatiosFilter.items.length
         while (i--) {
-          let item = this.filter.items[i]
+          let item = this.buySellRatiosFilter.items[i]
           if (items[item.id].illegal) {
-            this.filter.item.splice(i, 1)
+            this.buySellRatiosFilter.item.splice(i, 1)
           }
         }
       }

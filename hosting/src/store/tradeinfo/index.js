@@ -16,30 +16,6 @@ const DEPLOYMENT_ID = IS_PRODUCTION ? 'production' : 'test'
 const ROOT = `/deployments/${DEPLOYMENT_ID}`
 const FIELD_TIMESTAMPED = 'timestamped'
 const FIELD_TIMESTAMP = 'timestamp'
-/*
- * This is weird: import 'firebase/firestore' does not support Query.offset(...)...
- * https://firebase.google.com/docs/reference/js/firebase.firestore.Query
- * ...but import 'firebase-admin' does:
- * https://cloud.google.com/nodejs/docs/reference/firestore/0.13.x/Query#offset
- *
- * import 'firebase-admin' actually results in import '@google-cloud/firestore'.
- *
- * Maybe there is a [safe] way to use that or firebase-admin here.
- *
- * NOTE that there is also some '@firebase/firestore' package too:
- * https://www.npmjs.com/package/@firebase/firestore
- * But this appears to resolve to the same thing as import 'firebase/firestore'
- *
- * Set this to true if they ever add "offset" to Firestore's Web SDK.
- *
- * Finally, consider this problem too:
- * https://firebase.google.com/docs/firestore/pricing#operations
- * "Managing large result sets"
- * "... when you send a query that includes an offset, you are charged a read for each skipped document."
- * THAT SUCKS!
- * So, IS_QUERY_OFFSET_SUPPORTED may never be enabled for pricing reasons alone.
- */
-const IS_QUERY_OFFSET_SUPPORTED = false
 
 export default {
   state: {
@@ -64,7 +40,12 @@ export default {
       totalItems: 0,
       rowsPerPageItems: [5, 10, 25, 50, 100]
     },
-    buySellRatiosUnsubscribe: null,
+    buySellRatiosFilter: {
+      items: [],
+      locationsBuy: [],
+      locationsSell: []
+    },
+    buySellRatiosUnsubscribes: [],
     buySellRatios: []
   },
   mutations: {
@@ -160,8 +141,12 @@ export default {
       // console.log('setBuySellRatiosPagination payload', payload)
       state.buySellRatiosPagination = payload
     },
-    _setBuySellRatiosUnsubscribe (state, payload) {
-      state.buySellRatiosUnsubscribe = payload
+    setBuySellRatiosFilter (state, payload) {
+      // console.log('setBuySellRatiosFilter payload', payload)
+      state.buySellRatiosFilter = payload
+    },
+    _setBuySellRatiosUnsubscribes (state, payload) {
+      state.buySellRatiosUnsubscribes = payload
     },
     _setBuySellRatios (state, payload) {
       state.buySellRatios = payload
@@ -183,9 +168,9 @@ export default {
       let path = `${ROOT}/itemCategories`
       // console.log('_queryItemCategories path', path)
       firebase.firestore().collection(path)
-        .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
+        .onSnapshot(/* { includeQueryMetadataChanges: true }, */ querySnapshot => {
           context.dispatch('_onQueriedItemCategories', querySnapshot)
-        }, (error) => {
+        }, error => {
           console.error('_queryItemCategories', error)
         })
     },
@@ -197,7 +182,7 @@ export default {
         return
       }
       // console.log('_onQueriedItemCategories')
-      docChanges.forEach((change) => {
+      docChanges.forEach(change => {
         // console.log('_onQueriedItemCategories change.type', change.type)
         let doc = change.doc
         // console.log('_onQueriedItemCategories doc', doc)
@@ -229,9 +214,9 @@ export default {
       let path = `${ROOT}/itemTypes`
       // console.log('_queryItems path', path)
       firebase.firestore().collection(path)
-        .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
+        .onSnapshot(/* { includeQueryMetadataChanges: true }, */ querySnapshot => {
           context.dispatch('_onQueriedItems', querySnapshot)
-        }, (error) => {
+        }, error => {
           console.error('_queryItems', error)
         })
     },
@@ -243,7 +228,7 @@ export default {
         return
       }
       // console.log('_onQueriedItems')
-      docChanges.forEach((change) => {
+      docChanges.forEach(change => {
         // console.log('_onQueriedItems change.type', change.type)
         let doc = change.doc
         // console.log('_onQueriedItems doc', doc)
@@ -280,9 +265,9 @@ export default {
       let path = `${ROOT}/anchors`
       // console.log('_queryAnchors path', path)
       firebase.firestore().collection(path)
-        .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
+        .onSnapshot(/* { includeQueryMetadataChanges: true }, */ querySnapshot => {
           context.dispatch('_onQueriedAnchors', querySnapshot)
-        }, (error) => {
+        }, error => {
           console.error('_queryAnchors', error)
         })
     },
@@ -294,7 +279,7 @@ export default {
         return
       }
       // console.log('_onQueriedAnchors')
-      docChanges.forEach((change) => {
+      docChanges.forEach(change => {
         // console.log('_onQueriedAnchors change.type', change.type)
         let doc = change.doc
         // console.log('_onQueriedAnchors doc', doc)
@@ -326,9 +311,9 @@ export default {
       let path = `${ROOT}/locations`
       // console.log('_queryLocations path', path)
       firebase.firestore().collection(path)
-        .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
+        .onSnapshot(/* { includeQueryMetadataChanges: true }, */ querySnapshot => {
           context.dispatch('_onQueriedLocations', querySnapshot)
-        }, (error) => {
+        }, error => {
           console.error('_queryLocations', error)
         })
     },
@@ -340,7 +325,7 @@ export default {
         return
       }
       // console.log('_onQueriedLocations')
-      docChanges.forEach((change) => {
+      docChanges.forEach(change => {
         // console.log('_onQueriedLocations change.type', change.type)
         let doc = change.doc
         // console.log('_onQueriedLocations doc', doc)
@@ -375,9 +360,9 @@ export default {
         .where(FIELD_TIMESTAMPED, '==', true)
         .orderBy(FIELD_TIMESTAMP, 'desc')
         .limit(1)
-        .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
+        .onSnapshot(/* { includeQueryMetadataChanges: true }, */ querySnapshot => {
           context.dispatch('_onQueriedLocationItemPrices', { locationId, querySnapshot })
-        }, (error) => {
+        }, error => {
           console.error('_queryLocationItemPrices', error)
           context.commit('_setLocationItemPrices', { locationId: locationId, locationItemPrices: undefined })
           context.dispatch('_testIfInitialized')
@@ -394,7 +379,7 @@ export default {
       }
       let locationItemPrices = {}
       let metadata = {}
-      docChanges.forEach((change) => {
+      docChanges.forEach(change => {
         // console.log('_onQueriedLocationItemPrices change.type', change.type)
         if (change.type === 'removed' && docChanges.length !== 1) {
           return
@@ -448,16 +433,18 @@ export default {
     },
 
     queryBuySellRatios (context) {
+      console.info('queryBuySellRatios')
       if (!context.state.initialized) {
         // console.log('queryBuySellRatios initialized == false; ignoring')
         return
       }
 
-      let buySellRatiosUnsubscribe = context.state.buySellRatiosUnsubscribe
-      if (buySellRatiosUnsubscribe) {
+      let buySellRatiosUnsubscribes = context.state.buySellRatiosUnsubscribes
+      for (let buySellRatiosUnsubscribe of buySellRatiosUnsubscribes) {
         // console.log('queryBuySellRatios buySellRatiosUnsubscribe()')
         buySellRatiosUnsubscribe()
       }
+      context.commit('_setBuySellRatiosUnsubscribes', [])
 
       //
       // https://vuetifyjs.com/en/components/data-tables#example-server
@@ -465,52 +452,60 @@ export default {
       //
       let buySellRatiosPagination = context.state.buySellRatiosPagination
       // console.log('queryBuySellRatios buySellRatiosPagination', buySellRatiosPagination)
-      let orderBy = buySellRatiosPagination.sortBy
-      switch (orderBy) {
-        case 'itemName':
-          orderBy = 'itemId'
-          break
-        case 'buyLocationName':
-          orderBy = 'buyLocationId'
-          break
-        case 'sellLocationName':
-          orderBy = 'sellLocationId'
-          break
-      }
-      let descending = buySellRatiosPagination.descending
+      let { sortBy, descending, rowsPerPage } = buySellRatiosPagination
       let direction = descending ? 'desc' : 'asc'
-      let limit = buySellRatiosPagination.rowsPerPage
-      let pageNumber = buySellRatiosPagination.page
-      let offset
-      if (IS_QUERY_OFFSET_SUPPORTED) {
-        offset = (pageNumber - 1) * limit
-      }
       let path = `${ROOT}/buySellRatios`
-      // console.log('queryBuySellRatios path', path, 'orderBy', orderBy, 'direction', direction, 'offset', offset, 'limit', limit)
-      let query = firebase.firestore().collection(path)
-        .orderBy(orderBy, direction)
-      if (offset) {
-        query.offset(offset)
-      }
-      buySellRatiosUnsubscribe = query
-        .limit(limit)
-        .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (querySnapshot) => {
-          context.dispatch('_onQueriedBuySellRatios', querySnapshot)
-        }, (error) => {
-          console.error('queryBuySellRatios', error)
-        })
-      context.commit('_setBuySellRatiosUnsubscribe', buySellRatiosUnsubscribe)
 
-      if (IS_QUERY_OFFSET_SUPPORTED) {
-        firebase.firestore().doc(`${ROOT}`)
-          .onSnapshot(/* { includeQueryMetadataChanges: true }, */ (docSnapshot) => {
-            // console.log(`queryBuySellRatios ${ROOT} docSnapshot`, docSnapshot)
-            let buySellRatiosCount = docSnapshot.get('buySellRatiosCount')
-            context.commit('_setBuySellRatiosCount', buySellRatiosCount)
-          }, (error) => {
-            console.error(`queryBuySellRatios ${ROOT}`, error)
-          })
+      const queries = []
+
+      let buySellRatiosFilter = context.state.buySellRatiosFilter
+      // console.log('queryBuySellRatios buySellRatiosFilter', buySellRatiosFilter)
+      buySellRatiosFilter.items.forEach(filterItem => {
+        let query = firebase.firestore().collection(path)
+          .where('itemName', '==', filterItem.name)
+        if (sortBy !== 'itemName') {
+          query = query.orderBy(sortBy, direction)
+        }
+        queries.push(query)
+      })
+      buySellRatiosFilter.locationsBuy.forEach(filterLocationBuy => {
+        let query = firebase.firestore().collection(path)
+          .where('buyLocationName', '==', filterLocationBuy.name)
+        if (sortBy !== 'buyLocationName') {
+          query = query.orderBy(sortBy, direction)
+        }
+        queries.push(query)
+      })
+      buySellRatiosFilter.locationsSell.forEach(filterLocationSell => {
+        let query = firebase.firestore().collection(path)
+          .where('sellLocationName', '==', filterLocationSell.name)
+        if (sortBy !== 'sellLocationName') {
+          query = query.orderBy(sortBy, direction)
+        }
+        queries.push(query)
+      })
+      if (!queries.length) {
+        let query = firebase.firestore().collection(path)
+          .orderBy(sortBy, direction)
+        queries.push(query)
       }
+      // console.log('queryBuySellRatios queries', queries)
+
+      context.commit('_setBuySellRatios', [])
+      buySellRatiosUnsubscribes = []
+      for (let query of queries) {
+        query = query
+          .limit(rowsPerPage)
+        // console.log('queryBuySellRatios query', getQueryString(query))
+        let unsubscribe = query
+          .onSnapshot({ includeQueryMetadataChanges: true }, querySnapshot => {
+            context.dispatch('_onQueriedBuySellRatios', querySnapshot)
+          }, error => {
+            console.error('queryBuySellRatios', error)
+          })
+        buySellRatiosUnsubscribes.push(unsubscribe)
+      }
+      context.commit('_setBuySellRatiosUnsubscribes', buySellRatiosUnsubscribes)
     },
     _onQueriedBuySellRatios (context, querySnapshot) {
       // console.log('_onQueriedBuySellRatios querySnapshot', querySnapshot)
@@ -524,7 +519,7 @@ export default {
 
       let buySellRatios = []
 
-      docChanges.forEach((change) => {
+      docChanges.forEach(change => {
         // console.log('_onQueriedBuySellRatios change', change)
         let doc = change.doc
         // console.log('_onQueriedBuySellRatios doc', doc)
@@ -561,9 +556,46 @@ export default {
         // console.log('_onQueriedBuySellRatios buySellRatio', buySellRatio)
         buySellRatios.push(buySellRatio)
       })
-
       // console.log('_onQueriedBuySellRatios buySellRatios', buySellRatios)
-      context.commit('_setBuySellRatios', buySellRatios)
+      // console.log('_onQueriedBuySellRatios context.state.buySellRatios', context.state.buySellRatios)
+      let buySellRatiosPagination = context.state.buySellRatiosPagination
+      // console.log('_onQueriedBuySellRatios buySellRatiosPagination', buySellRatiosPagination)
+      let { sortBy, descending, rowsPerPage } = buySellRatiosPagination
+      let result = concatUniqueSortLimit(buySellRatios, context.state.buySellRatios, (a, b) => {
+        // console.log('equals a', a, 'b', b)
+        let result = a.itemName === b.itemName
+        // console.log('equals itemName', result)
+        result = result && a.buyLocationName === b.buyLocationName
+        // console.log('equals buyLocationName', result)
+        result = result && a.buyPrice === b.buyPrice
+        // console.log('equals buyPrice', result)
+        // NOTE:(pv) For some reason comparing buyTimestamp returns false
+        result = result && a.ratio === b.ratio
+        // console.log('equals ratio', result)
+        result = result && a.sellPrice === b.sellPrice
+        // console.log('equals sellPrice', result)
+        // NOTE:(pv) For some reason comparing sellTimestamp returns false
+        result = result && a.sellLocationName === b.sellLocationName
+        // console.log('equals sellLocationName', result)
+        return result
+      }, (a, b) => {
+        let valueA = a[sortBy]
+        let valueB = b[sortBy]
+        let result
+        if (valueA > valueB) {
+          result = 1
+        } else if (valueA < valueB) {
+          result = -1
+        } else {
+          result = 0
+        }
+        if (descending) {
+          result = -result
+        }
+        return result
+      }, rowsPerPage)
+      // console.log('_onQueriedBuySellRatios result', result)
+      context.commit('_setBuySellRatios', result)
     },
 
     saveLocationItemPrices (context, { locationId, locationItemPrices }) {
@@ -669,7 +701,7 @@ export default {
       return state.selectedLocationId
     },
     itemCategory (state) {
-      return (itemCategoryId) => {
+      return itemCategoryId => {
         return state.itemCategoriesMap[itemCategoryId].name
       }
     },
@@ -680,25 +712,72 @@ export default {
       return state.locationsList
     },
     location (state) {
-      return (locationId) => {
+      return locationId => {
         return state.locationsMap[locationId]
       }
     },
     locationItemPriceList (state) {
-      return (locationId) => {
+      return locationId => {
         return state.locationsItemsPricesMap[locationId]
       }
     },
     locationItemPriceMetadata (state) {
-      return (locationId) => {
+      return locationId => {
         return state.locationsItemsPricesMetadataMap[locationId]
       }
     },
     buySellRatiosPagination (state) {
       return state.buySellRatiosPagination
     },
+    buySellRatiosFilter (state) {
+      return state.buySellRatiosFilter
+    },
     buySellRatios (state) {
       return state.buySellRatios
     }
   }
+}
+
+// eslint-disable-next-line no-unused-vars
+function getQueryString (query) {
+  // console.log('getQueryString query', query)
+
+  let queryString = ''
+
+  let _query = query._query
+
+  let path = _query.path
+  queryString = 'path ' + path
+
+  let where = _query.filters
+  if (where.length) {
+    queryString += ' where ' + where
+  }
+
+  let orderBy = _query.explicitOrderBy
+  if (orderBy.length) {
+    queryString += ' orderBy ' + orderBy
+  }
+
+  let limit = _query.limit
+  if (limit) {
+    queryString += ' limit ' + limit
+  }
+
+  // offset
+
+  return queryString
+}
+
+function concatUniqueSortLimit (a, b, equals, sort, limit) {
+  a = a.concat(b)
+  for (var i = 0; i < a.length; ++i) {
+    for (var j = i + 1; j < a.length; ++j) {
+      if (equals(a[i], a[j])) {
+        a.splice(j--, 1)
+      }
+    }
+  }
+  a.sort(sort)
+  return a.slice(0, limit)
 }
