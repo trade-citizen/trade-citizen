@@ -8,19 +8,58 @@
     <v-layout row d-flex align-center>
       <v-icon class="mx-2">filter_list</v-icon><span class="mr-2">Filter</span>
       <v-select
-        label="Commodities"
+        label="Item"
         clearable
         multiple
         single-line
         hide-details
         hide-selected
-        :items="commodities"
-        v-model="filter.commodities"
+        :items="items"
+        v-model="filter.items"
         item-value="id"
         item-text="name"
         return-object
         >
       </v-select>
+      <!-- TODO:(pv) Filter Category... -->
+      <!--
+      <v-select
+        label="Anchors"
+        clearable
+        multiple
+        hide-details
+        :items="anchors"
+        v-model="filter.anchors"
+        >
+      </v-select>
+      -->
+      <v-select
+        label="Buy Location"
+        clearable
+        multiple
+        single-line
+        hide-details
+        hide-selected
+        :items="locations"
+        v-model="filter.locationsBuy"
+        item-value="id"
+        item-text="name"
+        return-object
+        >
+      </v-select>
+      <v-select
+        label="Sell Location"
+        clearable
+        multiple
+        hide-details
+        :items="locations"
+        v-model="filter.locationsSell"
+        item-value="id"
+        item-text="name"
+        return-object
+        >
+      </v-select>
+      <!--
       <v-checkbox
         label="Illegal"
         v-model="filter.illegal"
@@ -28,8 +67,8 @@
         hide-details
         >
       </v-checkbox>
+      -->
     </v-layout>
-    -->
     <v-layout row d-flex>
       <!--
         NOTE: pagination.sync is needed to define non-default sort column
@@ -179,9 +218,7 @@ export default {
         { sortable: true, align: 'left', text: 'Sell Location', value: 'sellLocationName' }
       ],
       filter: {
-        illegal: false,
-        commodities: [],
-        anchors: [],
+        items: [],
         locationsBuy: [],
         locationsSell: []
       },
@@ -232,16 +269,17 @@ export default {
       return this.$store.getters.user !== null &&
         this.$store.getters.user !== undefined
     },
-    commodities () {
-      let commodities = this.$store.getters.commodities
+    items () {
+      let items = this.$store.getters.items
       let result = []
-      Object.keys(commodities).forEach((commodityId) => {
-        let commodity = commodities[commodityId]
-        if (!commodity.illegal || this.filter.illegal) {
-          result.push({ id: commodityId, name: commodity.name })
-        }
+      Object.keys(items).forEach(itemId => {
+        let item = items[itemId]
+        result.push({ id: itemId, name: item.name })
       })
       return result
+    },
+    locations () {
+      return this.$store.getters.locations
     },
     buySellRatios () {
       return this.$store.getters.buySellRatios
@@ -278,13 +316,13 @@ export default {
     refresh () {
       // console.log('refresh()')
       if (!this.filter.illegal) {
-        // Clear illegal items from this.filter.commodities
-        let commodities = this.$store.getters.commodities
-        let i = this.filter.commodities.length
+        // Clear illegal items from this.filter.items
+        let items = this.$store.getters.items
+        let i = this.filter.items.length
         while (i--) {
-          let commodity = this.filter.commodities[i]
-          if (commodities[commodity.id].illegal) {
-            this.filter.commodities.splice(i, 1)
+          let item = this.filter.items[i]
+          if (items[item.id].illegal) {
+            this.filter.item.splice(i, 1)
           }
         }
       }
