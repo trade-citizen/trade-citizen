@@ -2,12 +2,12 @@ import Vue from 'vue'
 import * as firebase from 'firebase'
 import 'firebase/firestore'
 import 'firebase/functions'
+import * as utils from '../../utils'
 
-class PriceError extends Error {
-  constructor (itemId, buyOrSell, message) {
+class ErrorPricesInvalid extends Error {
+  constructor (message, invalidPrices) {
     super(message)
-    this.itemId = itemId
-    this.buyOrSell = buyOrSell
+    this.invalidPrices = invalidPrices
   }
 }
 
@@ -19,6 +19,8 @@ const FIELD_TIMESTAMP = 'timestamp'
 
 export default {
   state: {
+    offline: false,
+    persistenceError: null,
     initializing: true,
     initialized: false,
     saving: false,
@@ -49,6 +51,22 @@ export default {
     buySellRatios: []
   },
   mutations: {
+    setOffline (state, payload) {
+      // console.log('setOffline', payload)
+      let offline = payload
+      // console.log('setOffline offline', offline)
+      state.offline = offline
+      if (offline) {
+        // console.log('setOffline firebase.firestore().disableNetwork()')
+        firebase.firestore().disableNetwork()
+      } else {
+        // console.log('setOffline firebase.firestore().enableNetwork()')
+        firebase.firestore().enableNetwork()
+      }
+    },
+    _setPersistenceError (state, payload) {
+      state.persistenceError = payload
+    },
     setSelectedLocationId (state, payload) {
       state.selectedLocationId = payload
     },
@@ -112,15 +130,20 @@ export default {
     _setLocationItemPrices (state, { locationId, locationItemPrices, metadata }) {
       let locationItemPricesList = state.itemsList
         .map(item => {
+          // console.log('item', item)
+
           let itemId = item.id
           let itemName = item.name
           let itemCategory = item.category
           let locationItemPrice = locationItemPrices[itemId]
+          // console.log('locationItemPrice', locationItemPrice)
+
           locationItemPrice = Object.assign({
             id: itemId,
             name: itemName,
             category: itemCategory
           }, locationItemPrice)
+          // console.log('locationItemPrice', locationItemPrice)
 
           let priceBuy = locationItemPrice.priceBuy
           let priceSell = locationItemPrice.priceSell
@@ -135,6 +158,16 @@ export default {
       } else {
         Vue.set(state.locationsItemsPricesMetadataMap, locationId, undefined)
       }
+    },
+    _setLocationItemPriceInvalid (state, { locationId, itemId, buyOrSell, invalidPrice }) {
+      let locationItemPrices = state.locationsItemsPricesMap[locationId]
+      // console.log('_setLocationItemPriceInvalid locationItemPrices', locationItemPrices)
+      let itemPrices = locationItemPrices.find(itemPrices => {
+        return itemPrices.id === itemId
+      })
+      // console.log('_setLocationItemPriceInvalid itemPrices', itemPrices)
+      let errorKey = `invalidPrice${utils.uppercaseFirstLetter(buyOrSell)}`
+      Vue.set(itemPrices, errorKey, invalidPrice)
     },
 
     setBuySellRatiosPagination (state, payload) {
@@ -158,9 +191,28 @@ export default {
     }
   },
   actions: {
-
     initialize (context) {
-      context.dispatch('_queryItemCategories')
+      firebase.initializeApp({
+        apiKey: 'AIzaSyDfKA77M6vyodG8_BprKviSgNtB0zLoVDU',
+        authDomain: 'trade-citizen.firebaseapp.com',
+        projectId: 'trade-citizen'
+      })
+      firebase.firestore().enablePersistence()
+        .then(result => {
+          // console.log('enablePersistence resolve')
+        }, error => {
+          // console.warn('enablePersistence reject', error)
+          context.commit('_setPersistenceError', error)
+        })
+        .then(result => {
+          firebase.auth().onAuthStateChanged(user => {
+            // console.log('onAuthStateChanged', user)
+            if (user) {
+              context.dispatch('autoSignIn', user)
+            }
+            context.dispatch('_queryItemCategories')
+          })
+        })
     },
 
     _queryItemCategories (context) {
@@ -561,7 +613,7 @@ export default {
       let buySellRatiosPagination = context.state.buySellRatiosPagination
       // console.log('_onQueriedBuySellRatios buySellRatiosPagination', buySellRatiosPagination)
       let { sortBy, descending, rowsPerPage } = buySellRatiosPagination
-      let result = concatUniqueSortLimit(buySellRatios, context.state.buySellRatios, (a, b) => {
+      let equals = (a, b) => {
         // console.log('equals a', a, 'b', b)
         let result = a.itemName === b.itemName
         // console.log('equals itemName', result)
@@ -578,7 +630,8 @@ export default {
         result = result && a.sellLocationName === b.sellLocationName
         // console.log('equals sellLocationName', result)
         return result
-      }, (a, b) => {
+      }
+      let sort = (a, b) => {
         let valueA = a[sortBy]
         let valueB = b[sortBy]
         let result
@@ -593,7 +646,8 @@ export default {
           result = -result
         }
         return result
-      }, rowsPerPage)
+      }
+      let result = concatUniqueSortLimit(buySellRatios, context.state.buySellRatios, equals, sort, rowsPerPage)
       // console.log('_onQueriedBuySellRatios result', result)
       context.commit('_setBuySellRatios', result)
     },
@@ -620,6 +674,8 @@ export default {
       })
       // console.log('saveLocationItemPrices mapPricesNew', mapPricesNew)
 
+      let invalidPrices = []
+
       let arrayPricesOriginalAll = context.state.locationsItemsPricesMap[locationId]
       // console.log('saveLocationItemPrices arrayPricesOriginalAll', arrayPricesOriginalAll)
       for (let priceOriginal of arrayPricesOriginalAll) {
@@ -633,19 +689,31 @@ export default {
         let priceNewBuy
         let priceNewSell
         if (priceNew) {
+          let invalidPrice
+
           priceNewBuy = priceNew.priceBuy
-          if (priceNewBuy && isNaN(priceNewBuy)) {
-            return Promise.reject(new PriceError(itemId, 'buy', 'Invalid price'))
+          invalidPrice = priceNewBuy && isNaN(priceNewBuy)
+          context.commit('_setLocationItemPriceInvalid', { locationId, itemId, buyOrSell: 'buy', invalidPrice: invalidPrice })
+          if (invalidPrice) {
+            invalidPrices.push({ itemId, buyOrSell: 'buy' })
+          } else {
+            priceNewBuy = Number(priceNewBuy)
           }
-          priceNewBuy = Number(priceNewBuy)
 
           priceNewSell = priceNew.priceSell
-          if (priceNewSell && isNaN(priceNewSell)) {
-            return Promise.reject(new PriceError(itemId, 'sell', 'Invalid price'))
+          invalidPrice = priceNewSell && isNaN(priceNewSell)
+          context.commit('_setLocationItemPriceInvalid', { locationId, itemId, buyOrSell: 'sell', invalidPrice: invalidPrice })
+          if (invalidPrice) {
+            invalidPrices.push({ itemId, buyOrSell: 'sell' })
+          } else {
+            priceNewSell = Number(priceNewSell)
           }
-          priceNewSell = Number(priceNewSell)
         }
         // console.log('saveLocationItemPrices priceNewBuy', priceNewBuy, 'priceNewSell', priceNewSell)
+
+        if (invalidPrices.length) {
+          continue
+        }
 
         let thisPrices = {}
         changed |= priceOriginalBuy !== priceNewBuy
@@ -661,6 +729,14 @@ export default {
         }
       }
       // console.log('saveLocationItemPrices prices', prices)
+
+      if (invalidPrices.length) {
+        let message = 'Invalid price'
+        if (invalidPrices.length === 1) {
+          message += 's'
+        }
+        return Promise.reject(new ErrorPricesInvalid(message, invalidPrices))
+      }
 
       if (!changed) {
         return Promise.reject(new Error('No prices changed'))
@@ -688,6 +764,12 @@ export default {
     }
   },
   getters: {
+    offline (state) {
+      return state.offline
+    },
+    persistenceError (state) {
+      return state.persistenceError
+    },
     initializing (state) {
       return state.initializing
     },

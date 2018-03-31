@@ -164,6 +164,7 @@
                   hide-details
                   label="Buy Price"
                   :autofocus="index === 0"
+                  :error="locationItemPrice.invalidPriceBuy"
                   :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
                   :disabled="!userIsAuthenticated || offline"
                   :value="locationItemPrice.priceBuy"
@@ -176,6 +177,7 @@
                   class="input-group--focused"
                   hide-details
                   label="Sell Price"
+                  :error="locationItemPrice.invalidPriceSell"
                   :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
                   :disabled="!userIsAuthenticated || offline"
                   :value="locationItemPrice.priceSell"
@@ -235,6 +237,11 @@ export default {
     }
   },
   watch: {
+    persistenceError: {
+      handler () {
+        this.onPersistenceError()
+      }
+    },
     buySellRatiosPagination: {
       handler () {
         // console.error('watch buySellRatiosPagination arguments', arguments)
@@ -285,6 +292,9 @@ export default {
   computed: {
     isDevelopment () {
       return this.$store.getters.isDevelopment
+    },
+    persistenceError () {
+      return this.$store.getters.persistenceError
     },
     offline () {
       return this.$store.getters.offline
@@ -371,6 +381,27 @@ export default {
     }
   },
   methods: {
+    onPersistenceError () {
+      // console.log('onPersistenceError error', error)
+      let error = this.persistenceError
+      if (!error) {
+        return
+      }
+      let toastMessage
+      if (error.code === 'failed-precondition') {
+        toastMessage = 'Multiple tabs open; Offline mode disabled.'
+      } else if (error.code === 'unimplemented') {
+        toastMessage = 'Offline mode not supported.'
+      } else {
+        if (error.message) {
+          toastMessage = error.message
+        } else {
+          toastMessage = `Offline mode disabled: "${error.code}"`
+        }
+      }
+      this.toastMessage = toastMessage
+      this.toast = true
+    },
     formatDateYMDHMS (date) {
       return utils.formatDateYMDHMS(date)
     },
@@ -400,7 +431,6 @@ export default {
     saveLocation (locationId) {
       // console.log('Home saveLocation this.locationId:' + this.locationId)
       // console.log('Home saveLocation this.locationItemPriceListCopy', this.locationItemPriceListCopy)
-      this.editing = false
       this.$store
         .dispatch('saveLocationItemPrices', {
           locationId: this.locationId,
@@ -408,29 +438,13 @@ export default {
         })
         .then(result => {
           // console.log('saveLocation SUCCESS!')
+          this.editing = false
           this.toastMessage = 'Prices Saved.'
-          this.toast = true
-        },
-        error => {
-          // console.log('saveLocation ERROR', error)
-          let toastMessage = error.message ? error.message : error
-          if (this.isDevelopment) {
-            if (error.itemId) {
-              toastMessage += ` {${error.itemId}} {${error.buyOrSell}}`
-            }
-          }
-          this.toastMessage = toastMessage
           this.toast = true
         })
         .catch(error => {
-          console.log('saveLocation ERROR', error)
-          let toastMessage = error.message ? error.message : error
-          if (this.isDevelopment) {
-            if (error.itemId) {
-              toastMessage += ` {${error.itemId}} {${error.buyOrSell}}`
-            }
-          }
-          this.toastMessage = toastMessage
+          // console.log('saveLocation ERROR', error)
+          this.toastMessage = error.message ? error.message : error
           this.toast = true
         })
     },

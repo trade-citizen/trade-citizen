@@ -79,6 +79,7 @@
           solo-inverted
           autocomplete
           clearable
+          :disabled="this.initializing"
           :dense="$vuetify.breakpoint.xsOnly"
           :items="locations"
           item-text="name"
@@ -89,32 +90,51 @@
         <template v-if="locationId">
           <template v-if="userIsAuthenticated">
             <template v-if="showEdit">
-              <v-btn
+              <v-tooltip
                 v-if="editing"
-                icon
-                class="ml-0 mr-2"
-                @click="editLocation(false)"
-                >
-                <v-icon class="mx-1">cancel</v-icon>
-              </v-btn>
-              <v-btn
+                bottom>
+                <span
+                  slot="activator">
+                  <v-btn
+                    icon
+                    class="ml-0 mr-2"
+                    @click="editLocation(false)"
+                    >
+                    <v-icon class="mx-1">cancel</v-icon>
+                  </v-btn>
+                </span>
+                <span>Cancel</span>
+              </v-tooltip>
+              <v-tooltip
                 v-else
-                icon
-                class="ml-0 mr-2"
-                :disabled="!saveable"
-                @click="editLocation(true)"
-                >
-                <v-icon class="mx-1">edit</v-icon>
-              </v-btn>
+                bottom>
+                <span
+                  slot="activator">
+                  <v-btn
+                    icon
+                    class="ml-0 mr-2"
+                    @click="editLocation(true)"
+                    >
+                    <v-icon class="mx-1">edit</v-icon>
+                  </v-btn>
+                </span>
+                <span>Edit</span>
+              </v-tooltip>
             </template>
-            <v-btn
-              icon
-              class="ml-0 mr-2"
-              :disabled="!saveable"
-              @click="saveLocation"
-              >
-              <v-icon class="mx-1">save</v-icon>
-            </v-btn>
+            <v-tooltip bottom>
+              <span slot="activator">
+                <v-btn
+                  icon
+                  class="ml-0 mr-2"
+                  :disabled="!saveable"
+                  @click="saveLocation"
+                  >
+                  <v-icon class="mx-1">save</v-icon>
+                </v-btn>
+              </span>
+              <span>{{ 'Save (' + (offline ? 'OFFLINE' : 'Control-S or ⌘-S') + ')' }}</span>
+            </v-tooltip>
+            
           </template>
           <template v-else>
             <v-btn
@@ -160,7 +180,13 @@ export default {
     }
   },
 
+  created () {
+    // console.log('App created')
+    this.$store.dispatch('initialize')
+  },
+
   mounted () {
+    // console.log('App mounted')
     const vm = this
     window.addEventListener('load', function () {
       vm.updateOnlineStatus()
@@ -171,6 +197,7 @@ export default {
   },
 
   beforeDestroy () {
+    // console.log('App beforeDestroy')
     window.removeEventListener('keydown', this.onKeyDown)
     window.removeEventListener('online', this.updateOnlineStatus)
     window.removeEventListener('offline', this.updateOnlineStatus)
@@ -183,8 +210,11 @@ export default {
     offline () {
       return this.$store.getters.offline
     },
+    initializing () {
+      return this.$store.getters.initializing
+    },
     showProgress () {
-      let showProgress = this.$store.getters.initializing || this.$store.getters.saving
+      let showProgress = this.initializing || this.$store.getters.saving
       return showProgress
     },
     saveable () {
@@ -260,7 +290,9 @@ export default {
   },
   methods: {
     updateOnlineStatus () {
-      this.$store.commit('setOffline', !(navigator.onLine))
+      let online = navigator.onLine
+      // console.log('App updateOnlineStatus online', online)
+      this.$store.commit('setOffline', !online)
     },
     onKeyDown (event) {
       // NOTE: metaKey == Command on Mac
