@@ -11,7 +11,14 @@ const FIELD_LATEST_PRICE_TIMESTAMPED = 'latestPriceTimestamped'
 const FIELD_LATEST_PRICE_TIMESTAMP = 'latestPriceTimestamp'
 const FIELD_BUY_SELL_INFO_CACHE = '_buySellInfoCache'
 
-exports.addLocationPrice = function (userId, data) {
+module.exports = {
+  addLocationPrice,
+  getBuySellInfoCache,
+  updateBuySellInfo,
+  lastStep
+}
+
+function addLocationPrice(userId, data) {
   console.info('addLocationPrice userId', userId, 'data', data)
 
   if (!userId) {
@@ -207,87 +214,97 @@ function updateBuySellInfo(firestore, transaction, timestamp, deploymentId, loca
 
   // console.log('updateBuySellInfo buySellInfoCache', buySellInfoCache)
 
-  const { locationIds, itemIds, buySellPrices, buySellRatiosPrevious } = buySellInfoCache
-  // console.log('updateBuySellInfo locationIds', locationIds)
-  // console.log('updateBuySellInfo itemIds', itemIds)
+  const { locations, items, buySellPrices, buySellRatiosPrevious } = buySellInfoCache
+  // console.log('updateBuySellInfo locations', locations)
+  // console.log('updateBuySellInfo items', items)
   // console.log('updateBuySellInfo buySellPrices', buySellPrices)
   // console.log('updateBuySellInfo buySellRatiosPrevious', buySellRatiosPrevious)
 
   // console.log('updateBuySellInfo locationId', locationId, 'newPrices', newPrices)
-  if (newPrices) {
-    itemIds.forEach(itemId => {
-      const newPrice = newPrices && newPrices[itemId]
-      const priceBuy = newPrice && newPrice.priceBuy
-      const priceSell = newPrice && newPrice.priceSell
-      if (priceBuy || priceSell) {
-        console.log('updateBuySellInfo locationId', locationId, 'itemId', itemId, 'priceBuy', priceBuy, 'priceSell', priceSell)
-      }
-      addBuySellPrice(buySellPrices, locationId, itemId, 'buy', priceBuy, timestamp)
-      addBuySellPrice(buySellPrices, locationId, itemId, 'sell', priceSell, timestamp)
-    })
+  if (timestamp && locationId && priceId) {
+    if (newPrices) {
+      Object.keys(items).forEach(itemId => {
+        const newPrice = newPrices && newPrices[itemId]
+        const priceBuy = newPrice && newPrice.priceBuy
+        const priceSell = newPrice && newPrice.priceSell
+        if (priceBuy || priceSell) {
+          console.log('updateBuySellInfo locationId', locationId, 'itemId', itemId, 'priceBuy', priceBuy, 'priceSell', priceSell)
+        }
+        addBuySellPrice(buySellPrices, locationId, itemId, 'buy', priceBuy, timestamp)
+        addBuySellPrice(buySellPrices, locationId, itemId, 'sell', priceSell, timestamp)
+      })
+    } else {
+      buySellPrices[locationId] = { timestamp }
+    }
   } else {
-    buySellPrices[locationId] = { timestamp }
   }
 
   const buySellRatiosNew = {}
 
-  for (const locationIdBuy of locationIds) {
+  Object.keys(locations).forEach(locationIdBuy => {
     // console.log('updateBuySellInfo locationIdBuy', locationIdBuy)
     const itemPricesBuy = buySellPrices[locationIdBuy]
     // console.log('updateBuySellInfo itemPricesBuy', itemPricesBuy)
     if (!itemPricesBuy) {
       // console.warn(`No prices @ ${locationIdBuy}`)
-      continue
+      return
     }
 
-    for (const locationIdSell of locationIds) {
+    Object.keys(locations).forEach(locationIdSell => {
       // console.log('updateBuySellInfo locationIdSell', locationIdSell)
       if (locationIdSell === locationIdBuy) {
-        continue
+        return
       }
       const itemPricesSell = buySellPrices[locationIdSell]
       // console.log('updateBuySellInfo itemPricesSell', itemPricesSell)
       if (!itemPricesSell) {
         // console.warn(`No prices @ ${locationIdSell}`)
-        continue
+        return
       }
   
-      for (const itemId of itemIds) {
+      Object.keys(items).forEach(itemId => {
         // console.log('updateBuySellInfo itemId', itemId)
         const itemBuy = itemPricesBuy && itemPricesBuy[itemId]
         const priceBuy = itemBuy && itemBuy.priceBuy
         const timestampBuy = itemPricesBuy.timestamp
         if (!priceBuy) {
-          continue
+          return
         }
 
         const itemSell = itemPricesSell && itemPricesSell[itemId]
         const priceSell = itemSell && itemSell.priceSell
         const timestampSell = itemPricesSell.timestamp
         if (!priceSell) {
-          continue
+          return
         }
 
         const ratio = priceSell / priceBuy
 
         const docId = `${itemId}:${locationIdBuy}:${locationIdSell}`
 
+        const itemName = items[itemId]
+        const buyLocationName = locations[locationIdBuy]
+        const sellLocationName = locations[locationIdSell]
+
         const buySellRatio = {
-          itemId: itemId,
+          itemId,
+          itemName,
           buyLocationId: locationIdBuy,
+          buyLocationName,
           buyPrice: priceBuy,
           buyTimestamp: timestampBuy,
-          ratio: ratio,
+          ratio,
           sellPrice: priceSell,
           sellTimestamp: timestampSell,
-          sellLocationId: locationIdSell
+          sellLocationId: locationIdSell,
+          sellLocationName
         }
         // console.log('updateBuySellInfo buySellRatio', buySellRatio)
 
         buySellRatiosNew[docId] = buySellRatio
-      }
-    }
-  }
+      })
+    })
+  })
   // console.log('updateBuySellInfo buySellRatiosNew', buySellRatiosNew)
 
   buySellInfoCache.buySellRatios = buySellRatiosNew
@@ -369,9 +386,10 @@ function createBuySellInfoCache(firestore, deploymentId) {
   return firestore.collection(`/deployments/${deploymentId}/itemTypes`)
     .get()
     .then(snapshotItemTypes => {
-      const itemIds = []
+      const items = {}
       snapshotItemTypes.forEach(docItemType => {
-        itemIds.push(docItemType.id)
+        const itemName = docItemType.get('name')
+        items[docItemType.id] = itemName
       })
 
       return firestore.collection(`/deployments/${deploymentId}/locations`)
@@ -384,10 +402,11 @@ function createBuySellInfoCache(firestore, deploymentId) {
 
           const promises = []
 
-          const locationIds = []
+          const locations = {}
           snapshotLocations.forEach(docLocation => {
             const docLocationId = docLocation.id
             // console.log('createBuySellInfoCache docLocation.data()', docLocation.data())
+            const locationName = docLocation.get('name')
             
             promises.push(docLocation.ref.collection('prices')
               .where(FIELD_TIMESTAMPED, '==', true)
@@ -402,7 +421,7 @@ function createBuySellInfoCache(firestore, deploymentId) {
                   const prices = docPrice.get('prices')
                   const timestamp = docPrice.get(FIELD_TIMESTAMP)
                   // console.log('createBuySellInfoCache docLocationId', docLocationId, 'prices', prices)
-                  itemIds.forEach(itemId => {
+                  Object.keys(items).forEach(itemId => {
                     const price = prices && prices[itemId]
                     const priceBuy = price && price.priceBuy
                     const priceSell = price && price.priceSell
@@ -412,8 +431,8 @@ function createBuySellInfoCache(firestore, deploymentId) {
                   })
                 })
 
-                locationIds.push(docLocationId)
-                if (locationIds.length < snapshotLocationsSize) {
+                locations[docLocationId] = locationName
+                if (Object.keys(locations).length < snapshotLocationsSize) {
                   return Promise.resolve()
                 }
 
@@ -421,9 +440,9 @@ function createBuySellInfoCache(firestore, deploymentId) {
 
                 const buySellInfoCache = {
                   comment: 'TODO:(pv) Explain the purpose of the buySellInfoCache field and how to maintain it...',
-                  locationIds: locationIds,
-                  itemIds: itemIds,
-                  buySellPrices: buySellPrices
+                  locations,
+                  items,
+                  buySellPrices
                 }
                 // console.log('createBuySellInfoCache buySellInfoCache', buySellInfoCache)
 
