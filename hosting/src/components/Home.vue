@@ -91,7 +91,6 @@
         rows-per-page-text="Max Results"
         :total-items="buySellRatiosPagination.totalItems"
         :items="buySellRatios"
-        no-data-text="Soon™..."
         >
         <template slot="items" slot-scope="props">
           <td class="text-xs-right">{{ props.item.itemName }}</td>
