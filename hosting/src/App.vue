@@ -164,6 +164,19 @@
       <div>{{ offline ? 'OFFLINE' : '' }}</div>
       <div class="pl-2">v{{ $PACKAGE_VERSION }} &copy; 2018</div>
     </v-footer>
+    <v-snackbar
+      :timeout="toast.timeoutMillis"
+      bottom
+      v-model="toast.show"
+      >
+      {{ toast.message }}
+      <v-btn
+        icon
+        @click.native="toast.show = false"
+        >
+        <v-icon>close</v-icon>
+      </v-btn>
+    </v-snackbar>    
   </v-app>
 </template>
 
@@ -176,7 +189,12 @@ export default {
     return {
       drawer: false,
       title: 'Trade Citizen',
-      editing: false
+      editing: false,
+      toast: {
+        show: false,
+        message: null,
+        timeoutMillis: 3000
+      }
     }
   },
 
@@ -193,6 +211,10 @@ export default {
       window.addEventListener('online', vm.updateOnlineStatus)
       window.addEventListener('offline', vm.updateOnlineStatus)
       window.addEventListener('keydown', vm.onKeyDown)
+    })
+    vm.$root.$on('toastMessage', payload => {
+      // console.log('App vm.toastMessage payload', payload)
+      vm.toastMessage(payload)
     })
   },
 
@@ -302,6 +324,9 @@ export default {
         event.preventDefault()
         this.saveLocation()
       }
+    },
+    toastMessage (payload) {
+      this.toast = Object.assign({ show: true }, payload)
     },
     signin () {
       this.editing = false

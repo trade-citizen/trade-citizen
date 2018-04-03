@@ -85,6 +85,7 @@
       <v-data-table
         class="elevation-1"
         must-sort
+        :no-data-text="initialized ? 'No data available' : 'Loading...'"
         :headers="headers"
         :pagination.sync="buySellRatiosPagination"
         :rows-per-page-items="buySellRatiosPagination.rowsPerPageItems"
@@ -126,7 +127,7 @@
       >
       <v-flex
         xs4
-        v-for="(locationItemPrice, index) in locationItemPriceList"
+        v-for="(locationItemPrice, index) in locationItemPriceListCopy"
         :key="locationItemPrice.id"
         >
         <v-card style="border:1px solid white; border-radius:6px;">
@@ -161,29 +162,31 @@
               <v-flex xs6>
                 <v-text-field
                   class="input-group--focused"
-                  hide-details
                   label="Buy Price"
                   :autofocus="index === 0"
-                  :error="locationItemPrice.invalidPriceBuy"
                   :color="saveable ? 'cyan lighten-2' : ''"
                   :disabled="!saveable"
                   :clearable="saveable"
-                  :value="locationItemPrice.priceBuy"
-                  @input="updateLocationItemPrice(locationItemPrice.id, 'priceBuy', $event)"
+                  v-mask="'###.##'"
+                  v-model.number="locationItemPrice.priceBuy"
+                  :hide-details="!locationItemPrice.invalidPriceBuy"
+                  :error-messages="locationItemPrice.invalidPriceBuy ? 'Invalid price' : undefined"
+                  @input="locationItemPrice.invalidPriceBuy = false"
                   >
                 </v-text-field>
               </v-flex>
               <v-flex xs6>
                 <v-text-field
                   class="input-group--focused"
-                  hide-details
                   label="Sell Price"
-                  :error="locationItemPrice.invalidPriceSell"
                   :color="saveable ? 'cyan lighten-2' : ''"
                   :disabled="!saveable"
                   :clearable="saveable"
-                  :value="locationItemPrice.priceSell"
-                  @input="updateLocationItemPrice(locationItemPrice.id, 'priceSell', $event)"
+                  v-mask="'###.##'"
+                  v-model.number="locationItemPrice.priceSell"
+                  :hide-details="!locationItemPrice.invalidPriceSell"
+                  :error-messages="locationItemPrice.invalidPriceSell ? 'Invalid price' : undefined"
+                  @input="locationItemPrice.invalidPriceSell = false"
                   >
                 </v-text-field>
               </v-flex>
@@ -198,27 +201,18 @@
       >
       <p class="pa-2">No prices set</p>
     </v-layout>
-    <v-snackbar
-      :timeout="toastTimeoutMillis"
-      bottom
-      v-model="toast"
-      >
-      {{ toastMessage }}
-      <v-btn
-        icon
-        @click.native="toast = false"
-        >
-        <v-icon>close</v-icon>
-      </v-btn>
-    </v-snackbar>    
   </v-container>
 </template>
 
 <script>
 
+import { mask } from 'vue-the-mask'
 import * as utils from '../utils'
 
 export default {
+  directives: {
+    mask
+  },
   data () {
     return {
       headers: [
@@ -232,10 +226,8 @@ export default {
       buySellRatiosFilter: Object.assign({}, this.$store.getters.buySellRatiosFilter),
       buySellRatiosPagination: Object.assign({}, this.$store.getters.buySellRatiosPagination),
       buySellRatiosPaginationOld: Object.assign({}, this.$store.getters.buySellRatiosPagination),
-      editing: false,
-      toast: false,
-      toastMessage: null,
-      toastTimeoutMillis: 3000
+      locationItemPriceListCopy: [],
+      editing: false
     }
   },
   watch: {
@@ -273,9 +265,14 @@ export default {
         this.$store.dispatch('queryBuySellRatios')
       },
       deep: true
-    }
+    },
+    locationItemPriceList: {
+      handler: 'updateLocationItemPriceListCopy',
+      deep: true
+    },
+    editing: 'updateLocationItemPriceListCopy'
   },
-  mounted: function () {
+  mounted () {
     // console.log('Home mounted')
     var vm = this
     vm.$root.$on('onSelectedLocationChanged', function (locationId) {
@@ -300,6 +297,9 @@ export default {
     },
     offline () {
       return this.$store.getters.offline
+    },
+    initialized () {
+      return this.$store.getters.initialized
     },
     saveable () {
       // console.log('saveable this.offline', this.offline, 'this.userIsAuthenticated', this.userIsAuthenticated)
@@ -372,23 +372,13 @@ export default {
       return this.$store.getters.buySellRatios
     },
     locationItemPriceList () {
-      let prices = this.$store.getters.locationItemPriceList(this.locationId)
-      if (prices && !this.editing) {
-        let pricesDefined = prices.filter((price) => {
-          return price.isPriceDefined
-        })
-        prices = (pricesDefined.length > 0 || !this.userIsAuthenticated) ? pricesDefined : prices
-      }
-      this.locationItemPriceListCopy = []
-      prices.forEach(price => {
-        // console.log('locationItemPriceListCopy item', item)
-        let copy = Object.assign({}, price)
-        this.locationItemPriceListCopy.push(copy)
-      })
-      return this.locationItemPriceListCopy
+      return this.$store.getters.locationItemPriceList(this.locationId)
     }
   },
   methods: {
+    toastMessage (payload) {
+      this.$root.$emit('toastMessage', payload)
+    },
     onPersistenceError () {
       // console.log('onPersistenceError error', error)
       let error = this.persistenceError
@@ -407,8 +397,7 @@ export default {
           toastMessage = `Offline mode disabled: "${error.code}"`
         }
       }
-      this.toastMessage = toastMessage
-      this.toast = true
+      this.toastMessage({ message: toastMessage })
     },
     formatDateYMDHMS (date) {
       return utils.formatDateYMDHMS(date)
@@ -425,6 +414,22 @@ export default {
             this.buySellRatiosFilter.item.splice(i, 1)
           }
         }
+      }
+    },
+    updateLocationItemPriceListCopy () {
+      this.locationItemPriceListCopy.splice(0)
+      let prices = this.locationItemPriceList
+      if (prices && !this.editing) {
+        let pricesDefined = prices.filter((price) => {
+          return price.isPriceDefined
+        })
+        prices = (pricesDefined.length > 0 || !this.userIsAuthenticated) ? pricesDefined : prices
+      }
+      if (prices) {
+        prices.forEach(price => {
+          let copy = Object.assign({}, price)
+          this.locationItemPriceListCopy.push(copy)
+        })
       }
     },
     onSelectedLocationChanged (locationId) {
@@ -447,21 +452,13 @@ export default {
         .then(result => {
           // console.log('saveLocation SUCCESS!')
           this.editing = false
-          this.toastMessage = 'Prices Saved.'
-          this.toast = true
+          this.toastMessage({ message: 'Prices Saved.' })
         })
         .catch(error => {
           // console.log('saveLocation ERROR', error)
-          this.toastMessage = error.message ? error.message : error
-          this.toast = true
+          let toastMessage = error.message ? error.message : error
+          this.toastMessage({ message: toastMessage })
         })
-    },
-    updateLocationItemPrice (itemId, priceId, value) {
-      let prices = this.locationItemPriceListCopy
-        .find(item => {
-          return item.id === itemId
-        })
-      prices[priceId] = value
     }
   }
 }

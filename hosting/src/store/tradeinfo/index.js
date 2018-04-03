@@ -162,12 +162,13 @@ export default {
     _setLocationItemPriceInvalid (state, { locationId, itemId, buyOrSell, invalidPrice }) {
       let locationItemPrices = state.locationsItemsPricesMap[locationId]
       // console.log('_setLocationItemPriceInvalid locationItemPrices', locationItemPrices)
-      let itemPrices = locationItemPrices.find(itemPrices => {
-        return itemPrices.id === itemId
-      })
+      let prices = locationItemPrices
+        .find(item => {
+          return item.id === itemId
+        })
       // console.log('_setLocationItemPriceInvalid itemPrices', itemPrices)
       let errorKey = `invalidPrice${utils.uppercaseFirstLetter(buyOrSell)}`
-      Vue.set(itemPrices, errorKey, invalidPrice)
+      Vue.set(prices, errorKey, invalidPrice)
     },
 
     setBuySellRatiosPagination (state, payload) {
@@ -692,6 +693,10 @@ export default {
           let invalidPrice
 
           priceNewBuy = priceNew.priceBuy
+          // console.log('saveLocationItemPrices priceNewBuy', priceNewBuy)
+          if (priceNewBuy === null) {
+            priceNewBuy = priceOriginalBuy
+          }
           invalidPrice = priceNewBuy && isNaN(priceNewBuy)
           context.commit('_setLocationItemPriceInvalid', { locationId, itemId, buyOrSell: 'buy', invalidPrice: invalidPrice })
           if (invalidPrice) {
@@ -701,6 +706,10 @@ export default {
           }
 
           priceNewSell = priceNew.priceSell
+          // console.log('saveLocationItemPrices priceNewSell', priceNewSell)
+          if (priceNewSell === null) {
+            priceNewSell = priceOriginalSell
+          }
           invalidPrice = priceNewSell && isNaN(priceNewSell)
           context.commit('_setLocationItemPriceInvalid', { locationId, itemId, buyOrSell: 'sell', invalidPrice: invalidPrice })
           if (invalidPrice) {
@@ -751,16 +760,24 @@ export default {
       }
       // console.log('saveLocationItemPrices data', data)
       context.commit('_setSaving', true)
-      return firebase.functions().httpsCallable('addLocationPrice')(data)
-        .then(result => {
-          // console.log('addLocationPrice result', result)
+      const mockResult = false
+      if (mockResult) {
+        return new Promise((resolve, reject) => {
           context.commit('_setSaving', false)
-          return Promise.resolve(result)
-        }, error => {
-          console.error('addLocationPrice ERROR', error)
-          context.commit('_setSaving', false)
-          return Promise.reject(error)
+          setTimeout(resolve, 1500)
         })
+      } else {
+        return firebase.functions().httpsCallable('addLocationPrice')(data)
+          .then(result => {
+            // console.log('addLocationPrice result', result)
+            context.commit('_setSaving', false)
+            return Promise.resolve(result)
+          }, error => {
+            console.error('addLocationPrice ERROR', error)
+            context.commit('_setSaving', false)
+            return Promise.reject(error)
+          })
+      }
     }
   },
   getters: {
@@ -851,15 +868,15 @@ function getQueryString (query) {
   return queryString
 }
 
-function concatUniqueSortLimit (a, b, equals, sort, limit) {
-  a = a.concat(b)
-  for (var i = 0; i < a.length; ++i) {
-    for (var j = i + 1; j < a.length; ++j) {
-      if (equals(a[i], a[j])) {
-        a.splice(j--, 1)
+function concatUniqueSortLimit (arrayA, arrayB, equals, sort, limit) {
+  let result = arrayA.concat(arrayB)
+  for (var i = 0; i < result.length; ++i) {
+    for (var j = i + 1; j < result.length; ++j) {
+      if (equals(result[i], result[j])) {
+        result.splice(j--, 1)
       }
     }
   }
-  a.sort(sort)
-  return a.slice(0, limit)
+  result.sort(sort)
+  return result.slice(0, limit)
 }
