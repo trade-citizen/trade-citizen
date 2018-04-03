@@ -218,7 +218,9 @@ export default {
       return showProgress
     },
     saveable () {
+      // console.log('saveable this.offline', this.offline, 'this.showProgress', this.showProgress)
       let saveable = !this.offline && !this.showProgress
+      // console.log('saveable saveable', saveable)
       return saveable
     },
     locationId: {

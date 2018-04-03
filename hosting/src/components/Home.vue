@@ -165,8 +165,9 @@
                   label="Buy Price"
                   :autofocus="index === 0"
                   :error="locationItemPrice.invalidPriceBuy"
-                  :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
-                  :disabled="!userIsAuthenticated || offline"
+                  :color="saveable ? 'cyan lighten-2' : ''"
+                  :disabled="!saveable"
+                  :clearable="saveable"
                   :value="locationItemPrice.priceBuy"
                   @input="updateLocationItemPrice(locationItemPrice.id, 'priceBuy', $event)"
                   >
@@ -178,8 +179,9 @@
                   hide-details
                   label="Sell Price"
                   :error="locationItemPrice.invalidPriceSell"
-                  :color="userIsAuthenticated ? 'cyan lighten-2' : ''"
-                  :disabled="!userIsAuthenticated || offline"
+                  :color="saveable ? 'cyan lighten-2' : ''"
+                  :disabled="!saveable"
+                  :clearable="saveable"
                   :value="locationItemPrice.priceSell"
                   @input="updateLocationItemPrice(locationItemPrice.id, 'priceSell', $event)"
                   >
@@ -298,6 +300,12 @@ export default {
     },
     offline () {
       return this.$store.getters.offline
+    },
+    saveable () {
+      // console.log('saveable this.offline', this.offline, 'this.userIsAuthenticated', this.userIsAuthenticated)
+      let saveable = !this.offline && this.userIsAuthenticated
+      // console.log('saveable saveable', saveable)
+      return saveable
     },
     locationId: {
       get: function () {
