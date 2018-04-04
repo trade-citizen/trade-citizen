@@ -30,8 +30,9 @@ npm test
 
 # deploy to firebase hosting
 cd ..
-firebase deploy
--or-
+nvm use 6.11.5
+firebase deploy --only functions
+nvm use 8.9.1
 firebase deploy --only hosting
 ```
 
