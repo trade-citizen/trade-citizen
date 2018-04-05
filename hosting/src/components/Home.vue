@@ -85,6 +85,8 @@
       <v-data-table
         class="elevation-1"
         must-sort
+        sort-icon="arrow_downward"
+        :hide-actions="!initialized"
         :no-data-text="initialized ? 'No data available' : 'Loading...'"
         :headers="headers"
         :pagination.sync="buySellRatiosPagination"
@@ -121,7 +123,7 @@
     class="pa-0"
     >
     <v-layout
-      v-if="locationItemPriceList.length"
+      v-if="locationItemPriceListCopy.length"
       row wrap
       class="pa-2"
       >
@@ -199,7 +201,7 @@
       v-else
       justify-center
       >
-      <p class="pa-2">No prices set</p>
+      <p class="pa-4">No prices set</p>
     </v-layout>
   </v-container>
 </template>
@@ -419,12 +421,22 @@ export default {
     updateLocationItemPriceListCopy () {
       this.locationItemPriceListCopy.splice(0)
       let prices = this.locationItemPriceList
+      // console.log('updateLocationItemPriceListCopy prices BEFORE', prices)
       if (prices && !this.editing) {
         let pricesDefined = prices.filter((price) => {
           return price.isPriceDefined
         })
-        prices = (pricesDefined.length > 0 || !this.userIsAuthenticated) ? pricesDefined : prices
+        // console.log('updateLocationItemPriceListCopy pricesDefined', pricesDefined)
+        if (pricesDefined.length > 0 || !this.userIsAuthenticated) {
+          // console.log('updateLocationItemPriceListCopy A')
+          prices = pricesDefined
+        } else {
+          // console.log('updateLocationItemPriceListCopy B')
+        }
+      } else {
+        // console.log('updateLocationItemPriceListCopy C')
       }
+      // console.log('updateLocationItemPriceListCopy prices AFTER', prices)
       if (prices) {
         prices.forEach(price => {
           let copy = Object.assign({}, price)
