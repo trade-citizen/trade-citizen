@@ -162,35 +162,33 @@
             </v-layout>
             <v-layout row>
               <v-flex xs6>
-                <v-text-field
+                <v-number-field
                   class="input-group--focused"
                   label="Buy Price"
                   :autofocus="index === 0"
                   :color="saveable ? 'cyan lighten-2' : ''"
                   :disabled="!saveable"
                   :clearable="saveable"
-                  v-mask="'###.##'"
                   v-model.number="locationItemPrice.priceBuy"
                   :hide-details="!locationItemPrice.invalidPriceBuy"
                   :error-messages="locationItemPrice.invalidPriceBuy ? 'Invalid price' : undefined"
                   @input="locationItemPrice.invalidPriceBuy = false"
                   >
-                </v-text-field>
+                </v-number-field>
               </v-flex>
               <v-flex xs6>
-                <v-text-field
+                <v-number-field
                   class="input-group--focused"
                   label="Sell Price"
                   :color="saveable ? 'cyan lighten-2' : ''"
                   :disabled="!saveable"
                   :clearable="saveable"
-                  v-mask="'###.##'"
                   v-model.number="locationItemPrice.priceSell"
                   :hide-details="!locationItemPrice.invalidPriceSell"
                   :error-messages="locationItemPrice.invalidPriceSell ? 'Invalid price' : undefined"
                   @input="locationItemPrice.invalidPriceSell = false"
                   >
-                </v-text-field>
+                </v-number-field>
               </v-flex>
             </v-layout>
           </v-container>
@@ -208,13 +206,9 @@
 
 <script>
 
-import { mask } from 'vue-the-mask'
 import * as utils from '../utils'
 
 export default {
-  directives: {
-    mask
-  },
   data () {
     return {
       headers: [
