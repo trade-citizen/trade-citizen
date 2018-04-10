@@ -1,6 +1,6 @@
 {
   "name": "trade-citizen",
-  "version": "0.0.26",
+  "version": "0.0.27",
   "description": "Crowd Sourced Reptuation Based Commodity Prices for Star Citizen",
   "author": "tradecitizen.org <trade.citizen@gmail.com>",
   "private": true,
@@ -21,7 +21,6 @@
     "roboto-fontface": "^0.9.0",
     "vue": "^2.5.16",
     "vue-router": "^3.0.1",
-    "vuetify": "^1.0.13",
     "vuex": "^3.0.1"
   },
   "devDependencies": {
@@ -40,7 +39,7 @@
     "cssnano": "^3.10.0",
     "eslint": "^4.19.1",
     "eslint-config-standard": "^11.0.0",
-    "eslint-friendly-formatter": "^4.0.0",
+    "eslint-friendly-formatter": "^4.0.1",
     "eslint-loader": "^2.0.0",
     "eslint-plugin-html": "^4.0.2",
     "eslint-plugin-import": "^2.10.0",
@@ -71,7 +70,7 @@
     "webpack": "^3.11.0",
     "webpack-bundle-analyzer": "^2.11.1",
     "webpack-dev-middleware": "^2.0.6",
-    "webpack-hot-middleware": "^2.21.2",
+    "webpack-hot-middleware": "^2.22.0",
     "webpack-merge": "^4.1.2"
   },
   "engines": {

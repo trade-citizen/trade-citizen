@@ -163,8 +163,8 @@
             <v-layout row>
               <v-flex xs6>
                 <v-number-field
-                  class="input-group--focused"
                   label="Buy Price"
+                  class="input-group--focused inputPrice"
                   :autofocus="index === 0"
                   :color="saveable ? 'cyan lighten-2' : ''"
                   :disabled="!saveable"
@@ -178,8 +178,8 @@
               </v-flex>
               <v-flex xs6>
                 <v-number-field
-                  class="input-group--focused"
                   label="Sell Price"
+                  class="input-group--focused inputPrice"
                   :color="saveable ? 'cyan lighten-2' : ''"
                   :disabled="!saveable"
                   :clearable="saveable"
@@ -469,3 +469,13 @@ export default {
   }
 }
 </script>
+<style scoped>
+.inputPrice >>> input {
+  text-align: right;
+  -moz-appearance:textfield;
+}
+.inputPrice >>> input::-webkit-outer-spin-button,
+.inputPrice >>> input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+</style>
