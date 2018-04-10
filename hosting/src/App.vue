@@ -36,7 +36,7 @@
       app
       fixed
       :extended="showProgress"
-      extension-height="1"
+      :extension-height="progressHeight"
       >
       <v-toolbar-side-icon
         @click.stop="drawer = !drawer"
@@ -155,6 +155,7 @@
         v-if="showProgress"
         slot="extension"
         class="ma-0"
+        :height="progressHeight"
         :indeterminate="true"
         >
       </v-progress-linear>
@@ -198,6 +199,7 @@ export default {
       drawer: false,
       title: 'Trade Citizen',
       editing: false,
+      progressHeight: 4,
       toast: {
         show: false,
         message: null,
