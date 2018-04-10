@@ -458,7 +458,11 @@ export default {
         .then(result => {
           // console.log('saveLocation SUCCESS!')
           this.editing = false
-          this.toastMessage({ message: 'Prices Saved.' })
+          let message = 'Prices Saved.'
+          if (result.mocked) {
+            message = 'Mock ' + message
+          }
+          this.toastMessage({ message })
         })
         .catch(error => {
           // console.log('saveLocation ERROR', error)

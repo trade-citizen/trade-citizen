@@ -762,8 +762,10 @@ export default {
       const mockResult = false
       if (mockResult) {
         return new Promise((resolve, reject) => {
-          context.commit('_setSaving', false)
-          setTimeout(resolve, 1500)
+          setTimeout(() => {
+            context.commit('_setSaving', false)
+            resolve({ mocked: true })
+          }, 1500)
         })
       } else {
         return firebase.functions().httpsCallable('addLocationPrice')(data)
