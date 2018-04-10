@@ -11,8 +11,7 @@ class ErrorPricesInvalid extends Error {
   }
 }
 
-const IS_PRODUCTION = process.env.NODE_ENV === 'production'
-const DEPLOYMENT_ID = IS_PRODUCTION ? 'production' : 'test'
+const DEPLOYMENT_ID = utils.isProduction() ? 'production' : 'test'
 const ROOT = `/deployments/${DEPLOYMENT_ID}`
 const FIELD_TIMESTAMPED = 'timestamped'
 const FIELD_TIMESTAMP = 'timestamp'

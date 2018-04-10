@@ -85,6 +85,8 @@
       <v-data-table
         class="elevation-1"
         must-sort
+        sort-icon="arrow_downward"
+        :hide-actions="!initialized"
         :no-data-text="initialized ? 'No data available' : 'Loading...'"
         :headers="headers"
         :pagination.sync="buySellRatiosPagination"
@@ -121,7 +123,7 @@
     class="pa-0"
     >
     <v-layout
-      v-if="locationItemPriceList.length"
+      v-if="locationItemPriceListCopy.length"
       row wrap
       class="pa-2"
       >
@@ -160,35 +162,33 @@
             </v-layout>
             <v-layout row>
               <v-flex xs6>
-                <v-text-field
-                  class="input-group--focused"
+                <v-number-field
                   label="Buy Price"
+                  class="input-group--focused inputPrice"
                   :autofocus="index === 0"
                   :color="saveable ? 'cyan lighten-2' : ''"
                   :disabled="!saveable"
                   :clearable="saveable"
-                  v-mask="'###.##'"
                   v-model.number="locationItemPrice.priceBuy"
                   :hide-details="!locationItemPrice.invalidPriceBuy"
                   :error-messages="locationItemPrice.invalidPriceBuy ? 'Invalid price' : undefined"
                   @input="locationItemPrice.invalidPriceBuy = false"
                   >
-                </v-text-field>
+                </v-number-field>
               </v-flex>
               <v-flex xs6>
-                <v-text-field
-                  class="input-group--focused"
+                <v-number-field
                   label="Sell Price"
+                  class="input-group--focused inputPrice"
                   :color="saveable ? 'cyan lighten-2' : ''"
                   :disabled="!saveable"
                   :clearable="saveable"
-                  v-mask="'###.##'"
                   v-model.number="locationItemPrice.priceSell"
                   :hide-details="!locationItemPrice.invalidPriceSell"
                   :error-messages="locationItemPrice.invalidPriceSell ? 'Invalid price' : undefined"
                   @input="locationItemPrice.invalidPriceSell = false"
                   >
-                </v-text-field>
+                </v-number-field>
               </v-flex>
             </v-layout>
           </v-container>
@@ -199,20 +199,16 @@
       v-else
       justify-center
       >
-      <p class="pa-2">No prices set</p>
+      <p class="pa-4">No prices set</p>
     </v-layout>
   </v-container>
 </template>
 
 <script>
 
-import { mask } from 'vue-the-mask'
 import * as utils from '../utils'
 
 export default {
-  directives: {
-    mask
-  },
   data () {
     return {
       headers: [
@@ -419,12 +415,22 @@ export default {
     updateLocationItemPriceListCopy () {
       this.locationItemPriceListCopy.splice(0)
       let prices = this.locationItemPriceList
+      // console.log('updateLocationItemPriceListCopy prices BEFORE', prices)
       if (prices && !this.editing) {
         let pricesDefined = prices.filter((price) => {
           return price.isPriceDefined
         })
-        prices = (pricesDefined.length > 0 || !this.userIsAuthenticated) ? pricesDefined : prices
+        // console.log('updateLocationItemPriceListCopy pricesDefined', pricesDefined)
+        if (pricesDefined.length > 0 || !this.userIsAuthenticated) {
+          // console.log('updateLocationItemPriceListCopy A')
+          prices = pricesDefined
+        } else {
+          // console.log('updateLocationItemPriceListCopy B')
+        }
+      } else {
+        // console.log('updateLocationItemPriceListCopy C')
       }
+      // console.log('updateLocationItemPriceListCopy prices AFTER', prices)
       if (prices) {
         prices.forEach(price => {
           let copy = Object.assign({}, price)
@@ -463,3 +469,13 @@ export default {
   }
 }
 </script>
+<style scoped>
+.inputPrice >>> input {
+  text-align: right;
+  -moz-appearance:textfield;
+}
+.inputPrice >>> input::-webkit-outer-spin-button,
+.inputPrice >>> input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+</style>

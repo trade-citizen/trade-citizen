@@ -35,6 +35,8 @@
     <v-toolbar
       app
       fixed
+      :extended="showProgress"
+      extension-height="1"
       >
       <v-toolbar-side-icon
         @click.stop="drawer = !drawer"
@@ -149,9 +151,15 @@
           </template>
         </template>
       </template>
+      <v-progress-linear
+        v-if="showProgress"
+        slot="extension"
+        class="ma-0"
+        :indeterminate="true"
+        >
+      </v-progress-linear>
     </v-toolbar>
     <v-content>
-      <v-progress-linear :indeterminate="true" class="ma-0" v-if="showProgress"></v-progress-linear>      
       <v-fade-transition mode="out-in">
         <router-view></router-view>
       </v-fade-transition>
