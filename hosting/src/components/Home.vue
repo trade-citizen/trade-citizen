@@ -459,7 +459,7 @@ export default {
           // console.log('saveLocation SUCCESS!')
           this.editing = false
           let message = 'Prices Saved.'
-          if (result.mocked) {
+          if (result && result.mocked) {
             message = 'Mock ' + message
           }
           this.toastMessage({ message })
