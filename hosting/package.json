@@ -1,6 +1,6 @@
 {
   "name": "trade-citizen",
-  "version": "0.0.30",
+  "version": "0.0.31",
   "description": "Crowd Sourced Reptuation Based Commodity Prices for Star Citizen",
   "author": "tradecitizen.org <trade.citizen@gmail.com>",
   "private": true,
@@ -21,6 +21,7 @@
     "roboto-fontface": "^0.9.0",
     "vue": "^2.5.16",
     "vue-router": "^3.0.1",
+    "vuetify": "^1.0.14",
     "vuex": "^3.0.1"
   },
   "devDependencies": {
