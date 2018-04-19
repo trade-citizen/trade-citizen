@@ -1,7 +1,7 @@
 import Vue from 'vue'
-import * as firebase from 'firebase'
-import 'firebase/firestore'
-import 'firebase/functions'
+import firebase from '@firebase/app'
+import '@firebase/firestore'
+import '@firebase/functions'
 import * as utils from '../../utils'
 
 class ErrorPricesInvalid extends Error {
