@@ -17,6 +17,8 @@ const FIELD_TIMESTAMPED = 'timestamped'
 const FIELD_TIMESTAMP = 'timestamp'
 const ALLOW_EDIT_OFFLINE = false
 
+let firestore = null
+
 export default {
   state: {
     offline: false,
@@ -56,12 +58,14 @@ export default {
       let offline = payload
       // console.log('setOffline offline', offline)
       state.offline = offline
-      if (offline) {
-        // console.log('setOffline firebase.firestore().disableNetwork()')
-        firebase.firestore().disableNetwork()
-      } else {
-        // console.log('setOffline firebase.firestore().enableNetwork()')
-        firebase.firestore().enableNetwork()
+      if (firestore) {
+        if (offline) {
+          // console.log('setOffline firestore.disableNetwork()')
+          firestore.disableNetwork()
+        } else {
+          // console.log('setOffline firestore.enableNetwork()')
+          firestore.enableNetwork()
+        }
       }
     },
     _setPersistenceError (state, payload) {
@@ -198,16 +202,20 @@ export default {
         authDomain: 'trade-citizen.firebaseapp.com',
         projectId: 'trade-citizen'
       })
-      firebase.firestore().enablePersistence()
+      firestore = firebase.firestore()
+      firestore.settings({
+        timestampsInSnapshots: true
+      })
+      firestore.enablePersistence()
         .then(result => {
           // console.log('enablePersistence resolve')
         }, error => {
-          // console.warn('enablePersistence reject', error)
+          // console.warn('enablePersistence error', error)
           context.commit('_setPersistenceError', error)
         })
         .then(result => {
           firebase.auth().onAuthStateChanged(user => {
-            // console.log('onAuthStateChanged', user)
+            // console.log('onAuthStateChanged user', user)
             if (user) {
               context.dispatch('autoSignIn', user)
             }
@@ -220,7 +228,7 @@ export default {
       // console.log('_queryItemCategories')
       let path = `${ROOT}/itemCategories`
       // console.log('_queryItemCategories path', path)
-      firebase.firestore().collection(path)
+      firestore.collection(path)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ querySnapshot => {
           context.dispatch('_onQueriedItemCategories', querySnapshot)
         }, error => {
@@ -266,7 +274,7 @@ export default {
       // console.log('_queryItems')
       let path = `${ROOT}/itemTypes`
       // console.log('_queryItems path', path)
-      firebase.firestore().collection(path)
+      firestore.collection(path)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ querySnapshot => {
           context.dispatch('_onQueriedItems', querySnapshot)
         }, error => {
@@ -317,7 +325,7 @@ export default {
       // console.log('_queryAnchors')
       let path = `${ROOT}/anchors`
       // console.log('_queryAnchors path', path)
-      firebase.firestore().collection(path)
+      firestore.collection(path)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ querySnapshot => {
           context.dispatch('_onQueriedAnchors', querySnapshot)
         }, error => {
@@ -363,7 +371,7 @@ export default {
       // console.log('_queryLocations')
       let path = `${ROOT}/locations`
       // console.log('_queryLocations path', path)
-      firebase.firestore().collection(path)
+      firestore.collection(path)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ querySnapshot => {
           context.dispatch('_onQueriedLocations', querySnapshot)
         }, error => {
@@ -409,7 +417,7 @@ export default {
       // console.log('_queryLocationItemPrices locationId', locationId)
       let path = `${ROOT}/locations/${locationId}/prices`
       // console.log('_queryLocationItemPrices path', path)
-      firebase.firestore().collection(path)
+      firestore.collection(path)
         .where(FIELD_TIMESTAMPED, '==', true)
         .orderBy(FIELD_TIMESTAMP, 'desc')
         .limit(1)
@@ -443,7 +451,8 @@ export default {
         // console.log('_onQueriedLocationItemPrices fromCache', fromCache)
         let docData = doc.data()
         // console.log('_onQueriedLocationItemPrices docData', docData)
-        metadata.timestamp = docData[FIELD_TIMESTAMP]
+        const docDataTimestamp = docData[FIELD_TIMESTAMP]
+        metadata.timestamp = docDataTimestamp && docDataTimestamp.toDate()
         metadata.userId = docData.userId
         let prices = docData.prices
         // console.log('_onQueriedLocationItemPrices prices', prices)
@@ -514,7 +523,7 @@ export default {
       let buySellRatiosFilter = context.state.buySellRatiosFilter
       // console.log('queryBuySellRatios buySellRatiosFilter', buySellRatiosFilter)
       buySellRatiosFilter.items.forEach(filterItem => {
-        let query = firebase.firestore().collection(path)
+        let query = firestore.collection(path)
           .where('itemName', '==', filterItem.name)
         if (sortBy !== 'itemName') {
           query = query.orderBy(sortBy, direction)
@@ -522,7 +531,7 @@ export default {
         queries.push(query)
       })
       buySellRatiosFilter.locationsBuy.forEach(filterLocationBuy => {
-        let query = firebase.firestore().collection(path)
+        let query = firestore.collection(path)
           .where('buyLocationName', '==', filterLocationBuy.name)
         if (sortBy !== 'buyLocationName') {
           query = query.orderBy(sortBy, direction)
@@ -530,7 +539,7 @@ export default {
         queries.push(query)
       })
       buySellRatiosFilter.locationsSell.forEach(filterLocationSell => {
-        let query = firebase.firestore().collection(path)
+        let query = firestore.collection(path)
           .where('sellLocationName', '==', filterLocationSell.name)
         if (sortBy !== 'sellLocationName') {
           query = query.orderBy(sortBy, direction)
@@ -538,7 +547,7 @@ export default {
         queries.push(query)
       })
       if (!queries.length) {
-        let query = firebase.firestore().collection(path)
+        let query = firestore.collection(path)
           .orderBy(sortBy, direction)
         queries.push(query)
       }
@@ -600,10 +609,10 @@ export default {
           itemName,
           buyLocationName,
           buyPrice,
-          buyTimestamp,
+          buyTimestamp: buyTimestamp && buyTimestamp.toDate(),
           ratio,
           sellPrice,
-          sellTimestamp,
+          sellTimestamp: sellTimestamp && sellTimestamp.toDate(),
           sellLocationName
         }
         // console.log('_onQueriedBuySellRatios buySellRatio', buySellRatio)
