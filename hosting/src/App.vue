@@ -262,7 +262,7 @@ export default {
       if (!this.locationId) {
         return false
       }
-      let locationItemPriceList = this.$store.getters.locationItemPriceList(this.locationId)
+      const locationItemPriceList = this.$store.getters.locationItemPriceList(this.locationId)
       let accumulator = 0
       if (locationItemPriceList) {
         accumulator = locationItemPriceList
@@ -278,7 +278,7 @@ export default {
     locations () {
       return this.$store.getters.locations
         .map((location) => {
-          let id = location.id
+          const id = location.id
           let name = location.anchor.name + ' - ' + location.name
           if (this.isDevelopment) {
             name += ' {' + id + '}'
@@ -289,8 +289,8 @@ export default {
           }
         })
         .sort((a, b) => {
-          let aName = a.name.toLowerCase()
-          let bName = b.name.toLowerCase()
+          const aName = a.name.toLowerCase()
+          const bName = b.name.toLowerCase()
           if (aName < bName) {
             return -1
           }
@@ -301,7 +301,7 @@ export default {
         })
     },
     locationItemPriceTimestamp () {
-      let metadata = this.$store.getters.locationItemPriceMetadata(this.locationId)
+      const metadata = this.$store.getters.locationItemPriceMetadata(this.locationId)
       let timestamp = metadata && metadata.timestamp
       // console.log('timestamp', timestamp)
       timestamp = utils.formatDateYMDHMS(timestamp)
@@ -314,7 +314,7 @@ export default {
 
   methods: {
     updateOnlineStatus () {
-      let online = navigator.onLine
+      const online = navigator.onLine
       // console.log('App updateOnlineStatus online', online)
       this.$store.commit('setOffline', !online)
     },

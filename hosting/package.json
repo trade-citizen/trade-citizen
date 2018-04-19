@@ -1,6 +1,6 @@
 {
   "name": "trade-citizen",
-  "version": "0.0.32",
+  "version": "0.0.33",
   "description": "Crowd Sourced Reptuation Based Commodity Prices for Star Citizen",
   "author": "tradecitizen.org <trade.citizen@gmail.com>",
   "private": true,

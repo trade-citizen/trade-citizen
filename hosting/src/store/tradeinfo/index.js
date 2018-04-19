@@ -55,7 +55,7 @@ export default {
   mutations: {
     setOffline (state, payload) {
       // console.log('setOffline', payload)
-      let offline = payload
+      const offline = payload
       // console.log('setOffline offline', offline)
       state.offline = offline
       if (firestore) {
@@ -87,8 +87,8 @@ export default {
       Vue.set(state.itemCategoriesMap, payload.id, payload)
       state.itemCategoriesList = Object.values(state.itemCategoriesMap)
         .sort((a, b) => {
-          let aName = a.name.toLowerCase()
-          let bName = b.name.toLowerCase()
+          const aName = a.name.toLowerCase()
+          const bName = b.name.toLowerCase()
           if (aName < bName) {
             return -1
           }
@@ -102,8 +102,8 @@ export default {
       Vue.set(state.itemsMap, payload.id, payload)
       state.itemsList = Object.values(state.itemsMap)
         .sort((a, b) => {
-          let aName = a.name.toLowerCase()
-          let bName = b.name.toLowerCase()
+          const aName = a.name.toLowerCase()
+          const bName = b.name.toLowerCase()
           if (aName < bName) {
             return -1
           }
@@ -120,8 +120,8 @@ export default {
       Vue.set(state.locationsMap, payload.id, payload)
       state.locationsList = Object.values(state.locationsMap)
         .sort((a, b) => {
-          let aName = a.name.toLowerCase()
-          let bName = b.name.toLowerCase()
+          const aName = a.name.toLowerCase()
+          const bName = b.name.toLowerCase()
           if (aName < bName) {
             return -1
           }
@@ -132,13 +132,13 @@ export default {
         })
     },
     _setLocationItemPrices (state, { locationId, locationItemPrices, metadata }) {
-      let locationItemPricesList = state.itemsList
+      const locationItemPricesList = state.itemsList
         .map(item => {
           // console.log('item', item)
 
-          let itemId = item.id
-          let itemName = item.name
-          let itemCategory = item.category
+          const itemId = item.id
+          const itemName = item.name
+          const itemCategory = item.category
           let locationItemPrice = locationItemPrices[itemId]
           // console.log('locationItemPrice', locationItemPrice)
 
@@ -149,9 +149,9 @@ export default {
           }, locationItemPrice)
           // console.log('locationItemPrice', locationItemPrice)
 
-          let priceBuy = locationItemPrice.priceBuy
-          let priceSell = locationItemPrice.priceSell
-          let isPriceDefined = !isNaN(priceBuy) || !isNaN(priceSell)
+          const priceBuy = locationItemPrice.priceBuy
+          const priceSell = locationItemPrice.priceSell
+          const isPriceDefined = !isNaN(priceBuy) || !isNaN(priceSell)
           locationItemPrice.isPriceDefined = isPriceDefined
 
           return locationItemPrice
@@ -164,14 +164,14 @@ export default {
       }
     },
     _setLocationItemPriceInvalid (state, { locationId, itemId, buyOrSell, invalidPrice }) {
-      let locationItemPrices = state.locationsItemsPricesMap[locationId]
+      const locationItemPrices = state.locationsItemsPricesMap[locationId]
       // console.log('_setLocationItemPriceInvalid locationItemPrices', locationItemPrices)
-      let prices = locationItemPrices
+      const prices = locationItemPrices
         .find(item => {
           return item.id === itemId
         })
       // console.log('_setLocationItemPriceInvalid itemPrices', itemPrices)
-      let errorKey = `invalidPrice${utils.uppercaseFirstLetter(buyOrSell)}`
+      const errorKey = `invalidPrice${utils.uppercaseFirstLetter(buyOrSell)}`
       Vue.set(prices, errorKey, invalidPrice)
     },
 
@@ -188,7 +188,7 @@ export default {
     },
     _setBuySellRatios (state, payload) {
       state.buySellRatios = payload
-      let totalItems = payload ? payload.length : 0
+      const totalItems = payload ? payload.length : 0
       Vue.set(state.buySellRatiosPagination, 'totalItems', totalItems)
     },
     _setBuySellRatiosCount (state, payload) {
@@ -226,7 +226,7 @@ export default {
 
     _queryItemCategories (context) {
       // console.log('_queryItemCategories')
-      let path = `${ROOT}/itemCategories`
+      const path = `${ROOT}/itemCategories`
       // console.log('_queryItemCategories path', path)
       firestore.collection(path)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ querySnapshot => {
@@ -236,7 +236,7 @@ export default {
         })
     },
     _onQueriedItemCategories (context, querySnapshot) {
-      let docChanges = querySnapshot.docChanges
+      const docChanges = querySnapshot.docChanges
       // console.log('_onQueriedItemCategories docChanges', docChanges)
       if (docChanges.length === 0) {
         // console.warn('_onQueriedItemCategories docChanges.length === 0 ignoring')
@@ -245,17 +245,17 @@ export default {
       // console.log('_onQueriedItemCategories')
       docChanges.forEach(change => {
         // console.log('_onQueriedItemCategories change.type', change.type)
-        let doc = change.doc
+        const doc = change.doc
         // console.log('_onQueriedItemCategories doc', doc)
-        let itemCategoryId = doc.id
-        // let fromCache = doc.metadata.fromCache
+        const itemCategoryId = doc.id
+        // const fromCache = doc.metadata.fromCache
         // console.log('_onQueriedItemCategories ' + itemCategoryId + ' fromCache', fromCache)
         if (// !fromCache ||
           context.state.itemCategoriesMap[itemCategoryId] === undefined) {
-          let docData = doc.data()
+          const docData = doc.data()
           // console.log(docData)
           if (docData.name !== undefined) {
-            let itemCategory = {
+            const itemCategory = {
               id: itemCategoryId,
               name: docData.name
             }
@@ -272,7 +272,7 @@ export default {
 
     _queryItems (context) {
       // console.log('_queryItems')
-      let path = `${ROOT}/itemTypes`
+      const path = `${ROOT}/itemTypes`
       // console.log('_queryItems path', path)
       firestore.collection(path)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ querySnapshot => {
@@ -282,7 +282,7 @@ export default {
         })
     },
     _onQueriedItems (context, querySnapshot) {
-      let docChanges = querySnapshot.docChanges
+      const docChanges = querySnapshot.docChanges
       // console.log('_onQueriedItems docChanges', docChanges)
       if (docChanges.length === 0) {
         // console.warn('_onQueriedItems docChanges.length === 0 ignoring')
@@ -291,18 +291,18 @@ export default {
       // console.log('_onQueriedItems')
       docChanges.forEach(change => {
         // console.log('_onQueriedItems change.type', change.type)
-        let doc = change.doc
+        const doc = change.doc
         // console.log('_onQueriedItems doc', doc)
-        let itemId = doc.id
-        // let fromCache = doc.metadata.fromCache
+        const itemId = doc.id
+        // const fromCache = doc.metadata.fromCache
         // console.log('_onQueriedItems ' + itemId + ' fromCache', fromCache)
         if (// !fromCache ||
           context.state.itemsMap[itemId] === undefined) {
-          let docData = doc.data()
+          const docData = doc.data()
           // console.log(docData)
           if (docData.name !== undefined) {
-            let itemCategoryId = docData.category.id
-            let item = {
+            const itemCategoryId = docData.category.id
+            const item = {
               id: itemId,
               name: docData.name,
               category: context.state.itemCategoriesMap[itemCategoryId].name
@@ -323,7 +323,7 @@ export default {
 
     _queryAnchors (context) {
       // console.log('_queryAnchors')
-      let path = `${ROOT}/anchors`
+      const path = `${ROOT}/anchors`
       // console.log('_queryAnchors path', path)
       firestore.collection(path)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ querySnapshot => {
@@ -333,7 +333,7 @@ export default {
         })
     },
     _onQueriedAnchors (context, querySnapshot) {
-      let docChanges = querySnapshot.docChanges
+      const docChanges = querySnapshot.docChanges
       // console.log('_onQueriedAnchors docChanges', docChanges)
       if (docChanges.length === 0) {
         // console.warn('_onQueriedAnchors docChanges.length === 0 ignoring')
@@ -342,16 +342,16 @@ export default {
       // console.log('_onQueriedAnchors')
       docChanges.forEach(change => {
         // console.log('_onQueriedAnchors change.type', change.type)
-        let doc = change.doc
+        const doc = change.doc
         // console.log('_onQueriedAnchors doc', doc)
-        let anchorId = doc.id
-        // let fromCache = doc.metadata.fromCache
+        const anchorId = doc.id
+        // const fromCache = doc.metadata.fromCache
         // console.log('_onQueriedAnchors ' + anchorId + ' fromCache', fromCache)
         if (// !fromCache ||
           context.state.anchorsMap[anchorId] === undefined) {
-          let docData = doc.data()
+          const docData = doc.data()
           // console.log('_onQueriedAnchors docData', docData)
-          let anchor = {
+          const anchor = {
             id: anchorId,
             name: docData.name,
             type: docData.type.id,
@@ -369,7 +369,7 @@ export default {
 
     _queryLocations (context) {
       // console.log('_queryLocations')
-      let path = `${ROOT}/locations`
+      const path = `${ROOT}/locations`
       // console.log('_queryLocations path', path)
       firestore.collection(path)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ querySnapshot => {
@@ -379,7 +379,7 @@ export default {
         })
     },
     _onQueriedLocations (context, querySnapshot) {
-      let docChanges = querySnapshot.docChanges
+      const docChanges = querySnapshot.docChanges
       // console.log('_onQueriedLocations docChanges', docChanges)
       if (docChanges.length === 0) {
         // console.warn('_onQueriedLocations docChanges.length === 0 ignoring')
@@ -388,17 +388,17 @@ export default {
       // console.log('_onQueriedLocations')
       docChanges.forEach(change => {
         // console.log('_onQueriedLocations change.type', change.type)
-        let doc = change.doc
+        const doc = change.doc
         // console.log('_onQueriedLocations doc', doc)
-        let locationId = doc.id
-        // let fromCache = doc.metadata.fromCache
+        const locationId = doc.id
+        // const fromCache = doc.metadata.fromCache
         // console.log('_onQueriedLocations ' + locationId + ' fromCache', fromCache)
         if (// !fromCache ||
           context.state.locationsMap[locationId] === undefined) {
-          let docData = doc.data()
+          const docData = doc.data()
           // console.log(docData)
 
-          let location = {
+          const location = {
             id: locationId,
             name: docData.name,
             anchor: context.state.anchorsMap[docData.anchor.id],
@@ -415,7 +415,7 @@ export default {
 
     _queryLocationItemPrices (context, locationId) {
       // console.log('_queryLocationItemPrices locationId', locationId)
-      let path = `${ROOT}/locations/${locationId}/prices`
+      const path = `${ROOT}/locations/${locationId}/prices`
       // console.log('_queryLocationItemPrices path', path)
       firestore.collection(path)
         .where(FIELD_TIMESTAMPED, '==', true)
@@ -430,43 +430,43 @@ export default {
         })
     },
     _onQueriedLocationItemPrices (context, { locationId, querySnapshot }) {
-      // let path = `${ROOT}/locations/${locationId}/prices`
+      // const path = `${ROOT}/locations/${locationId}/prices`
       // console.log('_onQueriedLocationItemPrices path', path)
-      let docChanges = querySnapshot.docChanges
+      const docChanges = querySnapshot.docChanges
       // console.log('_onQueriedLocationItemPrices docChanges', docChanges)
       if (docChanges.length === 0 && context.state.locationsItemsPricesMap[locationId] !== undefined) {
         // console.warn('_onQueriedLocationItemPrices ' + path + ' docChanges.length === 0 ignoring')
         return
       }
-      let locationItemPrices = {}
-      let metadata = {}
+      const locationItemPrices = {}
+      const metadata = {}
       docChanges.forEach(change => {
         // console.log('_onQueriedLocationItemPrices change.type', change.type)
         if (change.type === 'removed' && docChanges.length !== 1) {
           return
         }
-        let doc = change.doc
+        const doc = change.doc
         // console.log('_onQueriedLocationItemPrices doc', doc)
-        // let fromCache = doc.metadata.fromCache
+        // const fromCache = doc.metadata.fromCache
         // console.log('_onQueriedLocationItemPrices fromCache', fromCache)
-        let docData = doc.data()
+        const docData = doc.data()
         // console.log('_onQueriedLocationItemPrices docData', docData)
         const docDataTimestamp = docData[FIELD_TIMESTAMP]
         metadata.timestamp = docDataTimestamp && docDataTimestamp.toDate()
         metadata.userId = docData.userId
-        let prices = docData.prices
+        const prices = docData.prices
         // console.log('_onQueriedLocationItemPrices prices', prices)
         if (prices) {
           Object.keys(prices).forEach(itemId => {
-            let locationItemPrice = prices[itemId]
-            let thisPrices = {}
+            const locationItemPrice = prices[itemId]
+            const thisPrices = {}
 
-            let locationItemPriceBuy = locationItemPrice.priceBuy
+            const locationItemPriceBuy = locationItemPrice.priceBuy
             if (locationItemPriceBuy && !isNaN(locationItemPriceBuy)) {
               thisPrices.priceBuy = Number(locationItemPriceBuy)
             }
 
-            let locationItemPriceSell = locationItemPrice.priceSell
+            const locationItemPriceSell = locationItemPrice.priceSell
             if (locationItemPriceSell && !isNaN(locationItemPriceSell)) {
               thisPrices.priceSell = Number(locationItemPriceSell)
             }
@@ -512,15 +512,15 @@ export default {
       // https://vuetifyjs.com/en/components/data-tables#example-server
       // https://github.com/vuetifyjs/vuetify/blob/master/src/mixins/data-iterable.js#L27
       //
-      let buySellRatiosPagination = context.state.buySellRatiosPagination
+      const buySellRatiosPagination = context.state.buySellRatiosPagination
       // console.log('queryBuySellRatios buySellRatiosPagination', buySellRatiosPagination)
-      let { sortBy, descending, rowsPerPage } = buySellRatiosPagination
-      let direction = descending ? 'desc' : 'asc'
-      let path = `${ROOT}/buySellRatios`
+      const { sortBy, descending, rowsPerPage } = buySellRatiosPagination
+      const direction = descending ? 'desc' : 'asc'
+      const path = `${ROOT}/buySellRatios`
 
       const queries = []
 
-      let buySellRatiosFilter = context.state.buySellRatiosFilter
+      const buySellRatiosFilter = context.state.buySellRatiosFilter
       // console.log('queryBuySellRatios buySellRatiosFilter', buySellRatiosFilter)
       buySellRatiosFilter.items.forEach(filterItem => {
         let query = firestore.collection(path)
@@ -547,7 +547,7 @@ export default {
         queries.push(query)
       })
       if (!queries.length) {
-        let query = firestore.collection(path)
+        const query = firestore.collection(path)
           .orderBy(sortBy, direction)
         queries.push(query)
       }
@@ -559,7 +559,7 @@ export default {
         query = query
           .limit(rowsPerPage)
         // console.log('queryBuySellRatios query', getQueryString(query))
-        let unsubscribe = query
+        const unsubscribe = query
           .onSnapshot({ includeQueryMetadataChanges: true }, querySnapshot => {
             context.dispatch('_onQueriedBuySellRatios', querySnapshot)
           }, error => {
@@ -571,7 +571,7 @@ export default {
     },
     _onQueriedBuySellRatios (context, querySnapshot) {
       // console.log('_onQueriedBuySellRatios querySnapshot', querySnapshot)
-      let docChanges = querySnapshot.docChanges
+      const docChanges = querySnapshot.docChanges
       // console.log('_onQueriedBuySellRatios docChanges', docChanges)
       if (docChanges.length === 0) {
         // console.warn('_onQueriedBuySellRatios docChanges.length === 0 ignoring')
@@ -579,33 +579,33 @@ export default {
       }
       // console.log('_onQueriedBuySellRatios')
 
-      let buySellRatios = []
+      const buySellRatios = []
 
       docChanges.forEach(change => {
         // console.log('_onQueriedBuySellRatios change', change)
-        let doc = change.doc
+        const doc = change.doc
         // console.log('_onQueriedBuySellRatios doc', doc)
-        // let docId = doc.id
-        // let fromCache = doc.metadata.fromCache
+        // const docId = doc.id
+        // const fromCache = doc.metadata.fromCache
         // console.log('_onQueriedBuySellRatios ' + docId + ' fromCache', fromCache)
-        let docData = doc.data()
+        const docData = doc.data()
         // console.log('_onQueriedBuySellRatios docData', docData)
 
-        let itemId = docData.itemId
-        let itemName = context.state.itemsMap[itemId].name
-        let buyLocationId = docData.buyLocationId
+        const itemId = docData.itemId
+        const itemName = context.state.itemsMap[itemId].name
+        const buyLocationId = docData.buyLocationId
         // console.log('_onQueriedBuySellRatios buyLocationId', buyLocationId)
-        let buyLocationName = context.state.locationsMap[buyLocationId].name
-        let buyPrice = docData.buyPrice
-        let buyTimestamp = docData.buyTimestamp
-        let ratio = docData.ratio
-        let sellPrice = docData.sellPrice
-        let sellTimestamp = docData.sellTimestamp
-        let sellLocationId = docData.sellLocationId
+        const buyLocationName = context.state.locationsMap[buyLocationId].name
+        const buyPrice = docData.buyPrice
+        const buyTimestamp = docData.buyTimestamp
+        const ratio = docData.ratio
+        const sellPrice = docData.sellPrice
+        const sellTimestamp = docData.sellTimestamp
+        const sellLocationId = docData.sellLocationId
         // console.log('_onQueriedBuySellRatios sellLocationId', sellLocationId)
-        let sellLocationName = context.state.locationsMap[sellLocationId].name
+        const sellLocationName = context.state.locationsMap[sellLocationId].name
 
-        let buySellRatio = {
+        const buySellRatio = {
           itemName,
           buyLocationName,
           buyPrice,
@@ -620,10 +620,10 @@ export default {
       })
       // console.log('_onQueriedBuySellRatios buySellRatios', buySellRatios)
       // console.log('_onQueriedBuySellRatios context.state.buySellRatios', context.state.buySellRatios)
-      let buySellRatiosPagination = context.state.buySellRatiosPagination
+      const buySellRatiosPagination = context.state.buySellRatiosPagination
       // console.log('_onQueriedBuySellRatios buySellRatiosPagination', buySellRatiosPagination)
-      let { sortBy, descending, rowsPerPage } = buySellRatiosPagination
-      let equals = (a, b) => {
+      const { sortBy, descending, rowsPerPage } = buySellRatiosPagination
+      const equals = (a, b) => {
         // console.log('equals a', a, 'b', b)
         let result = a.itemName === b.itemName
         // console.log('equals itemName', result)
@@ -641,9 +641,9 @@ export default {
         // console.log('equals sellLocationName', result)
         return result
       }
-      let sort = (a, b) => {
-        let valueA = a[sortBy]
-        let valueB = b[sortBy]
+      const sort = (a, b) => {
+        const valueA = a[sortBy]
+        const valueB = b[sortBy]
         let result
         if (valueA > valueB) {
           result = 1
@@ -657,7 +657,7 @@ export default {
         }
         return result
       }
-      let result = concatUniqueSortLimit(buySellRatios, context.state.buySellRatios, equals, sort, rowsPerPage)
+      const result = concatUniqueSortLimit(buySellRatios, context.state.buySellRatios, equals, sort, rowsPerPage)
       // console.log('_onQueriedBuySellRatios result', result)
       context.commit('_setBuySellRatios', result)
     },
@@ -666,35 +666,35 @@ export default {
       // console.log('saveLocationItemPrices locationId:', locationId)
       // console.log('saveLocationItemPrices locationItemPrices:', locationItemPrices)
 
-      let user = context.rootState.user.user
+      const user = context.rootState.user.user
       // console.log('saveLocationItemPrices user', user)
-      let userId = user && user.id
+      const userId = user && user.id
       // console.log('saveLocationItemPrices userId', userId)
       if (!userId) {
         return Promise.reject(new Error('Not authenticated'))
       }
 
-      let prices = {}
+      const prices = {}
 
       let changed = false
 
-      let mapPricesNew = {}
+      const mapPricesNew = {}
       locationItemPrices.forEach(item => {
         mapPricesNew[item.id] = item
       })
       // console.log('saveLocationItemPrices mapPricesNew', mapPricesNew)
 
-      let invalidPrices = []
+      const invalidPrices = []
 
-      let arrayPricesOriginalAll = context.state.locationsItemsPricesMap[locationId]
+      const arrayPricesOriginalAll = context.state.locationsItemsPricesMap[locationId]
       // console.log('saveLocationItemPrices arrayPricesOriginalAll', arrayPricesOriginalAll)
       for (let priceOriginal of arrayPricesOriginalAll) {
         // console.log('saveLocationItemPrices priceOriginal', priceOriginal)
-        let itemId = priceOriginal.id
-        let priceOriginalBuy = priceOriginal.priceBuy
-        let priceOriginalSell = priceOriginal.priceSell
+        const itemId = priceOriginal.id
+        const priceOriginalBuy = priceOriginal.priceBuy
+        const priceOriginalSell = priceOriginal.priceSell
         // console.log('saveLocationItemPrices priceOriginalBuy', priceOriginalBuy, 'priceOriginalSell', priceOriginalSell)
-        let priceNew = mapPricesNew[itemId]
+        const priceNew = mapPricesNew[itemId]
         // console.log('saveLocationItemPrices priceNew', priceNew)
         let priceNewBuy
         let priceNewSell
@@ -733,7 +733,7 @@ export default {
           continue
         }
 
-        let thisPrices = {}
+        const thisPrices = {}
         changed |= priceOriginalBuy !== priceNewBuy
         if (priceNewBuy) {
           thisPrices.priceBuy = priceNewBuy
@@ -760,7 +760,7 @@ export default {
         return Promise.reject(new Error('No prices changed'))
       }
 
-      let data = {
+      const data = {
         deploymentId: DEPLOYMENT_ID,
         locationId
       }
@@ -857,22 +857,22 @@ function getQueryString (query) {
 
   let queryString = ''
 
-  let _query = query._query
+  const _query = query._query
 
-  let path = _query.path
+  const path = _query.path
   queryString = 'path ' + path
 
-  let where = _query.filters
+  const where = _query.filters
   if (where.length) {
     queryString += ' where ' + where
   }
 
-  let orderBy = _query.explicitOrderBy
+  const orderBy = _query.explicitOrderBy
   if (orderBy.length) {
     queryString += ' orderBy ' + orderBy
   }
 
-  let limit = _query.limit
+  const limit = _query.limit
   if (limit) {
     queryString += ' limit ' + limit
   }
@@ -883,7 +883,7 @@ function getQueryString (query) {
 }
 
 function concatUniqueSortLimit (arrayA, arrayB, equals, sort, limit) {
-  let result = arrayA.concat(arrayB)
+  const result = arrayA.concat(arrayB)
   for (var i = 0; i < result.length; ++i) {
     for (var j = i + 1; j < result.length; ++j) {
       if (equals(result[i], result[j])) {

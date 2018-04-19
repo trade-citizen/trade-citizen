@@ -240,8 +240,8 @@ export default {
         // console.error('Home watch buySellRatiosPagination arguments', arguments)
         // console.error('Home watch buySellRatiosPagination buySellRatiosPagination', this.buySellRatiosPagination)
         // console.error('Home watch buySellRatiosPagination buySellRatiosPaginationOld', this.buySellRatiosPaginationOld)
-        let buySellRatiosPagination = this.buySellRatiosPagination
-        let buySellRatiosPaginationOld = this.buySellRatiosPaginationOld
+        const buySellRatiosPagination = this.buySellRatiosPagination
+        const buySellRatiosPaginationOld = this.buySellRatiosPaginationOld
         if (buySellRatiosPagination.sortBy !== buySellRatiosPaginationOld.sortBy ||
             buySellRatiosPagination.descending !== buySellRatiosPaginationOld.descending ||
             buySellRatiosPagination.rowsPerPage !== buySellRatiosPaginationOld.rowsPerPage ||
@@ -309,8 +309,8 @@ export default {
           // if (item.illegal && !this.buySellRatiosFilter.illegal) {
           //   return
           // }
-          let id = item.id
-          let name = item.name
+          const id = item.id
+          const name = item.name
           /*
           if (this.isDevelopment) {
             name += ' {' + id + '}'
@@ -319,8 +319,8 @@ export default {
           return { id, name }
         })
         .sort((a, b) => {
-          let aName = a.name.toLowerCase()
-          let bName = b.name.toLowerCase()
+          const aName = a.name.toLowerCase()
+          const bName = b.name.toLowerCase()
           if (aName < bName) {
             return -1
           }
@@ -333,8 +333,8 @@ export default {
     locations () {
       return this.$store.getters.locations
         .map(location => {
-          let id = location.id
-          let name = location.name
+          const id = location.id
+          const name = location.name
           // name = location.anchor.name + ' - ' + name
           /*
           if (this.isDevelopment) {
@@ -344,8 +344,8 @@ export default {
           return { id, name }
         })
         .sort((a, b) => {
-          let aName = a.name.toLowerCase()
-          let bName = b.name.toLowerCase()
+          const aName = a.name.toLowerCase()
+          const bName = b.name.toLowerCase()
           if (aName < bName) {
             return -1
           }
@@ -369,7 +369,7 @@ export default {
     },
     onPersistenceError () {
       // console.log('Home onPersistenceError error', error)
-      let error = this.persistenceError
+      const error = this.persistenceError
       if (!error) {
         return
       }
@@ -394,10 +394,10 @@ export default {
       // console.log('Home refresh()')
       if (!this.buySellRatiosFilter.illegal) {
         // Clear illegal items from this.buySellRatiosFilter.items
-        let items = this.$store.getters.items
+        const items = this.$store.getters.items
         let i = this.buySellRatiosFilter.items.length
         while (i--) {
-          let item = this.buySellRatiosFilter.items[i]
+          const item = this.buySellRatiosFilter.items[i]
           if (items[item.id].illegal) {
             this.buySellRatiosFilter.item.splice(i, 1)
           }
@@ -414,7 +414,7 @@ export default {
       let prices = this.locationItemPriceList
       // console.log('Home updateLocationItemPriceListCopy prices BEFORE', prices)
       if (prices && !this.editing) {
-        let pricesDefined = prices.filter((price) => {
+        const pricesDefined = prices.filter((price) => {
           return price.isPriceDefined
         })
         // console.log('Home updateLocationItemPriceListCopy pricesDefined', pricesDefined)
@@ -430,7 +430,7 @@ export default {
       // console.log('Home updateLocationItemPriceListCopy prices AFTER', prices)
       if (prices) {
         prices.forEach(price => {
-          let copy = Object.assign({}, price)
+          const copy = Object.assign({}, price)
           this.locationItemPriceListCopy.push(copy)
         })
       }
@@ -463,7 +463,7 @@ export default {
         })
         .catch(error => {
           // console.log('Home saveLocation ERROR', error)
-          let toastMessage = error.message ? error.message : error
+          const toastMessage = error.message ? error.message : error
           this.toastMessage({ message: toastMessage })
         })
     }
