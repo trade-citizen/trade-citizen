@@ -251,8 +251,11 @@ export default {
     saveable () {
       return this.$store.getters.saveable
     },
+    saving () {
+      return this.$store.getters.saving
+    },
     showProgress () {
-      return this.initializing || this.$store.getters.saving
+      return this.initializing || this.saving
     },
     locationId: {
       get: function () {
@@ -317,6 +320,7 @@ export default {
       return timestamp
     }
   },
+
   methods: {
     updateOnlineStatus () {
       let online = navigator.onLine

@@ -486,7 +486,7 @@ export default {
     },
 
     queryBuySellRatios (context) {
-      console.info('queryBuySellRatios')
+      // console.info('queryBuySellRatios')
       if (!context.state.initialized) {
         // console.log('queryBuySellRatios initialized == false; ignoring')
         return
@@ -760,8 +760,8 @@ export default {
       }
       // console.log('saveLocationItemPrices data', data)
       context.commit('_setSaving', true)
-      const mockResult = false
-      if (mockResult) {
+      const MOCK_ONLY = false
+      if (MOCK_ONLY) {
         return new Promise((resolve, reject) => {
           setTimeout(() => {
             context.commit('_setSaving', false)

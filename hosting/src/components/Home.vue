@@ -167,8 +167,8 @@
                   class="input-group--focused inputPrice"
                   :autofocus="index === 0"
                   :color="saveable ? 'cyan lighten-2' : ''"
-                  :disabled="!saveable"
-                  :clearable="saveable"
+                  :disabled="!saveable || saving"
+                  :clearable="saveable && !saving"
                   v-model.number="locationItemPrice.priceBuy"
                   :hide-details="!locationItemPrice.invalidPriceBuy"
                   :error-messages="locationItemPrice.invalidPriceBuy ? 'Invalid price' : undefined"
@@ -181,8 +181,8 @@
                   label="Sell Price"
                   class="input-group--focused inputPrice"
                   :color="saveable ? 'cyan lighten-2' : ''"
-                  :disabled="!saveable"
-                  :clearable="saveable"
+                  :disabled="!saveable || saving"
+                  :clearable="saveable && !saving"
                   v-model.number="locationItemPrice.priceSell"
                   :hide-details="!locationItemPrice.invalidPriceSell"
                   :error-messages="locationItemPrice.invalidPriceSell ? 'Invalid price' : undefined"
@@ -226,6 +226,7 @@ export default {
       editing: false
     }
   },
+
   watch: {
     persistenceError: {
       handler () {
@@ -233,41 +234,42 @@ export default {
       }
     },
     buySellRatiosPagination: {
+      deep: true,
       handler () {
-        // console.error('watch buySellRatiosPagination arguments', arguments)
-        // console.error('watch buySellRatiosPagination buySellRatiosPagination', this.buySellRatiosPagination)
-        // console.error('watch buySellRatiosPagination buySellRatiosPaginationOld', this.buySellRatiosPaginationOld)
+        // console.error('Home watch buySellRatiosPagination arguments', arguments)
+        // console.error('Home watch buySellRatiosPagination buySellRatiosPagination', this.buySellRatiosPagination)
+        // console.error('Home watch buySellRatiosPagination buySellRatiosPaginationOld', this.buySellRatiosPaginationOld)
         let buySellRatiosPagination = this.buySellRatiosPagination
         let buySellRatiosPaginationOld = this.buySellRatiosPaginationOld
         if (buySellRatiosPagination.sortBy !== buySellRatiosPaginationOld.sortBy ||
             buySellRatiosPagination.descending !== buySellRatiosPaginationOld.descending ||
             buySellRatiosPagination.rowsPerPage !== buySellRatiosPaginationOld.rowsPerPage ||
             buySellRatiosPagination.page !== buySellRatiosPaginationOld.page) {
-          // console.log('watch buySellRatiosPagination changed; setBuySellRatiosPagination && queryBuySellRatios')
+          // console.log('Home watch buySellRatiosPagination changed; setBuySellRatiosPagination && queryBuySellRatios')
           this.$store.commit('setBuySellRatiosPagination', Object.assign({}, this.buySellRatiosPagination))
           this.$store.dispatch('queryBuySellRatios')
         } else {
-          // console.log('watch buySellRatiosPagination unchanged; ignore')
+          // console.log('Home watch buySellRatiosPagination unchanged; ignore')
         }
         this.buySellRatiosPaginationOld = this.buySellRatiosPagination
-      },
-      deep: true
+      }
     },
     buySellRatiosFilter: {
+      deep: true,
       handler () {
-        // console.error('watch buySellRatiosFilter arguments', arguments)
-        // console.error('watch buySellRatiosFilter setBuySellRatiosFilter && queryBuySellRatios')
+        // console.error('Home watch buySellRatiosFilter arguments', arguments)
+        // console.error('Home watch buySellRatiosFilter setBuySellRatiosFilter && queryBuySellRatios')
         this.$store.commit('setBuySellRatiosFilter', Object.assign({}, this.buySellRatiosFilter))
         this.$store.dispatch('queryBuySellRatios')
-      },
-      deep: true
+      }
     },
     locationItemPriceList: {
-      handler: 'updateLocationItemPriceListCopy',
-      deep: true
+      deep: true,
+      handler: 'updateLocationItemPriceListCopy'
     },
     editing: 'updateLocationItemPriceListCopy'
   },
+
   mounted () {
     // console.log('Home mounted')
     var vm = this
@@ -284,6 +286,7 @@ export default {
       vm.saveLocation(locationId)
     })
   },
+
   computed: {
     isDevelopment () {
       return this.$store.getters.isDevelopment
@@ -302,6 +305,9 @@ export default {
     },
     saveable () {
       return this.$store.getters.saveable
+    },
+    saving () {
+      return this.$store.getters.saving
     },
     locationId: {
       get: function () {
@@ -367,12 +373,13 @@ export default {
       return this.$store.getters.locationItemPriceList(this.locationId)
     }
   },
+
   methods: {
     toastMessage (payload) {
       this.$root.$emit('toastMessage', payload)
     },
     onPersistenceError () {
-      // console.log('onPersistenceError error', error)
+      // console.log('Home onPersistenceError error', error)
       let error = this.persistenceError
       if (!error) {
         return
@@ -395,7 +402,7 @@ export default {
       return utils.formatDateYMDHMS(date)
     },
     refresh () {
-      // console.log('refresh()')
+      // console.log('Home refresh()')
       if (!this.buySellRatiosFilter.illegal) {
         // Clear illegal items from this.buySellRatiosFilter.items
         let items = this.$store.getters.items
@@ -409,24 +416,29 @@ export default {
       }
     },
     updateLocationItemPriceListCopy () {
+      // console.log('Home updateLocationItemPriceListCopy')
+      if (this.saving) {
+        // We're saving new values; don't update with the soon to be old values
+        return
+      }
       this.locationItemPriceListCopy.splice(0)
       let prices = this.locationItemPriceList
-      // console.log('updateLocationItemPriceListCopy prices BEFORE', prices)
+      // console.log('Home updateLocationItemPriceListCopy prices BEFORE', prices)
       if (prices && !this.editing) {
         let pricesDefined = prices.filter((price) => {
           return price.isPriceDefined
         })
-        // console.log('updateLocationItemPriceListCopy pricesDefined', pricesDefined)
+        // console.log('Home updateLocationItemPriceListCopy pricesDefined', pricesDefined)
         if (pricesDefined.length > 0 || !this.userIsAuthenticated) {
-          // console.log('updateLocationItemPriceListCopy A')
+          // console.log('Home updateLocationItemPriceListCopy A')
           prices = pricesDefined
         } else {
-          // console.log('updateLocationItemPriceListCopy B')
+          // console.log('Home updateLocationItemPriceListCopy B')
         }
       } else {
-        // console.log('updateLocationItemPriceListCopy C')
+        // console.log('Home updateLocationItemPriceListCopy C')
       }
-      // console.log('updateLocationItemPriceListCopy prices AFTER', prices)
+      // console.log('Home updateLocationItemPriceListCopy prices AFTER', prices)
       if (prices) {
         prices.forEach(price => {
           let copy = Object.assign({}, price)
@@ -452,7 +464,7 @@ export default {
           locationItemPrices: this.locationItemPriceListCopy
         })
         .then(result => {
-          // console.log('saveLocation SUCCESS!')
+          // console.log('Home saveLocation SUCCESS!')
           this.editing = false
           let message = 'Prices Saved.'
           if (result && result.mocked) {
@@ -461,7 +473,7 @@ export default {
           this.toastMessage({ message })
         })
         .catch(error => {
-          // console.log('saveLocation ERROR', error)
+          // console.log('Home saveLocation ERROR', error)
           let toastMessage = error.message ? error.message : error
           this.toastMessage({ message: toastMessage })
         })
