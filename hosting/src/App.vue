@@ -191,6 +191,7 @@
 
 <script>
 
+import { mapGetters } from 'vuex'
 import * as utils from './utils'
 
 export default {
@@ -236,24 +237,14 @@ export default {
   },
 
   computed: {
-    isDevelopment () {
-      return this.$store.getters.isDevelopment
-    },
-    offline () {
-      return this.$store.getters.offline
-    },
-    initializing () {
-      return this.$store.getters.initializing
-    },
-    userIsAuthenticated () {
-      return this.$store.getters.userIsAuthenticated
-    },
-    saveable () {
-      return this.$store.getters.saveable
-    },
-    saving () {
-      return this.$store.getters.saving
-    },
+    ...mapGetters([
+      'isDevelopment',
+      'offline',
+      'initializing',
+      'userIsAuthenticated',
+      'saveable',
+      'saving'
+    ]),
     showProgress () {
       return this.initializing || this.saving
     },

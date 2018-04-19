@@ -206,6 +206,7 @@
 
 <script>
 
+import { mapGetters } from 'vuex'
 import * as utils from '../utils'
 
 export default {
@@ -288,27 +289,15 @@ export default {
   },
 
   computed: {
-    isDevelopment () {
-      return this.$store.getters.isDevelopment
-    },
-    persistenceError () {
-      return this.$store.getters.persistenceError
-    },
-    offline () {
-      return this.$store.getters.offline
-    },
-    initialized () {
-      return this.$store.getters.initialized
-    },
-    userIsAuthenticated () {
-      return this.$store.getters.userIsAuthenticated
-    },
-    saveable () {
-      return this.$store.getters.saveable
-    },
-    saving () {
-      return this.$store.getters.saving
-    },
+    ...mapGetters([
+      'isDevelopment',
+      'persistenceError',
+      'offline',
+      'initialized',
+      'userIsAuthenticated',
+      'saveable',
+      'saving'
+    ]),
     locationId: {
       get: function () {
         return this.$store.getters.getSelectedLocationId
