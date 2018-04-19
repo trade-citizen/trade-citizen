@@ -167,7 +167,7 @@
     </v-content>
     <v-footer app class="pa-3">
       <div v-if="locationId">
-        {{ locationItemPriceTimestamp }}
+        Priced at: {{ locationItemPriceTimestamp }}
       </div>
       <v-spacer></v-spacer>
       <div>{{ offline ? 'OFFLINE' : '' }}</div>
@@ -245,15 +245,14 @@ export default {
     initializing () {
       return this.$store.getters.initializing
     },
-    showProgress () {
-      let showProgress = this.initializing || this.$store.getters.saving
-      return showProgress
+    userIsAuthenticated () {
+      return this.$store.getters.userIsAuthenticated
     },
     saveable () {
-      // console.log('saveable this.offline', this.offline, 'this.showProgress', this.showProgress)
-      let saveable = !this.offline && !this.showProgress
-      // console.log('saveable saveable', saveable)
-      return saveable
+      return this.$store.getters.saveable
+    },
+    showProgress () {
+      return this.initializing || this.$store.getters.saving
     },
     locationId: {
       get: function () {
@@ -264,10 +263,6 @@ export default {
         this.$store.commit('setSelectedLocationId', value)
         this.$root.$emit('onSelectedLocationChanged', value)
       }
-    },
-    userIsAuthenticated () {
-      return this.$store.getters.user !== null &&
-        this.$store.getters.user !== undefined
     },
     showEdit () {
       if (!this.locationId) {
@@ -319,7 +314,7 @@ export default {
       if (!timestamp) {
         timestamp = 'Never'
       }
-      return `Priced at: ${timestamp}`
+      return timestamp
     }
   },
   methods: {

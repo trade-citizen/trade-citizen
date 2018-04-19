@@ -15,6 +15,7 @@ const DEPLOYMENT_ID = utils.isProduction() ? 'production' : 'test'
 const ROOT = `/deployments/${DEPLOYMENT_ID}`
 const FIELD_TIMESTAMPED = 'timestamped'
 const FIELD_TIMESTAMP = 'timestamp'
+const ALLOW_EDIT_OFFLINE = false
 
 export default {
   state: {
@@ -793,6 +794,9 @@ export default {
     },
     initialized (state) {
       return state.initialized
+    },
+    saveable (state, getters, rootState) {
+      return getters.userIsAuthenticated && (ALLOW_EDIT_OFFLINE || !getters.offline)
     },
     saving (state) {
       return state.saving

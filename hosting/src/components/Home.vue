@@ -297,20 +297,16 @@ export default {
     initialized () {
       return this.$store.getters.initialized
     },
+    userIsAuthenticated () {
+      return this.$store.getters.userIsAuthenticated
+    },
     saveable () {
-      // console.log('saveable this.offline', this.offline, 'this.userIsAuthenticated', this.userIsAuthenticated)
-      let saveable = !this.offline && this.userIsAuthenticated
-      // console.log('saveable saveable', saveable)
-      return saveable
+      return this.$store.getters.saveable
     },
     locationId: {
       get: function () {
         return this.$store.getters.getSelectedLocationId
       }
-    },
-    userIsAuthenticated () {
-      return this.$store.getters.user !== null &&
-        this.$store.getters.user !== undefined
     },
     items () {
       return this.$store.getters.items
