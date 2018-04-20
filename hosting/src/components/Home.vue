@@ -416,7 +416,20 @@ export default {
     updateLocationItemPriceListCopy () {
       // console.log('Home updateLocationItemPriceListCopy')
       if (this.saving) {
-        // We're saving new values; don't update with the soon to be old values
+        //
+        // We're saving new values.
+        // Don't update with the soon to be old values.
+        // Do hide any blank/0 valued items.
+        //
+        let i = this.locationItemPriceListCopy.length
+        while (i--) {
+          const itemPrice = this.locationItemPriceListCopy[i]
+          // console.log('updateLocationItemPriceListCopy itemPrice', JSON.stringify(itemPrice))
+          if ((itemPrice.priceSell === 0 || itemPrice.priceSell === undefined) &&
+            (itemPrice.priceSell === 0 || itemPrice.priceSell === undefined)) {
+            this.locationItemPriceListCopy.splice(i, 1)
+          }
+        }
         return
       }
       this.locationItemPriceListCopy.splice(0)
