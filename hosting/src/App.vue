@@ -14,6 +14,14 @@
             <v-list-tile-title>Home</v-list-tile-title>
           </v-list-tile-content>
         </v-list-tile>
+        <v-list-tile href="https://bitbucket.org/trade-citizen/trade-citizen/issues/new" target="_blank">
+          <v-list-tile-action>
+            <v-icon>bug_report</v-icon>
+          </v-list-tile-action>
+          <v-list-tile-content>
+            <v-list-tile-title>Report a bug</v-list-tile-title>
+          </v-list-tile-content>
+        </v-list-tile>        
         <template v-if="userIsAuthenticated">
           <v-list-tile @click="signout">
             <v-list-tile-action>
