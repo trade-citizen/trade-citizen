@@ -240,7 +240,7 @@ export default {
   computed: {
     ...mapState({
       isDevelopment: state => state.shared.isDevelopment,
-      userIsAuthenticated: state => state.user.userIsAuthenticated,
+      authenticating: state => state.user.authenticating,
       offline: state => state.tradeinfo.offline,
       initializing: state => state.tradeinfo.initializing,
       saving: state => state.tradeinfo.saving
@@ -250,7 +250,7 @@ export default {
       'saveable'
     ]),
     showProgress () {
-      return this.initializing || this.saving
+      return this.authenticating || this.initializing || this.saving
     },
     locationId: {
       get: function () {

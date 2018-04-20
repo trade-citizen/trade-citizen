@@ -197,6 +197,8 @@ export default {
   },
   actions: {
     initialize (context) {
+      // console.log('initialize')
+
       firebase.initializeApp({
         apiKey: 'AIzaSyDfKA77M6vyodG8_BprKviSgNtB0zLoVDU',
         authDomain: 'trade-citizen.firebaseapp.com',

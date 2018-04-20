@@ -230,47 +230,9 @@ export default {
     }
   },
 
-  watch: {
-    persistenceError: {
-      handler () {
-        this.onPersistenceError()
-      }
-    },
-    buySellRatiosPagination: {
-      deep: true,
-      handler () {
-        // console.error('Home watch buySellRatiosPagination arguments', arguments)
-        // console.error('Home watch buySellRatiosPagination buySellRatiosPagination', this.buySellRatiosPagination)
-        // console.error('Home watch buySellRatiosPagination buySellRatiosPaginationOld', this.buySellRatiosPaginationOld)
-        const buySellRatiosPagination = this.buySellRatiosPagination
-        const buySellRatiosPaginationOld = this.buySellRatiosPaginationOld
-        if (buySellRatiosPagination.sortBy !== buySellRatiosPaginationOld.sortBy ||
-            buySellRatiosPagination.descending !== buySellRatiosPaginationOld.descending ||
-            buySellRatiosPagination.rowsPerPage !== buySellRatiosPaginationOld.rowsPerPage ||
-            buySellRatiosPagination.page !== buySellRatiosPaginationOld.page) {
-          // console.log('Home watch buySellRatiosPagination changed; setBuySellRatiosPagination && queryBuySellRatios')
-          this.$store.commit('setBuySellRatiosPagination', Object.assign({}, this.buySellRatiosPagination))
-          this.$store.dispatch('queryBuySellRatios')
-        } else {
-          // console.log('Home watch buySellRatiosPagination unchanged; ignore')
-        }
-        this.buySellRatiosPaginationOld = this.buySellRatiosPagination
-      }
-    },
-    buySellRatiosFilter: {
-      deep: true,
-      handler () {
-        // console.error('Home watch buySellRatiosFilter arguments', arguments)
-        // console.error('Home watch buySellRatiosFilter setBuySellRatiosFilter && queryBuySellRatios')
-        this.$store.commit('setBuySellRatiosFilter', Object.assign({}, this.buySellRatiosFilter))
-        this.$store.dispatch('queryBuySellRatios')
-      }
-    },
-    locationItemPriceList: {
-      deep: true,
-      handler: 'updateLocationItemPriceListCopy'
-    },
-    editing: 'updateLocationItemPriceListCopy'
+  created () {
+    // console.log('Home created')
+    this.updateLocationItemPriceListCopy()
   },
 
   mounted () {
@@ -365,6 +327,49 @@ export default {
     locationItemPriceList () {
       return this.$store.getters.locationItemPriceList(this.locationId)
     }
+  },
+
+  watch: {
+    persistenceError: {
+      handler () {
+        this.onPersistenceError()
+      }
+    },
+    buySellRatiosPagination: {
+      deep: true,
+      handler () {
+        // console.error('Home watch buySellRatiosPagination arguments', arguments)
+        // console.error('Home watch buySellRatiosPagination buySellRatiosPagination', this.buySellRatiosPagination)
+        // console.error('Home watch buySellRatiosPagination buySellRatiosPaginationOld', this.buySellRatiosPaginationOld)
+        const buySellRatiosPagination = this.buySellRatiosPagination
+        const buySellRatiosPaginationOld = this.buySellRatiosPaginationOld
+        if (buySellRatiosPagination.sortBy !== buySellRatiosPaginationOld.sortBy ||
+            buySellRatiosPagination.descending !== buySellRatiosPaginationOld.descending ||
+            buySellRatiosPagination.rowsPerPage !== buySellRatiosPaginationOld.rowsPerPage ||
+            buySellRatiosPagination.page !== buySellRatiosPaginationOld.page) {
+          // console.log('Home watch buySellRatiosPagination changed; setBuySellRatiosPagination && queryBuySellRatios')
+          this.$store.commit('setBuySellRatiosPagination', Object.assign({}, this.buySellRatiosPagination))
+          this.$store.dispatch('queryBuySellRatios')
+        } else {
+          // console.log('Home watch buySellRatiosPagination unchanged; ignore')
+        }
+        this.buySellRatiosPaginationOld = this.buySellRatiosPagination
+      }
+    },
+    buySellRatiosFilter: {
+      deep: true,
+      handler () {
+        // console.error('Home watch buySellRatiosFilter arguments', arguments)
+        // console.error('Home watch buySellRatiosFilter setBuySellRatiosFilter && queryBuySellRatios')
+        this.$store.commit('setBuySellRatiosFilter', Object.assign({}, this.buySellRatiosFilter))
+        this.$store.dispatch('queryBuySellRatios')
+      }
+    },
+    locationItemPriceList: {
+      deep: true,
+      handler: 'updateLocationItemPriceListCopy'
+    },
+    editing: 'updateLocationItemPriceListCopy'
   },
 
   methods: {
@@ -474,7 +479,9 @@ export default {
   }
 }
 </script>
+
 <style scoped>
+
 .inputPrice >>> input {
   text-align: right;
   -moz-appearance:textfield;
@@ -483,4 +490,5 @@ export default {
 .inputPrice >>> input::-webkit-inner-spin-button {
   -webkit-appearance: none;
 }
+
 </style>
