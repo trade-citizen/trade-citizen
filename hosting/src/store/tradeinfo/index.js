@@ -792,23 +792,8 @@ export default {
     }
   },
   getters: {
-    offline (state) {
-      return state.offline
-    },
-    persistenceError (state) {
-      return state.persistenceError
-    },
-    initializing (state) {
-      return state.initializing
-    },
-    initialized (state) {
-      return state.initialized
-    },
     saveable (state, getters, rootState) {
       return getters.userIsAuthenticated && (ALLOW_EDIT_OFFLINE || !getters.offline)
-    },
-    saving (state) {
-      return state.saving
     },
     getSelectedLocationId (state) {
       return state.selectedLocationId

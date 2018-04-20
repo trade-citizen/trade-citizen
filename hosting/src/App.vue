@@ -192,7 +192,7 @@
 
 <script>
 
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import * as utils from './utils'
 
 export default {
@@ -238,13 +238,16 @@ export default {
   },
 
   computed: {
+    ...mapState({
+      isDevelopment: state => state.shared.isDevelopment,
+      userIsAuthenticated: state => state.user.userIsAuthenticated,
+      offline: state => state.tradeinfo.offline,
+      initializing: state => state.tradeinfo.initializing,
+      saving: state => state.tradeinfo.saving
+    }),
     ...mapGetters([
-      'isDevelopment',
-      'offline',
-      'initializing',
       'userIsAuthenticated',
-      'saveable',
-      'saving'
+      'saveable'
     ]),
     showProgress () {
       return this.initializing || this.saving

@@ -208,7 +208,7 @@
 
 <script>
 
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import * as utils from '../utils'
 
 export default {
@@ -291,14 +291,16 @@ export default {
   },
 
   computed: {
+    ...mapState({
+      isDevelopment: state => state.shared.isDevelopment,
+      persistenceError: state => state.tradeinfo.persistenceError,
+      offline: state => state.tradeinfo.offline,
+      initialized: state => state.tradeinfo.initialized,
+      saving: state => state.tradeinfo.saving
+    }),
     ...mapGetters([
-      'isDevelopment',
-      'persistenceError',
-      'offline',
-      'initialized',
       'userIsAuthenticated',
-      'saveable',
-      'saving'
+      'saveable'
     ]),
     locationId: {
       get: function () {
