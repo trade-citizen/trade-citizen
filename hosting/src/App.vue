@@ -79,6 +79,7 @@
           append-icon="search"
           placeholder="Search"
           solo-inverted
+          auto
           autocomplete
           clearable
           :disabled="this.initializing"
