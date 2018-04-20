@@ -9,8 +9,8 @@ Vue.use(Vuex)
 export const store = new Vuex.Store({
   strict: process.env.NODE_ENV !== 'production',
   modules: {
-    user: user,
-    shared: shared,
-    tradeinfo: tradeinfo
+    user,
+    shared,
+    tradeinfo
   }
 })

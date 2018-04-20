@@ -86,52 +86,52 @@
 </template>
 
 <script>
-  export default {
-    data () {
-      return {
-        email: '',
-        password: ''
-      }
+export default {
+  data () {
+    return {
+      email: '',
+      password: ''
+    }
+  },
+  computed: {
+    user () {
+      return this.$store.getters.user
     },
-    computed: {
-      user () {
-        return this.$store.getters.user
-      },
-      error () {
-        return this.$store.getters.error
-      },
-      loading () {
-        return this.$store.getters.loading
-      }
+    error () {
+      return this.$store.getters.error
     },
-    watch: {
-      user (value) {
-        if (value !== null && value !== undefined) {
-          this.$router.push('/')
-        }
-      }
-    },
-    methods: {
-      onSignin () {
-        this.$store.dispatch('signUserIn', {email: this.email, password: this.password})
-      },
-      onSigninGoogle () {
-        this.$store.dispatch('signUserInGoogle')
-      },
-      /*
-      onSigninFacebook () {
-        this.$store.dispatch('signUserInFacebook')
-      },
-      onSigninGithub () {
-        this.$store.dispatch('signUserInGithub')
-      },
-      onSigninTwitter () {
-        this.$store.dispatch('signUserInTwitter')
-      },
-      */
-      onDismissed () {
-        this.$store.dispatch('clearError')
+    loading () {
+      return this.$store.getters.loading
+    }
+  },
+  watch: {
+    user (value) {
+      if (value !== null && value !== undefined) {
+        this.$router.push('/')
       }
     }
+  },
+  methods: {
+    onSignin () {
+      this.$store.dispatch('signUserIn', {email: this.email, password: this.password})
+    },
+    onSigninGoogle () {
+      this.$store.dispatch('signUserInGoogle')
+    },
+    /*
+    onSigninFacebook () {
+      this.$store.dispatch('signUserInFacebook')
+    },
+    onSigninGithub () {
+      this.$store.dispatch('signUserInGithub')
+    },
+    onSigninTwitter () {
+      this.$store.dispatch('signUserInTwitter')
+    },
+    */
+    onDismissed () {
+      this.$store.dispatch('clearError')
+    }
   }
+}
 </script>
