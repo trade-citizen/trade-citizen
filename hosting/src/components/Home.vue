@@ -173,6 +173,7 @@
                   :hide-details="!locationItemPrice.invalidPriceBuy"
                   :error-messages="locationItemPrice.invalidPriceBuy ? 'Invalid price' : undefined"
                   @input="locationItemPrice.invalidPriceBuy = false"
+                  @click="$event.target.select()"
                   >
                 </v-number-field>
               </v-flex>
@@ -187,6 +188,7 @@
                   :hide-details="!locationItemPrice.invalidPriceSell"
                   :error-messages="locationItemPrice.invalidPriceSell ? 'Invalid price' : undefined"
                   @input="locationItemPrice.invalidPriceSell = false"
+                  @click="$event.target.select()"
                   >
                 </v-number-field>
               </v-flex>
