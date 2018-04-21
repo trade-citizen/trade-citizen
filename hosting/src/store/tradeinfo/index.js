@@ -36,21 +36,22 @@ export default {
     locationsList: [],
     locationsItemsPricesMap: {},
     locationsItemsPricesMetadataMap: {},
-    buySellRatiosPagination: {
-      descending: true,
-      page: 1,
-      rowsPerPage: 10,
-      sortBy: 'ratio',
-      totalItems: 0,
-      rowsPerPageItems: [5, 10, 25, 50, 100]
-    },
     buySellRatiosFilter: {
       items: [],
       locationsBuy: [],
       locationsSell: []
     },
+    buySellRatiosPagination: {
+      descending: true,
+      page: 1,
+      rowsPerPage: 10,
+      sortBy: 'ratio',
+      rowsPerPageItems: [5, 10, 25, 50, 100]
+    },
+    buySellRatiosPaginationOld: {},
     buySellRatiosUnsubscribes: [],
-    buySellRatios: []
+    buySellRatiosAll: [],
+    buySellRatiosFiltered: []
   },
   mutations: {
     setOffline (state, payload) {
@@ -175,24 +176,59 @@ export default {
       Vue.set(prices, errorKey, invalidPrice)
     },
 
-    setBuySellRatiosPagination (state, payload) {
-      // console.log('setBuySellRatiosPagination payload', payload)
-      state.buySellRatiosPagination = payload
+    _setBuySellRatiosFilter (state, payload) {
+      // console.log('_setBuySellRatiosFilter payload', payload)
+      state.buySellRatiosFilter = Object.assign({}, payload)
     },
-    setBuySellRatiosFilter (state, payload) {
-      // console.log('setBuySellRatiosFilter payload', payload)
-      state.buySellRatiosFilter = payload
+    _setBuySellRatiosPagination (state, payload) {
+      // console.log('_setBuySellRatiosPagination payload', payload)
+      state.buySellRatiosPaginationOld = state.buySellRatiosPagination
+      state.buySellRatiosPagination = Object.assign({}, payload)
     },
     _setBuySellRatiosUnsubscribes (state, payload) {
       state.buySellRatiosUnsubscribes = payload
     },
-    _setBuySellRatios (state, payload) {
-      state.buySellRatios = payload
-      const totalItems = payload ? payload.length : 0
-      Vue.set(state.buySellRatiosPagination, 'totalItems', totalItems)
+    _clearBuySellRatios (state) {
+      state.buySellRatiosAll.splice(0)
+      state.buySellRatiosFiltered.splice(0)
     },
-    _setBuySellRatiosCount (state, payload) {
-      Vue.set(state.buySellRatiosPagination, 'totalItems', payload)
+    _setBuySellRatio (state, { id, buySellRatio }) {
+      // console.log('_setBuySellRatio id', id, 'buySellRatio', JSON.stringify(buySellRatio))
+      // console.log('_setBuySellRatio BEFORE state.buySellRatiosAll', JSON.stringify(state.buySellRatiosAll))
+      const foundIndex = state.buySellRatiosAll.findIndex(buySellRatio => {
+        return buySellRatio.id === id
+      })
+      if (foundIndex !== -1) {
+        // console.log('_setBuySellRatio Remove item...')
+        state.buySellRatiosAll.splice(foundIndex, 1)
+      }
+      if (buySellRatio) {
+        // console.log('_setBuySellRatio Add item...')
+        state.buySellRatiosAll.push(buySellRatio)
+      }
+
+      const buySellRatiosPagination = state.buySellRatiosPagination
+      // console.log('_setBuySellRatio buySellRatiosPagination', buySellRatiosPagination)
+      const { sortBy, descending, rowsPerPage } = buySellRatiosPagination
+      state.buySellRatiosAll.sort((a, b) => {
+        const valueA = a[sortBy]
+        const valueB = b[sortBy]
+        let result
+        if (valueA > valueB) {
+          result = 1
+        } else if (valueA < valueB) {
+          result = -1
+        } else {
+          result = 0
+        }
+        if (descending) {
+          result = -result
+        }
+        return result
+      })
+      // console.log('_setBuySellRatio AFTER state.buySellRatiosAll', JSON.stringify(state.buySellRatiosAll))
+
+      state.buySellRatiosFiltered = state.buySellRatiosAll.slice(0, rowsPerPage)
     }
   },
   actions: {
@@ -490,12 +526,33 @@ export default {
         // console.info('%c_testIfInitialized INITIALIZED!', 'color: green;')
         context.commit('_setInitialized')
 
-        if (context.state.buySellRatios.length === 0) {
+        if (context.state.buySellRatiosAll.length === 0) {
           context.dispatch('queryBuySellRatios')
         }
       }
     },
 
+    setBuySellRatiosFilter (context, payload) {
+      // console.log('setBuySellRatiosFilter _setBuySellRatiosFilter && queryBuySellRatios')
+      context.commit('_setBuySellRatiosFilter', payload)
+      context.dispatch('queryBuySellRatios')
+    },
+    setBuySellRatiosPagination (context, payload) {
+      //
+      // Prevent double queryBuySellRatios...
+      //
+      const buySellRatiosPaginationOld = context.state.buySellRatiosPaginationOld
+      if (payload.sortBy !== buySellRatiosPaginationOld.sortBy ||
+        payload.descending !== buySellRatiosPaginationOld.descending ||
+        payload.rowsPerPage !== buySellRatiosPaginationOld.rowsPerPage ||
+        payload.page !== buySellRatiosPaginationOld.page) {
+        // console.log('setBuySellRatiosPagination buySellRatiosPagination changed; _setBuySellRatiosPagination && queryBuySellRatios')
+        context.commit('_setBuySellRatiosPagination', payload)
+        context.dispatch('queryBuySellRatios')
+      } else {
+        // console.log('setBuySellRatiosPagination buySellRatiosPagination unchanged; ignore')
+      }
+    },
     queryBuySellRatios (context) {
       // console.info('queryBuySellRatios')
       if (!context.state.initialized) {
@@ -555,7 +612,7 @@ export default {
       }
       // console.log('queryBuySellRatios queries', queries)
 
-      context.commit('_setBuySellRatios', [])
+      context.commit('_clearBuySellRatios')
       buySellRatiosUnsubscribes = []
       for (let query of queries) {
         query = query
@@ -581,87 +638,51 @@ export default {
       }
       // console.log('_onQueriedBuySellRatios')
 
-      const buySellRatios = []
-
       docChanges.forEach(change => {
         // console.log('_onQueriedBuySellRatios change', change)
+        const changeType = change.type
+        // console.log('_onQueriedBuySellRatios changeType', changeType)
         const doc = change.doc
         // console.log('_onQueriedBuySellRatios doc', doc)
-        // const docId = doc.id
+        const docId = doc.id
         // const fromCache = doc.metadata.fromCache
         // console.log('_onQueriedBuySellRatios ' + docId + ' fromCache', fromCache)
-        const docData = doc.data()
-        // console.log('_onQueriedBuySellRatios docData', docData)
+        let buySellRatio
+        if (changeType === 'removed') {
+          buySellRatio = null
+        } else {
+          const docData = doc.data()
+          // console.log('_onQueriedBuySellRatios docData', docData)
 
-        const itemId = docData.itemId
-        const itemName = context.state.itemsMap[itemId].name
-        const buyLocationId = docData.buyLocationId
-        // console.log('_onQueriedBuySellRatios buyLocationId', buyLocationId)
-        const buyLocationName = context.state.locationsMap[buyLocationId].name
-        const buyPrice = docData.buyPrice
-        const buyTimestamp = docData.buyTimestamp
-        const ratio = docData.ratio
-        const sellPrice = docData.sellPrice
-        const sellTimestamp = docData.sellTimestamp
-        const sellLocationId = docData.sellLocationId
-        // console.log('_onQueriedBuySellRatios sellLocationId', sellLocationId)
-        const sellLocationName = context.state.locationsMap[sellLocationId].name
+          const itemId = docData.itemId
+          const itemName = context.state.itemsMap[itemId].name
+          const buyLocationId = docData.buyLocationId
+          // console.log('_onQueriedBuySellRatios buyLocationId', buyLocationId)
+          const buyLocationName = context.state.locationsMap[buyLocationId].name
+          const buyPrice = docData.buyPrice
+          const buyTimestamp = docData.buyTimestamp
+          const ratio = docData.ratio
+          const sellPrice = docData.sellPrice
+          const sellTimestamp = docData.sellTimestamp
+          const sellLocationId = docData.sellLocationId
+          // console.log('_onQueriedBuySellRatios sellLocationId', sellLocationId)
+          const sellLocationName = context.state.locationsMap[sellLocationId].name
 
-        const buySellRatio = {
-          itemName,
-          buyLocationName,
-          buyPrice,
-          buyTimestamp: buyTimestamp && buyTimestamp.toDate(),
-          ratio,
-          sellPrice,
-          sellTimestamp: sellTimestamp && sellTimestamp.toDate(),
-          sellLocationName
+          buySellRatio = {
+            id: docId,
+            itemName,
+            buyLocationName,
+            buyPrice,
+            buyTimestamp: buyTimestamp && buyTimestamp.toDate(),
+            ratio,
+            sellPrice,
+            sellTimestamp: sellTimestamp && sellTimestamp.toDate(),
+            sellLocationName
+          }
         }
         // console.log('_onQueriedBuySellRatios buySellRatio', buySellRatio)
-        buySellRatios.push(buySellRatio)
+        context.commit('_setBuySellRatio', { id: docId, buySellRatio })
       })
-      // console.log('_onQueriedBuySellRatios buySellRatios', buySellRatios)
-      // console.log('_onQueriedBuySellRatios context.state.buySellRatios', context.state.buySellRatios)
-      const buySellRatiosPagination = context.state.buySellRatiosPagination
-      // console.log('_onQueriedBuySellRatios buySellRatiosPagination', buySellRatiosPagination)
-      const { sortBy, descending, rowsPerPage } = buySellRatiosPagination
-      const equals = (a, b) => {
-        // console.log('equals a', a, 'b', b)
-        let result = a.itemName === b.itemName
-        // console.log('equals itemName', result)
-        result = result && a.buyLocationName === b.buyLocationName
-        // console.log('equals buyLocationName', result)
-        result = result && a.buyPrice === b.buyPrice
-        // console.log('equals buyPrice', result)
-        // NOTE:(pv) For some reason comparing buyTimestamp returns false
-        result = result && a.ratio === b.ratio
-        // console.log('equals ratio', result)
-        result = result && a.sellPrice === b.sellPrice
-        // console.log('equals sellPrice', result)
-        // NOTE:(pv) For some reason comparing sellTimestamp returns false
-        result = result && a.sellLocationName === b.sellLocationName
-        // console.log('equals sellLocationName', result)
-        return result
-      }
-      const sort = (a, b) => {
-        const valueA = a[sortBy]
-        const valueB = b[sortBy]
-        let result
-        if (valueA > valueB) {
-          result = 1
-        } else if (valueA < valueB) {
-          result = -1
-        } else {
-          result = 0
-        }
-        if (descending) {
-          result = -result
-        }
-        return result
-      }
-      const result = concatUniqueSortLimit(buySellRatios, context.state.buySellRatios, equals, sort, rowsPerPage)
-      // console.log('_onQueriedBuySellRatios result', result)
-      context.commit('_setBuySellRatios', result)
     },
 
     saveLocationItemPrices (context, { locationId, locationItemPrices }) {
@@ -826,14 +847,11 @@ export default {
         return state.locationsItemsPricesMetadataMap[locationId]
       }
     },
-    buySellRatiosPagination (state) {
-      return state.buySellRatiosPagination
-    },
     buySellRatiosFilter (state) {
       return state.buySellRatiosFilter
     },
-    buySellRatios (state) {
-      return state.buySellRatios
+    buySellRatiosPagination (state) {
+      return state.buySellRatiosPagination
     }
   }
 }
@@ -869,6 +887,28 @@ function getQueryString (query) {
   return queryString
 }
 
+/*
+function buySellRatiosEqual(a, b) {
+  // console.log('equals a', a, 'b', b)
+  let result = a.itemName === b.itemName
+  // console.log('equals itemName', result)
+  result = result && a.buyLocationName === b.buyLocationName
+  // console.log('equals buyLocationName', result)
+  result = result && a.buyPrice === b.buyPrice
+  // console.log('equals buyPrice', result)
+  // NOTE:(pv) For some reason comparing buyTimestamp returns false
+  result = result && a.ratio === b.ratio
+  // console.log('equals ratio', result)
+  result = result && a.sellPrice === b.sellPrice
+  // console.log('equals sellPrice', result)
+  // NOTE:(pv) For some reason comparing sellTimestamp returns false
+  result = result && a.sellLocationName === b.sellLocationName
+  // console.log('equals sellLocationName', result)
+  return result
+}
+*/
+
+/*
 function concatUniqueSortLimit (arrayA, arrayB, equals, sort, limit) {
   const result = arrayA.concat(arrayB)
   for (var i = 0; i < result.length; ++i) {
@@ -881,3 +921,4 @@ function concatUniqueSortLimit (arrayA, arrayB, equals, sort, limit) {
   result.sort(sort)
   return result.slice(0, limit)
 }
+*/

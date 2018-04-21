@@ -92,8 +92,7 @@
         :pagination.sync="buySellRatiosPagination"
         :rows-per-page-items="buySellRatiosPagination.rowsPerPageItems"
         rows-per-page-text="Max Results"
-        :total-items="buySellRatiosPagination.totalItems"
-        :items="buySellRatios"
+        :items="buySellRatiosFiltered"
         >
         <template slot="items" slot-scope="props">
           <td class="text-xs-right">{{ props.item.itemName }}</td>
@@ -224,7 +223,6 @@ export default {
       ],
       buySellRatiosFilter: Object.assign({}, this.$store.getters.buySellRatiosFilter),
       buySellRatiosPagination: Object.assign({}, this.$store.getters.buySellRatiosPagination),
-      buySellRatiosPaginationOld: Object.assign({}, this.$store.getters.buySellRatiosPagination),
       locationItemPriceListCopy: [],
       editing: false
     }
@@ -258,7 +256,8 @@ export default {
       persistenceError: state => state.tradeinfo.persistenceError,
       offline: state => state.tradeinfo.offline,
       initialized: state => state.tradeinfo.initialized,
-      saving: state => state.tradeinfo.saving
+      saving: state => state.tradeinfo.saving,
+      buySellRatiosFiltered: state => state.tradeinfo.buySellRatiosFiltered
     }),
     ...mapGetters([
       'userIsAuthenticated',
@@ -321,9 +320,6 @@ export default {
           return 0
         })
     },
-    buySellRatios () {
-      return this.$store.getters.buySellRatios
-    },
     locationItemPriceList () {
       return this.$store.getters.locationItemPriceList(this.locationId)
     }
@@ -337,32 +333,14 @@ export default {
     },
     buySellRatiosPagination: {
       deep: true,
-      handler () {
-        // console.error('Home watch buySellRatiosPagination arguments', arguments)
-        // console.error('Home watch buySellRatiosPagination buySellRatiosPagination', this.buySellRatiosPagination)
-        // console.error('Home watch buySellRatiosPagination buySellRatiosPaginationOld', this.buySellRatiosPaginationOld)
-        const buySellRatiosPagination = this.buySellRatiosPagination
-        const buySellRatiosPaginationOld = this.buySellRatiosPaginationOld
-        if (buySellRatiosPagination.sortBy !== buySellRatiosPaginationOld.sortBy ||
-            buySellRatiosPagination.descending !== buySellRatiosPaginationOld.descending ||
-            buySellRatiosPagination.rowsPerPage !== buySellRatiosPaginationOld.rowsPerPage ||
-            buySellRatiosPagination.page !== buySellRatiosPaginationOld.page) {
-          // console.log('Home watch buySellRatiosPagination changed; setBuySellRatiosPagination && queryBuySellRatios')
-          this.$store.commit('setBuySellRatiosPagination', Object.assign({}, this.buySellRatiosPagination))
-          this.$store.dispatch('queryBuySellRatios')
-        } else {
-          // console.log('Home watch buySellRatiosPagination unchanged; ignore')
-        }
-        this.buySellRatiosPaginationOld = this.buySellRatiosPagination
+      handler (value) {
+        this.$store.dispatch('setBuySellRatiosPagination', value)
       }
     },
     buySellRatiosFilter: {
       deep: true,
-      handler () {
-        // console.error('Home watch buySellRatiosFilter arguments', arguments)
-        // console.error('Home watch buySellRatiosFilter setBuySellRatiosFilter && queryBuySellRatios')
-        this.$store.commit('setBuySellRatiosFilter', Object.assign({}, this.buySellRatiosFilter))
-        this.$store.dispatch('queryBuySellRatios')
+      handler (value) {
+        this.$store.dispatch('setBuySellRatiosFilter', value)
       }
     },
     locationItemPriceList: {
