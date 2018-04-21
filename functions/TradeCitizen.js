@@ -1,7 +1,7 @@
 
 
 const admin = require('firebase-admin')
-const functions = require('firebase-functions')
+const functions = require('@firebase/functions')
 const { firebasePushId } = require('./firebase-push-id')
 
 const FIELD_TIMESTAMPED = 'timestamped'

@@ -9,6 +9,42 @@ admin.initializeApp({
 const TradeCitizen = require('./TradeCitizen')
 
 /**
+ * DANGER, WILL ROBINSON!
+ * 
+ * @param {*} deploymentId 
+ */
+function removeAllPrices(deploymentId) {
+
+  deploymentId = 'test' // <- We should probably never run this against 'production'
+
+  const firestore = admin.firestore()
+
+  console.log('removeAllPrices runTransaction(...)')
+  return firestore.runTransaction(tranaction => {
+    try {
+      console.log('removeAllPrices +runTransaction')
+      // ...
+      //
+      // Must call getBuySellInfoCache first to prevent:
+      //  "Error: Firestore transactions require all reads to be executed before all writes."
+      //
+      return TradeCitizen.getBuySellInfoCache(firestore, transaction, deploymentId)
+        .then(buySellInfoCache => {
+          console.log('removeAllPrices buySellInfoCache', buySellInfoCache)
+          console.log('TODO:(pv) Remove collection locations/*/prices')
+          console.log('TODO:(pv) Remove field _buySellInfoCache')
+          console.log('TODO:(pv) Remove field buySellRatiosCount')
+          console.log('TODO:(pv) Remove collection buySellRatios')
+          // ...
+          return Promise.resolve()
+        })
+    } finally {
+      console.log('removeAllPrices -runTransaction')    
+    }
+  })
+}
+
+/**
  * Before calling this, delete buySellRatios and _buySellInfoCache via the web admin
  * 
  * @param {*} deploymentId 
@@ -21,12 +57,11 @@ function createBuySellInfo(deploymentId) {
   const pricesNew = undefined
 
   const firestore = admin.firestore()
-  console.log('createBuySellInfo firestore', firestore)
 
   console.log('createBuySellInfo runTransaction(...)')
   return firestore.runTransaction(transaction => {
-    console.log('createBuySellInfo +runTransaction')
     try {
+      console.log('createBuySellInfo +runTransaction')
       //
       // Must call getBuySellInfoCache first to prevent:
       //  "Error: Firestore transactions require all reads to be executed before all writes."
@@ -44,4 +79,9 @@ function createBuySellInfo(deploymentId) {
   })
 }
 
+//
+//
+//
+
+removeAllPrices('test')
 createBuySellInfo('test')
