@@ -83,7 +83,6 @@
       <template v-else-if="$route.path==='/'">
         <v-select
           class="mx-2"
-          color="cyan lighten-2"
           append-icon="search"
           placeholder="Search"
           solo-inverted
@@ -269,10 +268,7 @@ export default {
         return locationId
       },
       set: function (value) {
-        let location = '/'
-        if (value) {
-          location += `?locationId=${value}`
-        }
+        let location = { path: '/', query: value ? { locationId: value } : null }
         // console.log(`App locationId set this.$router.push(${location})`)
         this.$router.push(location)
       }

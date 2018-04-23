@@ -2,6 +2,7 @@
 // (runtime-only or standalone) has been set in webpack.base.conf with an alias.
 import Vue from 'vue'
 import Vuetify from 'vuetify'
+import colors from 'vuetify/es5/util/colors'
 import App from './App'
 import router from './router'
 import { store } from './store'
@@ -15,7 +16,15 @@ import 'material-design-icons-iconfont/dist/material-design-icons.css'
 // Used in App.vue to show app version in footer
 Vue.prototype.$PACKAGE_VERSION = PACKAGE_VERSION
 
-Vue.use(Vuetify)
+Vue.use(Vuetify, {
+  theme: {
+    //
+    // https://github.com/vuetifyjs/vuetify/blob/master/src/stylus/settings/_colors.styl
+    //
+    primary: colors.cyan.lighten2
+  }
+})
+
 Vue.config.productionTip = false
 
 // eslint-disable-next-line no-new

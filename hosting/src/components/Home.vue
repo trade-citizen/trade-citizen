@@ -96,21 +96,33 @@
         >
         <template slot="items" slot-scope="props">
           <td class="text-xs-right">{{ props.item.itemName }}</td>
-          <td class="text-xs-right">{{ props.item.buyLocationName }}</td>
           <td class="text-xs-right">
-            <v-tooltip bottom>
-              <span slot="activator">{{ props.item.buyPrice.toFixed(3) }}</span>
-              <span>{{ formatDateYMDHMS(props.item.buyTimestamp) }}</span>
-            </v-tooltip>
+            <router-link :to="getLocationRoute(props.item.buyLocationId)">
+              {{ props.item.buyLocationName }}
+            </router-link>
+          </td>
+          <td class="text-xs-right">
+            <router-link :to="getLocationRoute(props.item.buyLocationId, props.item.itemId)">
+              <v-tooltip bottom>
+                <span slot="activator">{{ props.item.buyPrice.toFixed(3) }}</span>
+                <span>{{ formatDateYMDHMS(props.item.buyTimestamp) }}</span>
+              </v-tooltip>
+            </router-link>
           </td>
           <td class="text-xs-center">{{ props.item.ratio.toFixed(3) }}</td>
           <td class="text-xs-left">
-            <v-tooltip bottom>
-              <span slot="activator">{{ props.item.sellPrice.toFixed(3) }}</span>
-              <span>{{ formatDateYMDHMS(props.item.sellTimestamp) }}</span>
-            </v-tooltip>
+            <router-link :to="getLocationRoute(props.item.sellLocationId, props.item.itemId)">
+              <v-tooltip bottom>
+                <span slot="activator">{{ props.item.sellPrice.toFixed(3) }}</span>
+                <span>{{ formatDateYMDHMS(props.item.sellTimestamp) }}</span>
+              </v-tooltip>
+            </router-link>
           </td>
-          <td class="text-xs-left">{{ props.item.sellLocationName }}</td>
+          <td class="text-xs-left">
+            <router-link :to="getLocationRoute(props.item.sellLocationId)">
+              {{ props.item.sellLocationName }}
+            </router-link>
+          </td>
         </template>
       </v-data-table>
     </v-layout>
@@ -131,7 +143,10 @@
         v-for="(locationItemPrice, index) in locationItemPriceListCopy"
         :key="locationItemPrice.id"
         >
-        <v-card style="border:1px solid white; border-radius:6px;">
+        <v-card
+          :style="getItemBorder()"
+          :id="locationItemPrice.id"
+          >
           <v-container fluid grid-list-lg>
             <v-layout row>
               <!--
@@ -358,6 +373,22 @@ export default {
   },
 
   methods: {
+    getLocationRoute (locationId, itemId) {
+      let path = '/'
+      const query = {}
+      if (locationId) {
+        query.locationId = locationId
+      }
+      if (itemId) {
+        path += `#${itemId}`
+      }
+      const route = { path, query }
+      // console.log('getLocationRoute locationId', locationId, 'itemId', itemId, 'route', route)
+      return route
+    },
+    getItemBorder () {
+      return 'border:1px solid white; border-radius:6px;'
+    },
     toastMessage (payload) {
       this.$root.$emit('toastMessage', payload)
     },

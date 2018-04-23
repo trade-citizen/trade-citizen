@@ -670,13 +670,16 @@ export default {
 
           buySellRatio = {
             id: docId,
+            itemId,
             itemName,
+            buyLocationId,
             buyLocationName,
             buyPrice,
             buyTimestamp: buyTimestamp && buyTimestamp.toDate(),
             ratio,
             sellPrice,
             sellTimestamp: sellTimestamp && sellTimestamp.toDate(),
+            sellLocationId,
             sellLocationName
           }
         }
