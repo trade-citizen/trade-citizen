@@ -86,8 +86,8 @@
         class="elevation-1"
         must-sort
         sort-icon="arrow_downward"
-        :hide-actions="!initialized"
-        :no-data-text="initialized ? 'No data available' : 'Loading...'"
+        :hide-actions="!hasBuySellRatios"
+        :no-data-text="hasBuySellRatios ? 'No data available' : 'Loading...'"
         :headers="headers"
         :pagination.sync="buySellRatiosPagination"
         :rows-per-page-items="buySellRatiosPagination.rowsPerPageItems"
@@ -261,7 +261,8 @@ export default {
     }),
     ...mapGetters([
       'userIsAuthenticated',
-      'saveable'
+      'saveable',
+      'hasBuySellRatios'
     ]),
     locationId: {
       get: function () {

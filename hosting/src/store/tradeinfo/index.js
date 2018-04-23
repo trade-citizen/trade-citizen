@@ -50,6 +50,7 @@ export default {
     },
     buySellRatiosPaginationOld: {},
     buySellRatiosUnsubscribes: [],
+    buySellRatiosResponseCount: 0,
     buySellRatiosAll: [],
     buySellRatiosFiltered: []
   },
@@ -185,12 +186,17 @@ export default {
       state.buySellRatiosPaginationOld = state.buySellRatiosPagination
       state.buySellRatiosPagination = Object.assign({}, payload)
     },
-    _setBuySellRatiosUnsubscribes (state, payload) {
-      state.buySellRatiosUnsubscribes = payload
-    },
     _clearBuySellRatios (state) {
+      state.buySellRatiosUnsubscribes.splice(0)
+      state.buySellRatiosResponseCount = 0
       state.buySellRatiosAll.splice(0)
       state.buySellRatiosFiltered.splice(0)
+    },
+    _addBuySellRatiosUnsubscribe (state, payload) {
+      state.buySellRatiosUnsubscribes.push(payload)
+    },
+    _incrementBuySellRatiosResponseCount (state) {
+      state.buySellRatiosResponseCount++
     },
     _setBuySellRatio (state, { id, buySellRatio }) {
       // console.log('_setBuySellRatio id', id, 'buySellRatio', JSON.stringify(buySellRatio))
@@ -522,7 +528,9 @@ export default {
     _testIfInitialized (context) {
       if (!context.state.initialized &&
         Object.keys(context.state.locationsItemsPricesMap).length === context.state.locationsList.length) {
-        // Only _setInitialized after all prices have come back
+        //
+        // Only _setInitialized when *ALL* _queryLocationItemPrices have come back
+        //
         // console.info('%c_testIfInitialized INITIALIZED!', 'color: green;')
         context.commit('_setInitialized')
 
@@ -560,12 +568,11 @@ export default {
         return
       }
 
-      let buySellRatiosUnsubscribes = context.state.buySellRatiosUnsubscribes
-      for (let buySellRatiosUnsubscribe of buySellRatiosUnsubscribes) {
+      for (let buySellRatiosUnsubscribe of context.state.buySellRatiosUnsubscribes) {
         // console.log('queryBuySellRatios buySellRatiosUnsubscribe()')
         buySellRatiosUnsubscribe()
       }
-      context.commit('_setBuySellRatiosUnsubscribes', [])
+      context.commit('_clearBuySellRatios')
 
       //
       // https://vuetifyjs.com/en/components/data-tables#example-server
@@ -612,21 +619,18 @@ export default {
       }
       // console.log('queryBuySellRatios queries', queries)
 
-      context.commit('_clearBuySellRatios')
-      buySellRatiosUnsubscribes = []
       for (let query of queries) {
         query = query
           .limit(rowsPerPage)
         // console.log('queryBuySellRatios query', getQueryString(query))
-        const unsubscribe = query
+        const buySellRatiosUnsubscribe = query
           .onSnapshot({ includeQueryMetadataChanges: true }, querySnapshot => {
             context.dispatch('_onQueriedBuySellRatios', querySnapshot)
           }, error => {
             console.error('queryBuySellRatios', error)
           })
-        buySellRatiosUnsubscribes.push(unsubscribe)
+        context.commit('_addBuySellRatiosUnsubscribe', buySellRatiosUnsubscribe)
       }
-      context.commit('_setBuySellRatiosUnsubscribes', buySellRatiosUnsubscribes)
     },
     _onQueriedBuySellRatios (context, querySnapshot) {
       // console.log('_onQueriedBuySellRatios querySnapshot', querySnapshot)
@@ -683,6 +687,7 @@ export default {
         // console.log('_onQueriedBuySellRatios buySellRatio', buySellRatio)
         context.commit('_setBuySellRatio', { id: docId, buySellRatio })
       })
+      context.commit('_incrementBuySellRatiosResponseCount')
     },
 
     saveLocationItemPrices (context, { locationId, locationItemPrices }) {
@@ -852,6 +857,15 @@ export default {
     },
     buySellRatiosPagination (state) {
       return state.buySellRatiosPagination
+    },
+    hasBuySellRatios (state) {
+      const buySellRatiosUnsubscribesLength = state.buySellRatiosUnsubscribes.length
+      // console.log('hasBuySellRatios state.initialized', state.initialized)
+      // console.log('hasBuySellRatios state.buySellRatiosUnsubscribes.length', buySellRatiosUnsubscribesLength)
+      // console.log('hasBuySellRatios state.buySellRatiosResponseCount', state.buySellRatiosResponseCount)
+      const hasBuySellRatios = state.initialized && buySellRatiosUnsubscribesLength && buySellRatiosUnsubscribesLength === state.buySellRatiosResponseCount
+      // console.log('hasBuySellRatios', hasBuySellRatios)
+      return hasBuySellRatios
     }
   }
 }
