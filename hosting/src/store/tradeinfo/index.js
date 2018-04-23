@@ -26,7 +26,6 @@ export default {
     initializing: true,
     initialized: false,
     saving: false,
-    selectedLocationId: null,
     itemCategoriesMap: {},
     itemCategoriesList: [],
     itemsMap: {},
@@ -72,9 +71,6 @@ export default {
     },
     _setPersistenceError (state, payload) {
       state.persistenceError = payload
-    },
-    setSelectedLocationId (state, payload) {
-      state.selectedLocationId = payload
     },
     _setInitialized (state) {
       // console.log('_setInitialized')
@@ -822,9 +818,6 @@ export default {
   getters: {
     saveable (state, getters, rootState) {
       return getters.userIsAuthenticated && (ALLOW_EDIT_OFFLINE || !getters.offline)
-    },
-    getSelectedLocationId (state) {
-      return state.selectedLocationId
     },
     itemCategory (state) {
       return itemCategoryId => {

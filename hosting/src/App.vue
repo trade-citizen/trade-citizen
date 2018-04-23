@@ -262,12 +262,19 @@ export default {
     },
     locationId: {
       get: function () {
-        return this.$store.getters.getSelectedLocationId
+        // Example(s):
+        //  http://localhost:8080/?locationId=zsrxhjHzhfXxUCPs73EF
+        const locationId = this.$route.query.locationId
+        // console.log('App locationId this.$route.query.locationId', locationId)
+        return locationId
       },
       set: function (value) {
-        this.editing = false
-        this.$store.commit('setSelectedLocationId', value)
-        this.$root.$emit('onSelectedLocationChanged', value)
+        let location = '/'
+        if (value) {
+          location += `?locationId=${value}`
+        }
+        // console.log(`App locationId set this.$router.push(${location})`)
+        this.$router.push(location)
       }
     },
     showEdit () {
@@ -321,6 +328,15 @@ export default {
         timestamp = 'Never'
       }
       return timestamp
+    }
+  },
+
+  watch: {
+    locationId: {
+      handler () {
+        // console.log('App watch locationId')
+        this.editing = false
+      }
     }
   },
 

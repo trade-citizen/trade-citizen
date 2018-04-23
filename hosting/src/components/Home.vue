@@ -122,7 +122,7 @@
     class="pa-0"
     >
     <v-layout
-      v-if="locationItemPriceListCopy.length"
+      v-if="initialized && locationItemPriceListCopy.length"
       row wrap
       class="pa-2"
       >
@@ -200,7 +200,7 @@
       v-else
       justify-center
       >
-      <p class="pa-4">No prices set</p>
+      <p class="pa-4">{{ initialized ? 'No prices set' : 'Loading...' }}</p>
     </v-layout>
   </v-container>
 </template>
@@ -236,10 +236,6 @@ export default {
   mounted () {
     // console.log('Home mounted')
     var vm = this
-    vm.$root.$on('onSelectedLocationChanged', function (locationId) {
-      // console.log('Home vm.onSelectedLocationChanged locationId', locationId)
-      vm.onSelectedLocationChanged(locationId)
-    })
     vm.$root.$on('editLocation', function (locationId, editing) {
       // console.log('Home vm.editLocation locationId:' + locationId)
       vm.editLocation(locationId, editing)
@@ -266,7 +262,11 @@ export default {
     ]),
     locationId: {
       get: function () {
-        return this.$store.getters.getSelectedLocationId
+        // Example(s):
+        //  http://localhost:8080/?locationId=zsrxhjHzhfXxUCPs73EF
+        const locationId = this.$route.query.locationId
+        // console.log('Home locationId this.$route.query.locationId', locationId)
+        return locationId
       }
     },
     items () {
@@ -330,6 +330,12 @@ export default {
     persistenceError: {
       handler () {
         this.onPersistenceError()
+      }
+    },
+    locationId: {
+      handler () {
+        // console.log('Home watch locationId')
+        this.editing = false
       }
     },
     buySellRatiosPagination: {
@@ -435,10 +441,6 @@ export default {
           this.locationItemPriceListCopy.push(copy)
         })
       }
-    },
-    onSelectedLocationChanged (locationId) {
-      // console.log('Home onSelectedLocationChanged locationId:' + locationId)
-      this.editing = false
     },
     editLocation (locationId, editing) {
       // console.log('Home editLocation locationId:' + locationId)
