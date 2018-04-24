@@ -24,12 +24,12 @@ export default {
     }
   },
   actions: {
-    clearError ({commit}) {
-      commit('clearError')
+    clearError (context) {
+      context.commit('clearError')
     },
-    signUserIn ({commit}, {mode, providerName, email, password}) {
-      commit('setAuthenticating', true)
-      commit('clearError')
+    signUserIn (context, { mode, providerName, email, password }) {
+      context.commit('setAuthenticating', true)
+      context.commit('clearError')
       let authProvider
       switch (providerName) {
         case 'google':
@@ -57,32 +57,32 @@ export default {
       }
       return promise
         .then(user => {
-          commit('setAuthenticating', false)
+          context.commit('setAuthenticating', false)
           const newUser = {
             id: user.uid,
             name: user.displayName,
             email: user.email,
             photoUrl: user.photoURL
           }
-          commit('setUser', newUser)
+          context.commit('setUser', newUser)
         })
         .catch(error => {
-          commit('setAuthenticating', false)
-          commit('setError', error)
+          context.commit('setAuthenticating', false)
+          context.commit('setError', error)
           console.log(error)
         })
     },
-    autoSignIn ({commit}, payload) {
-      commit('setUser', {
+    autoSignIn (context, payload) {
+      context.commit('setUser', {
         id: payload.uid,
         name: payload.displayName,
         email: payload.email,
         photoUrl: payload.photoURL
       })
     },
-    logout ({commit}) {
+    logout (context) {
       firebase.auth().signOut()
-      commit('setUser', null)
+      context.commit('setUser', null)
     }
   },
   getters: {

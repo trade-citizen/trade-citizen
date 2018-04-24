@@ -113,7 +113,7 @@
                     <v-icon class="mx-1">cancel</v-icon>
                   </v-btn>
                 </span>
-                <span>Cancel</span>
+                <span>Cancel Edit Prices</span>
               </v-tooltip>
               <v-tooltip
                 v-else
@@ -128,7 +128,7 @@
                     <v-icon class="mx-1">edit</v-icon>
                   </v-btn>
                 </span>
-                <span>Edit</span>
+                <span>Edit Prices</span>
               </v-tooltip>
             </template>
             <v-tooltip bottom>
@@ -142,7 +142,7 @@
                   <v-icon class="mx-1">save</v-icon>
                 </v-btn>
               </span>
-              <span>{{ 'Save (' + (offline ? 'OFFLINE' : 'Control-S or ⌘-S') + ')' }}</span>
+              <span>{{ 'Save Prices (' + (offline ? 'OFFLINE' : 'Control-S or ⌘-S') + ')' }}</span>
             </v-tooltip>
             
           </template>
