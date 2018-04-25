@@ -15,8 +15,11 @@ let data
 if (true) {
   data = {
     deploymentId,
-    locationId: 'zsrxhjHzhfXxUCPs73EF',
-    prices: { '4PqeXIFIa47BFsKsjKLa': { priceBuy: 7, priceSell: 3 } }
+    locationId: 'zsrxhjHzhfXxUCPs73EF', // Gallette Family Farms
+    prices: {
+      '4PqeXIFIa47BFsKsjKLa': { priceBuy: 1 }, // Agricium
+      '5IsHDe0vQYAHeVnz8Dty': { priceBuy: 2 } // Agricultural Supplies
+    }
   }
   TradeCitizen.addLocationPrice(userId, data)
 }
@@ -24,8 +27,35 @@ if (true) {
 if (true) {
   data = {
     deploymentId,
-    locationId: 'zi0W2vHJOpMeYgR1sm3U',
-    prices: { '4PqeXIFIa47BFsKsjKLa': { priceBuy: 10, priceSell: 5 } }
+    locationId: 'PHtX8Hcf933fm4ZQBtt8', // Hickes Research Outpost
+    prices: {
+      '4PqeXIFIa47BFsKsjKLa': { priceSell: 2 }, // Agricium
+      '6myz2mm42kSA8503xAsl': { priceSell: 4 } // Altruciatoxin
+    }
   }
   TradeCitizen.addLocationPrice(userId, data)
 }
+
+if (true) {
+  data = {
+    deploymentId,
+    locationId: '4kr56IsDxUk0TGGdpU6C', // Terra Mills Hydro Farm
+    prices: {
+      '4PqeXIFIa47BFsKsjKLa': { priceSell: 3 }, // Agricium
+      '6myz2mm42kSA8503xAsl': { priceBuy: 3 } // Altruciatoxin
+    }
+  }
+  TradeCitizen.addLocationPrice(userId, data)
+}
+
+if (true) {
+  data = {
+    deploymentId,
+    locationId: 'PHtX8Hcf933fm4ZQBtt8', // Hickes Research Outpost
+    prices: {
+      '5IsHDe0vQYAHeVnz8Dty': { priceSell: 4 } // Agricultural Supplies
+    }
+  }
+  TradeCitizen.addLocationPrice(userId, data)
+}
+

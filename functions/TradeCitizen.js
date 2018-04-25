@@ -2,7 +2,7 @@
 
 const admin = require('firebase-admin')
 const functions = require('@firebase/functions')
-const { firebasePushId } = require('./firebase-push-id')
+const { firebasePushId } = require('../common/firebase-push-id')
 
 const FIELD_TIMESTAMPED = 'timestamped'
 const FIELD_TIMESTAMP = 'timestamp'
@@ -41,8 +41,11 @@ function addLocationPrice(userId, data) {
 
   console.log('runTransaction(...)')
   return firestore.runTransaction(transaction => {
-    console.log('+runTransaction')
+    //
+    // NOTE:(pv) Transactions are limited to a maximum of 500 document *writes*
+    //
     try {
+      console.log('+runTransaction')
       //
       // Must call getBuySellInfoCache first to prevent:
       //  "Error: Firestore transactions require all reads to be executed before all writes."
@@ -308,6 +311,10 @@ function updateBuySellInfo(firestore, transaction, timestamp, deploymentId, loca
   // console.log('updateBuySellInfo buySellRatiosNew', buySellRatiosNew)
 
   buySellInfoCache.buySellRatios = buySellRatiosNew
+
+  //
+  //
+  //
 
   let changes = diff(buySellRatiosPrevious, buySellRatiosNew)
   console.log('updateBuySellInfo changes', changes)
