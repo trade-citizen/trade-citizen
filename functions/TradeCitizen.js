@@ -30,7 +30,7 @@ function addLocationPrice(userId, data) {
     throw new functions.https.HttpsError('unauthenticated', 'Not authenticated')
   }
 
-  console.log('addLocationPrice process.env', process.env)
+  // console.log('addLocationPrice process.env', process.env)
 
   const timestampNew = new Date()
   const deploymentId = data.deploymentId
