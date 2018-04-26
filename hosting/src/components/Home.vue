@@ -368,9 +368,17 @@ export default {
     },
     locationItemPriceList: {
       deep: true,
-      handler: 'updateLocationItemPriceListCopy'
+      handler () {
+        // console.log('Home watch locationItemPriceList')
+        this.updateLocationItemPriceListCopy()
+      }
     },
-    editing: 'updateLocationItemPriceListCopy'
+    editing: {
+      handler () {
+        // console.log('Home watch editing')
+        this.updateLocationItemPriceListCopy()
+      }
+    }
   },
 
   methods: {
@@ -433,46 +441,50 @@ export default {
     updateLocationItemPriceListCopy () {
       // console.log('Home updateLocationItemPriceListCopy')
       if (this.saving) {
+        // console.log('Home updateLocationItemPriceListCopy saving')
         //
         // We're saving new values.
         // Don't update with the soon to be old values.
         // Do hide any blank/0 valued items.
         //
         let i = this.locationItemPriceListCopy.length
+        // console.log('Home updateLocationItemPriceListCopy this.locationItemPriceListCopy.length', i)
         while (i--) {
           const itemPrice = this.locationItemPriceListCopy[i]
           // console.log('updateLocationItemPriceListCopy itemPrice', JSON.stringify(itemPrice))
-          if ((itemPrice.priceSell === 0 || itemPrice.priceSell === undefined) &&
+          if ((itemPrice.priceBuy === 0 || itemPrice.priceBuy === undefined) &&
             (itemPrice.priceSell === 0 || itemPrice.priceSell === undefined)) {
             this.locationItemPriceListCopy.splice(i, 1)
           }
         }
-        return
-      }
-      this.locationItemPriceListCopy.splice(0)
-      let prices = this.locationItemPriceList
-      // console.log('Home updateLocationItemPriceListCopy prices BEFORE', prices)
-      if (prices && !this.editing) {
-        const pricesDefined = prices.filter((price) => {
-          return price.isPriceDefined
-        })
-        // console.log('Home updateLocationItemPriceListCopy pricesDefined', pricesDefined)
-        if (pricesDefined.length > 0 || !this.userIsAuthenticated) {
-          // console.log('Home updateLocationItemPriceListCopy A')
-          prices = pricesDefined
-        } else {
-          // console.log('Home updateLocationItemPriceListCopy B')
-        }
       } else {
-        // console.log('Home updateLocationItemPriceListCopy C')
+        // console.log('Home updateLocationItemPriceListCopy *NOT* saving')
+        this.locationItemPriceListCopy.splice(0)
+        let prices = this.locationItemPriceList
+        // console.log('Home updateLocationItemPriceListCopy prices BEFORE', prices)
+        if (prices && !this.editing) {
+          const pricesDefined = prices.filter((price) => {
+            return price.isPriceDefined
+          })
+          // console.log('Home updateLocationItemPriceListCopy pricesDefined', pricesDefined)
+          if (pricesDefined.length > 0 || !this.userIsAuthenticated) {
+            // console.log('Home updateLocationItemPriceListCopy A')
+            prices = pricesDefined
+          } else {
+            // console.log('Home updateLocationItemPriceListCopy B')
+          }
+        } else {
+          // console.log('Home updateLocationItemPriceListCopy C')
+        }
+        // console.log('Home updateLocationItemPriceListCopy prices AFTER', prices)
+        if (prices) {
+          prices.forEach(price => {
+            const copy = Object.assign({}, price)
+            this.locationItemPriceListCopy.push(copy)
+          })
+        }
       }
-      // console.log('Home updateLocationItemPriceListCopy prices AFTER', prices)
-      if (prices) {
-        prices.forEach(price => {
-          const copy = Object.assign({}, price)
-          this.locationItemPriceListCopy.push(copy)
-        })
-      }
+      // console.log('Home updateLocationItemPriceListCopy AFTER this.locationItemPriceListCopy', JSON.stringify(this.locationItemPriceListCopy))
     },
     editLocation (locationId, editing) {
       // console.log('Home editLocation locationId:' + locationId)
