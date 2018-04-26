@@ -23,6 +23,7 @@ module.exports = {
 }
 
 function addLocationPrice(userId, data) {
+  console.info('addLocationPrice BEGIN')
   console.info('addLocationPrice userId', userId, 'data', data)
 
   if (!userId) {
@@ -40,7 +41,7 @@ function addLocationPrice(userId, data) {
     throw new functions.https.HttpsError('invalid-argument', 'Invalid argument(s)')
   }
   const pricesNew = data.prices
-  console.log('addLocationPrice pricesNew', pricesNew)
+  // console.log('addLocationPrice pricesNew', pricesNew)
   console.log('addLocationPrice timestampNew', timestampNew)
 
   const firestore = admin.firestore()
@@ -78,6 +79,10 @@ function addLocationPrice(userId, data) {
     } finally {
       console.log('-runTransaction')    
     }
+  })
+  .then(result => {
+    console.info('addLocationPrice END')
+    return Promise.resolve(result)
   })
 }
 
