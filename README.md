@@ -42,10 +42,11 @@ Hosting:
 1. Code like the wind, grandma!
 1. **DON'T FORGET TO TEST!**
 1. `git commit`
-1. **DON'T FORGET TO STASH!**
+1. **`git stash`**
 1. `yarn build`
 1. `cd ..`
 1. `firebase deploy --only hosting`
+1. **`git stash pop`**
 
 Functions:
 
@@ -53,7 +54,9 @@ Functions:
 1. Code like the wind, grandma!
 1. **DON'T FORGET TO TEST!**
 1. `git commit`
-1. **DON'T FORGET TO STASH!**
+1. **`git stash`**
 1. `cd ..`
 1. `firebase deploy --only functions`
+1. **`git stash pop`**
+
  
