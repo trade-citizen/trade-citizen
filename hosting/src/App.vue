@@ -14,6 +14,14 @@
             <v-list-tile-title>Home</v-list-tile-title>
           </v-list-tile-content>
         </v-list-tile>
+        <v-list-tile href="https://bitbucket.org/trade-citizen/trade-citizen/issues/new" target="_blank">
+          <v-list-tile-action>
+            <v-icon>bug_report</v-icon>
+          </v-list-tile-action>
+          <v-list-tile-content>
+            <v-list-tile-title>Report a bug</v-list-tile-title>
+          </v-list-tile-content>
+        </v-list-tile>        
         <template v-if="userIsAuthenticated">
           <v-list-tile @click="signout">
             <v-list-tile-action>
@@ -36,7 +44,7 @@
       app
       fixed
       :extended="showProgress"
-      extension-height="1"
+      :extension-height="progressHeight"
       >
       <v-toolbar-side-icon
         @click.stop="drawer = !drawer"
@@ -75,10 +83,10 @@
       <template v-else-if="$route.path==='/'">
         <v-select
           class="mx-2"
-          color="cyan lighten-2"
           append-icon="search"
           placeholder="Search"
           solo-inverted
+          auto
           autocomplete
           clearable
           :disabled="this.initializing"
@@ -105,7 +113,7 @@
                     <v-icon class="mx-1">cancel</v-icon>
                   </v-btn>
                 </span>
-                <span>Cancel</span>
+                <span>Cancel Edit Prices</span>
               </v-tooltip>
               <v-tooltip
                 v-else
@@ -120,7 +128,7 @@
                     <v-icon class="mx-1">edit</v-icon>
                   </v-btn>
                 </span>
-                <span>Edit</span>
+                <span>Edit Prices</span>
               </v-tooltip>
             </template>
             <v-tooltip bottom>
@@ -134,7 +142,7 @@
                   <v-icon class="mx-1">save</v-icon>
                 </v-btn>
               </span>
-              <span>{{ 'Save (' + (offline ? 'OFFLINE' : 'Control-S or ⌘-S') + ')' }}</span>
+              <span>{{ 'Save Prices (' + (offline ? 'OFFLINE' : 'Control-S or ⌘-S') + ')' }}</span>
             </v-tooltip>
             
           </template>
@@ -155,6 +163,7 @@
         v-if="showProgress"
         slot="extension"
         class="ma-0"
+        :height="progressHeight"
         :indeterminate="true"
         >
       </v-progress-linear>
@@ -166,7 +175,7 @@
     </v-content>
     <v-footer app class="pa-3">
       <div v-if="locationId">
-        {{ locationItemPriceTimestamp }}
+        Priced at: {{ locationItemPriceTimestamp }}
       </div>
       <v-spacer></v-spacer>
       <div>{{ offline ? 'OFFLINE' : '' }}</div>
@@ -190,6 +199,7 @@
 
 <script>
 
+import { mapGetters, mapState } from 'vuex'
 import * as utils from './utils'
 
 export default {
@@ -198,6 +208,7 @@ export default {
       drawer: false,
       title: 'Trade Citizen',
       editing: false,
+      progressHeight: 4,
       toast: {
         show: false,
         message: null,
@@ -234,44 +245,39 @@ export default {
   },
 
   computed: {
-    isDevelopment () {
-      return this.$store.getters.isDevelopment
-    },
-    offline () {
-      return this.$store.getters.offline
-    },
-    initializing () {
-      return this.$store.getters.initializing
-    },
+    ...mapState({
+      isDevelopment: state => state.shared.isDevelopment,
+      authenticating: state => state.user.authenticating,
+      offline: state => state.tradeinfo.offline,
+      initializing: state => state.tradeinfo.initializing,
+      saving: state => state.tradeinfo.saving
+    }),
+    ...mapGetters([
+      'userIsAuthenticated',
+      'saveable'
+    ]),
     showProgress () {
-      let showProgress = this.initializing || this.$store.getters.saving
-      return showProgress
-    },
-    saveable () {
-      // console.log('saveable this.offline', this.offline, 'this.showProgress', this.showProgress)
-      let saveable = !this.offline && !this.showProgress
-      // console.log('saveable saveable', saveable)
-      return saveable
+      return this.authenticating || this.initializing || this.saving
     },
     locationId: {
       get: function () {
-        return this.$store.getters.getSelectedLocationId
+        // Example(s):
+        //  http://localhost:8080/?locationId=zsrxhjHzhfXxUCPs73EF
+        const locationId = this.$route.query.locationId
+        // console.log('App locationId this.$route.query.locationId', locationId)
+        return locationId
       },
       set: function (value) {
-        this.editing = false
-        this.$store.commit('setSelectedLocationId', value)
-        this.$root.$emit('onSelectedLocationChanged', value)
+        let location = { path: '/', query: value ? { locationId: value } : null }
+        // console.log(`App locationId set this.$router.push(${location})`)
+        this.$router.push(location)
       }
-    },
-    userIsAuthenticated () {
-      return this.$store.getters.user !== null &&
-        this.$store.getters.user !== undefined
     },
     showEdit () {
       if (!this.locationId) {
         return false
       }
-      let locationItemPriceList = this.$store.getters.locationItemPriceList(this.locationId)
+      const locationItemPriceList = this.$store.getters.locationItemPriceList(this.locationId)
       let accumulator = 0
       if (locationItemPriceList) {
         accumulator = locationItemPriceList
@@ -287,7 +293,7 @@ export default {
     locations () {
       return this.$store.getters.locations
         .map((location) => {
-          let id = location.id
+          const id = location.id
           let name = location.anchor.name + ' - ' + location.name
           if (this.isDevelopment) {
             name += ' {' + id + '}'
@@ -298,8 +304,8 @@ export default {
           }
         })
         .sort((a, b) => {
-          let aName = a.name.toLowerCase()
-          let bName = b.name.toLowerCase()
+          const aName = a.name.toLowerCase()
+          const bName = b.name.toLowerCase()
           if (aName < bName) {
             return -1
           }
@@ -310,19 +316,29 @@ export default {
         })
     },
     locationItemPriceTimestamp () {
-      let metadata = this.$store.getters.locationItemPriceMetadata(this.locationId)
+      const metadata = this.$store.getters.locationItemPriceMetadata(this.locationId)
       let timestamp = metadata && metadata.timestamp
       // console.log('timestamp', timestamp)
       timestamp = utils.formatDateYMDHMS(timestamp)
       if (!timestamp) {
         timestamp = 'Never'
       }
-      return `Priced at: ${timestamp}`
+      return timestamp
     }
   },
+
+  watch: {
+    locationId: {
+      handler () {
+        // console.log('App watch locationId')
+        this.editing = false
+      }
+    }
+  },
+
   methods: {
     updateOnlineStatus () {
-      let online = navigator.onLine
+      const online = navigator.onLine
       // console.log('App updateOnlineStatus online', online)
       this.$store.commit('setOffline', !online)
     },
@@ -355,7 +371,7 @@ export default {
     },
     saveLocation () {
       // console.log('App saveLocation this.locationId', this.locationId)
-      if (!this.userIsAuthenticated || !this.locationId || this.offline) {
+      if (!this.locationId || !this.saveable) {
         return
       }
       this.editLocation(false)

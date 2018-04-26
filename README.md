@@ -2,39 +2,50 @@
 
 ## Introduction
 
-TradeCitizen is an app built on Cloud Firestore.
-For more information about Firestore visit [the docs][firestore-docs].
+TradeCitizen is a [planned to be Crowd Sourced Reptuation Based] Commodity Prices Tracker for Star Citizen.
 
-[firestore-docs]: https://firebase.google.com/docs/firestore/
+### Add Location
 
-## Setup and run the app
+TODO:(pv) Create an admin app/page that makes this *MUCH* easier
 
-Follow these steps to setup and run the quickstart:
+1. `node utils/generate-push-id.js`
+1. Create a document w/ that name under locations w/ following values:
+```json
+anchor: reference to deployments/production/anchors/?
+type: reference to deployments/production/locationTypes/?
+name: as appropriate
+```
+1. Clear/Update _buySellInfoCache
 
- 1. Create a Firebase project in the [Firebase Console](https://console.firebase.google.com).
- 1. In the Firebase console, enable Anonymous authentication on your project by doing: **Authentication > SIGN-IN METHOD > Anonymous > Enable > SAVE**
- 1. In the Firebase console, enable Cloud Firestore on your project by doing: **Database > TRY FIRESTORE BETA > ENABLE**
- 1. Copy/Download this repo and open this folder in a Terminal.
- 1. Install the Firebase CLI if you do not have it installed on your machine:
-    ```bash
-    npm -g i firebase-tools
-    ```
- 1. Set the CLI to use the project you created on step 1:
-    ```bash
-    firebase use --add
-    ```
- 1. Deploy the Firestore security rules and indexes:
-    ```bash
-    firebase deploy --only firestore
-    ```
- 1. Run a local server:
-    ```bash
-    firebase serve
-    ```
- 1. As indicated, open [http://localhost:5000](http://localhost:5000) in your browser and try out the app.
- 1. Deploy to live hosting:
-    ```bash
-    firebase deploy
-    -or-
-    firebase deploy --only hosting
-    ```
+### Add Item
+
+1. `node utils/generate-push-id.js`
+1. ...
+1. Clear/Update _buySellInfoCache
+
+### Add "Anchor"
+
+"Anchor" is what I am calling whatever holds a Location. The Anchor is the closest capturing planet (ex: Crusader), moon (ex: Yela). It is possible some locations may be free-floating and have no Anchor.
+
+1. `node utils/generate-push-id.js`
+1. ...
+1. Clear/Update _buySellInfoCache
+
+## Workflow
+
+Hosting:
+1. `cd hosting`
+1. `yarn dev`
+1. Dev your heart out
+1. **DON'T FORGET TO TEST!**
+1. `yarn build`
+1. `cd ..`
+1. `firebase deploy --only hosting`
+
+Functions:
+1. `cd functions`
+1. Dev your heart out
+1. **DON'T FORGET TO TEST!**
+1. `cd ..`
+1. `firebase deploy --only functions`
+ 

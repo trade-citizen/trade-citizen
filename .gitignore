@@ -2,3 +2,4 @@
 .DS_Store
 firebase-debug.log
 trade-citizen-firebase-adminsdk*.json
+yarn-error\.log

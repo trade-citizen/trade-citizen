@@ -1,5 +1,4 @@
 
-
 const admin = require('firebase-admin')
 const functions = require('firebase-functions')
 const { firebasePushId } = require('./firebase-push-id')
@@ -12,10 +11,15 @@ const FIELD_LATEST_PRICE_TIMESTAMP = 'latestPriceTimestamp'
 const FIELD_BUY_SELL_INFO_CACHE = '_buySellInfoCache'
 
 module.exports = {
+  FIELD_BUY_SELL_INFO_CACHE,
   addLocationPrice,
   getBuySellInfoCache,
   updateBuySellInfo,
-  lastStep
+  lastStep,
+  getPathBuySellInfoCache,
+  diff,
+  transactionSetPath,
+  transactionSetRef
 }
 
 function addLocationPrice(userId, data) {
@@ -41,8 +45,16 @@ function addLocationPrice(userId, data) {
 
   console.log('runTransaction(...)')
   return firestore.runTransaction(transaction => {
-    console.log('+runTransaction')
+    //
+    // NOTE: "Each transaction or batch of writes can write to a maximum of 500 documents."
+    //  Per https://firebase.google.com/docs/firestore/manage-data/transactions
+    //
+    // This will be a problem if we ever have to update more than 500 buy:sell ratios
+    // We will need to come up w/ a way to chunk these, similar to:
+    //  https://firebase.google.com/docs/firestore/manage-data/delete-data#collections
+    //
     try {
+      console.log('+runTransaction')
       //
       // Must call getBuySellInfoCache first to prevent:
       //  "Error: Firestore transactions require all reads to be executed before all writes."
@@ -103,6 +115,7 @@ function _addLocationPrice(firestore, transaction, userId, timestamp, deployment
         [FIELD_TIMESTAMP]: timestamp
         // TODO:(pv) Anything else useful/nice to set?
       }
+      // console.log('_addLocationPrice docData', docData)
 
       transactionSetPath(firestore, transaction, docPath, docData)
 
@@ -208,17 +221,19 @@ function updateBuySellInfo(firestore, transaction, timestamp, deploymentId, loca
 
   const pathBuySellInfo = getPathBuySellInfoCache(deploymentId)
 
+  // console.log('updateBuySellInfo buySellInfoCache', buySellInfoCache)
   if (!buySellInfoCache) {
     throw new functions.https.HttpsError('invalid-argument', 'Invalid argument(s)')
   }
-
-  // console.log('updateBuySellInfo buySellInfoCache', buySellInfoCache)
-
-  const { locations, items, buySellPrices, buySellRatiosPrevious } = buySellInfoCache
+  const { locations, items, buySellPrices, buySellRatios:buySellRatiosPrevious } = buySellInfoCache
   // console.log('updateBuySellInfo locations', locations)
   // console.log('updateBuySellInfo items', items)
   // console.log('updateBuySellInfo buySellPrices', buySellPrices)
   // console.log('updateBuySellInfo buySellRatiosPrevious', buySellRatiosPrevious)
+
+  //
+  //
+  //
 
   // console.log('updateBuySellInfo locationId', locationId, 'newPrices', newPrices)
   if (timestamp && locationId && priceId) {
@@ -238,6 +253,10 @@ function updateBuySellInfo(firestore, transaction, timestamp, deploymentId, loca
     }
   } else {
   }
+
+  //
+  //
+  //
 
   const buySellRatiosNew = {}
 
@@ -309,11 +328,15 @@ function updateBuySellInfo(firestore, transaction, timestamp, deploymentId, loca
 
   buySellInfoCache.buySellRatios = buySellRatiosNew
 
+  //
+  //
+  //
+
   let changes = diff(buySellRatiosPrevious, buySellRatiosNew)
   console.log('updateBuySellInfo changes', changes)
   if (changes) {
-    if (changes.right && !changes.left) {
-      changes = changes.right
+    if (changes.current && !changes.previous) {
+      changes = changes.current
     }
     Object.keys(changes).forEach(key => {
       const change = changes[key]
@@ -321,7 +344,7 @@ function updateBuySellInfo(firestore, transaction, timestamp, deploymentId, loca
       const docId = `/deployments/${deploymentId}/buySellRatios/${key}`
       // console.log('updateBuySellInfo docId', docId)
       const docRef = firestore.doc(docId)
-      if (change && change.left && !change.right) {
+      if (change && change.previous && !change.current) {
         console.log('updateBuySellInfo delete', docId)
         transaction.delete(docRef)
       } else {
@@ -500,18 +523,18 @@ function addBuySellPrice(buySellPrices,
   }
 }
 
-function diff(left, right) {
-  // console.log('diff left', left, 'right', right)
+function diff(previous, current) {
+  // console.log('diff previous', previous, 'current', current)
   let changes = {}
-  if (left !== right) {
-    // console.log('left !== right')
-    if (typeof left == 'object' && typeof right == 'object') {
+  if (previous !== current) {
+    // console.log('previous !== current')
+    if (typeof previous == 'object' && typeof current == 'object') {
       // console.log('object')
-      let keys = new Set(Object.keys(left).concat(Object.keys(right)))
+      let keys = new Set(Object.keys(previous).concat(Object.keys(current)))
       // console.log('diff keys', keys)
       for (const key of keys) {
-        const valueLeft = left[key]
-        const valueRight = right[key]
+        const valueLeft = previous[key]
+        const valueRight = current[key]
         // console.log('diff key', key, 'valueLeft', valueLeft, 'valueRight', valueRight)
         const temp = diff(valueLeft, valueRight)
         // console.log('diff temp', temp)
@@ -522,8 +545,8 @@ function diff(left, right) {
     } else {
       // console.log('not object')
       changes = {
-        left: left,
-        right: right
+        previous,
+        current
       }
     }
   }
@@ -534,11 +557,12 @@ function diff(left, right) {
   return changes
 }
 
-function transactionSetPath(firestore, transaction, docPath, docData) {
-  return transactionSetRef(transaction, firestore.doc(docPath), docData)
+function transactionSetPath(firestore, transaction, docPath, docData, overwrite) {
+  return transactionSetRef(transaction, firestore.doc(docPath), docData, overwrite)
 }
 
-function transactionSetRef(transaction, docRef, docData) {
-  // console.log('transactionSetRef docRef.path', docRef.path, 'docData', docData)
-  return transaction.set(docRef, docData, { merge: true })
+function transactionSetRef(transaction, docRef, docData, overwrite) {
+  // console.log('transactionSetRef docRef.path', docRef.path, 'docData', JSON.stringify(docData))
+  return transaction.set(docRef, docData, (overwrite === true) ? undefined : { merge: true })
 }
+

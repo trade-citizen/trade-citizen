@@ -86,32 +86,43 @@
         class="elevation-1"
         must-sort
         sort-icon="arrow_downward"
-        :hide-actions="!initialized"
-        :no-data-text="initialized ? 'No data available' : 'Loading...'"
+        :hide-actions="!hasBuySellRatios"
+        :no-data-text="hasBuySellRatios ? 'No data available' : 'Loading...'"
         :headers="headers"
         :pagination.sync="buySellRatiosPagination"
         :rows-per-page-items="buySellRatiosPagination.rowsPerPageItems"
         rows-per-page-text="Max Results"
-        :total-items="buySellRatiosPagination.totalItems"
-        :items="buySellRatios"
+        :items="buySellRatiosFiltered"
         >
         <template slot="items" slot-scope="props">
           <td class="text-xs-right">{{ props.item.itemName }}</td>
-          <td class="text-xs-right">{{ props.item.buyLocationName }}</td>
           <td class="text-xs-right">
-            <v-tooltip bottom>
-              <span slot="activator">{{ props.item.buyPrice.toFixed(3) }}</span>
-              <span>{{ formatDateYMDHMS(props.item.buyTimestamp) }}</span>
-            </v-tooltip>
+            <router-link :to="getLocationRoute(props.item.buyLocationId)">
+              {{ props.item.buyLocationName }}
+            </router-link>
+          </td>
+          <td class="text-xs-right">
+            <router-link :to="getLocationRoute(props.item.buyLocationId, props.item.itemId)">
+              <v-tooltip bottom>
+                <span slot="activator">{{ props.item.buyPrice.toFixed(3) }}</span>
+                <span>{{ formatDateYMDHMS(props.item.buyTimestamp) }}</span>
+              </v-tooltip>
+            </router-link>
           </td>
           <td class="text-xs-center">{{ props.item.ratio.toFixed(3) }}</td>
           <td class="text-xs-left">
-            <v-tooltip bottom>
-              <span slot="activator">{{ props.item.sellPrice.toFixed(3) }}</span>
-              <span>{{ formatDateYMDHMS(props.item.sellTimestamp) }}</span>
-            </v-tooltip>
+            <router-link :to="getLocationRoute(props.item.sellLocationId, props.item.itemId)">
+              <v-tooltip bottom>
+                <span slot="activator">{{ props.item.sellPrice.toFixed(3) }}</span>
+                <span>{{ formatDateYMDHMS(props.item.sellTimestamp) }}</span>
+              </v-tooltip>
+            </router-link>
           </td>
-          <td class="text-xs-left">{{ props.item.sellLocationName }}</td>
+          <td class="text-xs-left">
+            <router-link :to="getLocationRoute(props.item.sellLocationId)">
+              {{ props.item.sellLocationName }}
+            </router-link>
+          </td>
         </template>
       </v-data-table>
     </v-layout>
@@ -123,7 +134,7 @@
     class="pa-0"
     >
     <v-layout
-      v-if="locationItemPriceListCopy.length"
+      v-if="initialized && locationItemPriceListCopy.length"
       row wrap
       class="pa-2"
       >
@@ -132,7 +143,10 @@
         v-for="(locationItemPrice, index) in locationItemPriceListCopy"
         :key="locationItemPrice.id"
         >
-        <v-card style="border:1px solid white; border-radius:6px;">
+        <v-card
+          :style="getItemBorder()"
+          :id="locationItemPrice.id"
+          >
           <v-container fluid grid-list-lg>
             <v-layout row>
               <!--
@@ -167,12 +181,14 @@
                   class="input-group--focused inputPrice"
                   :autofocus="index === 0"
                   :color="saveable ? 'cyan lighten-2' : ''"
-                  :disabled="!saveable"
-                  :clearable="saveable"
+                  :disabled="!saveable || saving"
+                  :clearable="saveable && !saving"
+                  :clearValue="locationItemPrice.priceBuy === 0 ? null : 0"
                   v-model.number="locationItemPrice.priceBuy"
                   :hide-details="!locationItemPrice.invalidPriceBuy"
                   :error-messages="locationItemPrice.invalidPriceBuy ? 'Invalid price' : undefined"
                   @input="locationItemPrice.invalidPriceBuy = false"
+                  @click="$event.target.select()"
                   >
                 </v-number-field>
               </v-flex>
@@ -181,12 +197,14 @@
                   label="Sell Price"
                   class="input-group--focused inputPrice"
                   :color="saveable ? 'cyan lighten-2' : ''"
-                  :disabled="!saveable"
-                  :clearable="saveable"
+                  :disabled="!saveable || saving"
+                  :clearable="saveable && !saving"
+                  :clearValue="locationItemPrice.priceSell === 0 ? null : 0"
                   v-model.number="locationItemPrice.priceSell"
                   :hide-details="!locationItemPrice.invalidPriceSell"
                   :error-messages="locationItemPrice.invalidPriceSell ? 'Invalid price' : undefined"
                   @input="locationItemPrice.invalidPriceSell = false"
+                  @click="$event.target.select()"
                   >
                 </v-number-field>
               </v-flex>
@@ -199,13 +217,14 @@
       v-else
       justify-center
       >
-      <p class="pa-4">No prices set</p>
+      <p class="pa-4">{{ initialized ? 'No prices set' : 'Loading...' }}</p>
     </v-layout>
   </v-container>
 </template>
 
 <script>
 
+import { mapGetters, mapState } from 'vuex'
 import * as utils from '../utils'
 
 export default {
@@ -221,60 +240,19 @@ export default {
       ],
       buySellRatiosFilter: Object.assign({}, this.$store.getters.buySellRatiosFilter),
       buySellRatiosPagination: Object.assign({}, this.$store.getters.buySellRatiosPagination),
-      buySellRatiosPaginationOld: Object.assign({}, this.$store.getters.buySellRatiosPagination),
       locationItemPriceListCopy: [],
       editing: false
     }
   },
-  watch: {
-    persistenceError: {
-      handler () {
-        this.onPersistenceError()
-      }
-    },
-    buySellRatiosPagination: {
-      handler () {
-        // console.error('watch buySellRatiosPagination arguments', arguments)
-        // console.error('watch buySellRatiosPagination buySellRatiosPagination', this.buySellRatiosPagination)
-        // console.error('watch buySellRatiosPagination buySellRatiosPaginationOld', this.buySellRatiosPaginationOld)
-        let buySellRatiosPagination = this.buySellRatiosPagination
-        let buySellRatiosPaginationOld = this.buySellRatiosPaginationOld
-        if (buySellRatiosPagination.sortBy !== buySellRatiosPaginationOld.sortBy ||
-            buySellRatiosPagination.descending !== buySellRatiosPaginationOld.descending ||
-            buySellRatiosPagination.rowsPerPage !== buySellRatiosPaginationOld.rowsPerPage ||
-            buySellRatiosPagination.page !== buySellRatiosPaginationOld.page) {
-          // console.log('watch buySellRatiosPagination changed; setBuySellRatiosPagination && queryBuySellRatios')
-          this.$store.commit('setBuySellRatiosPagination', Object.assign({}, this.buySellRatiosPagination))
-          this.$store.dispatch('queryBuySellRatios')
-        } else {
-          // console.log('watch buySellRatiosPagination unchanged; ignore')
-        }
-        this.buySellRatiosPaginationOld = this.buySellRatiosPagination
-      },
-      deep: true
-    },
-    buySellRatiosFilter: {
-      handler () {
-        // console.error('watch buySellRatiosFilter arguments', arguments)
-        // console.error('watch buySellRatiosFilter setBuySellRatiosFilter && queryBuySellRatios')
-        this.$store.commit('setBuySellRatiosFilter', Object.assign({}, this.buySellRatiosFilter))
-        this.$store.dispatch('queryBuySellRatios')
-      },
-      deep: true
-    },
-    locationItemPriceList: {
-      handler: 'updateLocationItemPriceListCopy',
-      deep: true
-    },
-    editing: 'updateLocationItemPriceListCopy'
+
+  created () {
+    // console.log('Home created')
+    this.updateLocationItemPriceListCopy()
   },
+
   mounted () {
     // console.log('Home mounted')
     var vm = this
-    vm.$root.$on('onSelectedLocationChanged', function (locationId) {
-      // console.log('Home vm.onSelectedLocationChanged locationId', locationId)
-      vm.onSelectedLocationChanged(locationId)
-    })
     vm.$root.$on('editLocation', function (locationId, editing) {
       // console.log('Home vm.editLocation locationId:' + locationId)
       vm.editLocation(locationId, editing)
@@ -284,33 +262,28 @@ export default {
       vm.saveLocation(locationId)
     })
   },
+
   computed: {
-    isDevelopment () {
-      return this.$store.getters.isDevelopment
-    },
-    persistenceError () {
-      return this.$store.getters.persistenceError
-    },
-    offline () {
-      return this.$store.getters.offline
-    },
-    initialized () {
-      return this.$store.getters.initialized
-    },
-    saveable () {
-      // console.log('saveable this.offline', this.offline, 'this.userIsAuthenticated', this.userIsAuthenticated)
-      let saveable = !this.offline && this.userIsAuthenticated
-      // console.log('saveable saveable', saveable)
-      return saveable
-    },
+    ...mapState({
+      isDevelopment: state => state.shared.isDevelopment,
+      persistenceError: state => state.tradeinfo.persistenceError,
+      initialized: state => state.tradeinfo.initialized,
+      saving: state => state.tradeinfo.saving,
+      buySellRatiosFiltered: state => state.tradeinfo.buySellRatiosFiltered
+    }),
+    ...mapGetters([
+      'userIsAuthenticated',
+      'saveable',
+      'hasBuySellRatios'
+    ]),
     locationId: {
       get: function () {
-        return this.$store.getters.getSelectedLocationId
+        // Example(s):
+        //  http://localhost:8080/?locationId=zsrxhjHzhfXxUCPs73EF
+        const locationId = this.$route.query.locationId
+        // console.log('Home locationId this.$route.query.locationId', locationId)
+        return locationId
       }
-    },
-    userIsAuthenticated () {
-      return this.$store.getters.user !== null &&
-        this.$store.getters.user !== undefined
     },
     items () {
       return this.$store.getters.items
@@ -318,8 +291,8 @@ export default {
           // if (item.illegal && !this.buySellRatiosFilter.illegal) {
           //   return
           // }
-          let id = item.id
-          let name = item.name
+          const id = item.id
+          const name = item.name
           /*
           if (this.isDevelopment) {
             name += ' {' + id + '}'
@@ -328,8 +301,8 @@ export default {
           return { id, name }
         })
         .sort((a, b) => {
-          let aName = a.name.toLowerCase()
-          let bName = b.name.toLowerCase()
+          const aName = a.name.toLowerCase()
+          const bName = b.name.toLowerCase()
           if (aName < bName) {
             return -1
           }
@@ -342,8 +315,8 @@ export default {
     locations () {
       return this.$store.getters.locations
         .map(location => {
-          let id = location.id
-          let name = location.name
+          const id = location.id
+          const name = location.name
           // name = location.anchor.name + ' - ' + name
           /*
           if (this.isDevelopment) {
@@ -353,8 +326,8 @@ export default {
           return { id, name }
         })
         .sort((a, b) => {
-          let aName = a.name.toLowerCase()
-          let bName = b.name.toLowerCase()
+          const aName = a.name.toLowerCase()
+          const bName = b.name.toLowerCase()
           if (aName < bName) {
             return -1
           }
@@ -364,20 +337,73 @@ export default {
           return 0
         })
     },
-    buySellRatios () {
-      return this.$store.getters.buySellRatios
-    },
     locationItemPriceList () {
       return this.$store.getters.locationItemPriceList(this.locationId)
     }
   },
+
+  watch: {
+    persistenceError: {
+      handler () {
+        this.onPersistenceError()
+      }
+    },
+    locationId: {
+      handler () {
+        // console.log('Home watch locationId')
+        this.editing = false
+      }
+    },
+    buySellRatiosPagination: {
+      deep: true,
+      handler (value) {
+        this.$store.dispatch('setBuySellRatiosPagination', value)
+      }
+    },
+    buySellRatiosFilter: {
+      deep: true,
+      handler (value) {
+        this.$store.dispatch('setBuySellRatiosFilter', value)
+      }
+    },
+    locationItemPriceList: {
+      deep: true,
+      handler () {
+        // console.log('Home watch locationItemPriceList')
+        this.updateLocationItemPriceListCopy()
+      }
+    },
+    editing: {
+      handler () {
+        // console.log('Home watch editing')
+        this.updateLocationItemPriceListCopy()
+      }
+    }
+  },
+
   methods: {
+    getLocationRoute (locationId, itemId) {
+      let path = '/'
+      const query = {}
+      if (locationId) {
+        query.locationId = locationId
+      }
+      if (itemId) {
+        path += `#${itemId}`
+      }
+      const route = { path, query }
+      // console.log('getLocationRoute locationId', locationId, 'itemId', itemId, 'route', route)
+      return route
+    },
+    getItemBorder () {
+      return 'border:1px solid white; border-radius:6px;'
+    },
     toastMessage (payload) {
       this.$root.$emit('toastMessage', payload)
     },
     onPersistenceError () {
-      // console.log('onPersistenceError error', error)
-      let error = this.persistenceError
+      // console.log('Home onPersistenceError error', error)
+      const error = this.persistenceError
       if (!error) {
         return
       }
@@ -399,13 +425,13 @@ export default {
       return utils.formatDateYMDHMS(date)
     },
     refresh () {
-      // console.log('refresh()')
+      // console.log('Home refresh()')
       if (!this.buySellRatiosFilter.illegal) {
         // Clear illegal items from this.buySellRatiosFilter.items
-        let items = this.$store.getters.items
+        const items = this.$store.getters.items
         let i = this.buySellRatiosFilter.items.length
         while (i--) {
-          let item = this.buySellRatiosFilter.items[i]
+          const item = this.buySellRatiosFilter.items[i]
           if (items[item.id].illegal) {
             this.buySellRatiosFilter.item.splice(i, 1)
           }
@@ -413,34 +439,52 @@ export default {
       }
     },
     updateLocationItemPriceListCopy () {
-      this.locationItemPriceListCopy.splice(0)
-      let prices = this.locationItemPriceList
-      // console.log('updateLocationItemPriceListCopy prices BEFORE', prices)
-      if (prices && !this.editing) {
-        let pricesDefined = prices.filter((price) => {
-          return price.isPriceDefined
-        })
-        // console.log('updateLocationItemPriceListCopy pricesDefined', pricesDefined)
-        if (pricesDefined.length > 0 || !this.userIsAuthenticated) {
-          // console.log('updateLocationItemPriceListCopy A')
-          prices = pricesDefined
-        } else {
-          // console.log('updateLocationItemPriceListCopy B')
+      // console.log('Home updateLocationItemPriceListCopy')
+      if (this.saving) {
+        // console.log('Home updateLocationItemPriceListCopy saving')
+        //
+        // We're saving new values.
+        // Don't update with the soon to be old values.
+        // Do hide any blank/0 valued items.
+        //
+        let i = this.locationItemPriceListCopy.length
+        // console.log('Home updateLocationItemPriceListCopy this.locationItemPriceListCopy.length', i)
+        while (i--) {
+          const itemPrice = this.locationItemPriceListCopy[i]
+          // console.log('updateLocationItemPriceListCopy itemPrice', JSON.stringify(itemPrice))
+          if ((itemPrice.priceBuy === 0 || itemPrice.priceBuy === undefined) &&
+            (itemPrice.priceSell === 0 || itemPrice.priceSell === undefined)) {
+            this.locationItemPriceListCopy.splice(i, 1)
+          }
         }
       } else {
-        // console.log('updateLocationItemPriceListCopy C')
+        // console.log('Home updateLocationItemPriceListCopy *NOT* saving')
+        this.locationItemPriceListCopy.splice(0)
+        let prices = this.locationItemPriceList
+        // console.log('Home updateLocationItemPriceListCopy prices BEFORE', prices)
+        if (prices && !this.editing) {
+          const pricesDefined = prices.filter((price) => {
+            return price.isPriceDefined
+          })
+          // console.log('Home updateLocationItemPriceListCopy pricesDefined', pricesDefined)
+          if (pricesDefined.length > 0 || !this.userIsAuthenticated) {
+            // console.log('Home updateLocationItemPriceListCopy A')
+            prices = pricesDefined
+          } else {
+            // console.log('Home updateLocationItemPriceListCopy B')
+          }
+        } else {
+          // console.log('Home updateLocationItemPriceListCopy C')
+        }
+        // console.log('Home updateLocationItemPriceListCopy prices AFTER', prices)
+        if (prices) {
+          prices.forEach(price => {
+            const copy = Object.assign({}, price)
+            this.locationItemPriceListCopy.push(copy)
+          })
+        }
       }
-      // console.log('updateLocationItemPriceListCopy prices AFTER', prices)
-      if (prices) {
-        prices.forEach(price => {
-          let copy = Object.assign({}, price)
-          this.locationItemPriceListCopy.push(copy)
-        })
-      }
-    },
-    onSelectedLocationChanged (locationId) {
-      // console.log('Home onSelectedLocationChanged locationId:' + locationId)
-      this.editing = false
+      // console.log('Home updateLocationItemPriceListCopy AFTER this.locationItemPriceListCopy', JSON.stringify(this.locationItemPriceListCopy))
     },
     editLocation (locationId, editing) {
       // console.log('Home editLocation locationId:' + locationId)
@@ -456,20 +500,26 @@ export default {
           locationItemPrices: this.locationItemPriceListCopy
         })
         .then(result => {
-          // console.log('saveLocation SUCCESS!')
+          // console.log('Home saveLocation SUCCESS!')
           this.editing = false
-          this.toastMessage({ message: 'Prices Saved.' })
+          let message = 'Prices Saved.'
+          if (result && result.mocked) {
+            message = 'Mock ' + message
+          }
+          this.toastMessage({ message })
         })
         .catch(error => {
-          // console.log('saveLocation ERROR', error)
-          let toastMessage = error.message ? error.message : error
+          // console.log('Home saveLocation ERROR', error)
+          const toastMessage = error.message ? error.message : error
           this.toastMessage({ message: toastMessage })
         })
     }
   }
 }
 </script>
+
 <style scoped>
+
 .inputPrice >>> input {
   text-align: right;
   -moz-appearance:textfield;
@@ -478,4 +528,5 @@ export default {
 .inputPrice >>> input::-webkit-inner-spin-button {
   -webkit-appearance: none;
 }
+
 </style>
