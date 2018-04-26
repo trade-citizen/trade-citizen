@@ -1,6 +1,6 @@
 {
   "name": "trade-citizen-hosting",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Crowd Sourced Reptuation Based Commodity Prices for Star Citizen",
   "author": "tradecitizen.org <trade.citizen@gmail.com>",
   "private": true,
