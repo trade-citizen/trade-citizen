@@ -15,7 +15,7 @@ const DEPLOYMENT_ID = utils.isProduction() ? 'production' : 'test'
 const ROOT = `/deployments/${DEPLOYMENT_ID}`
 const FIELD_TIMESTAMPED = 'timestamped'
 const FIELD_TIMESTAMP = 'timestamp'
-const ALLOW_EDIT_OFFLINE = false
+const MOCK_SAVING = false
 
 let firestore = null
 
@@ -796,8 +796,7 @@ export default {
       }
       // console.log('saveLocationItemPrices data', data)
       context.commit('_setSaving', true)
-      const MOCK_ONLY = false
-      if (MOCK_ONLY) {
+      if (MOCK_SAVING) {
         return new Promise((resolve, reject) => {
           setTimeout(() => {
             context.commit('_setSaving', false)
@@ -820,7 +819,7 @@ export default {
   },
   getters: {
     saveable (state, getters, rootState) {
-      return getters.userIsAuthenticated && (ALLOW_EDIT_OFFLINE || !getters.offline)
+      return getters.userIsAuthenticated && (MOCK_SAVING || !getters.offline)
     },
     itemCategory (state) {
       return itemCategoryId => {

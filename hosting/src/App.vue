@@ -371,7 +371,7 @@ export default {
     },
     saveLocation () {
       // console.log('App saveLocation this.locationId', this.locationId)
-      if (!this.userIsAuthenticated || !this.locationId || this.offline) {
+      if (!this.locationId || !this.saveable) {
         return
       }
       this.editLocation(false)

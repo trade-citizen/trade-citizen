@@ -267,7 +267,6 @@ export default {
     ...mapState({
       isDevelopment: state => state.shared.isDevelopment,
       persistenceError: state => state.tradeinfo.persistenceError,
-      offline: state => state.tradeinfo.offline,
       initialized: state => state.tradeinfo.initialized,
       saving: state => state.tradeinfo.saving,
       buySellRatiosFiltered: state => state.tradeinfo.buySellRatiosFiltered
