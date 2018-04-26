@@ -1,7 +1,7 @@
 
 const admin = require('firebase-admin')
-const functions = require('@firebase/functions')
-const { firebasePushId } = require('../common/firebase-push-id')
+const functions = require('firebase-functions')
+const { firebasePushId } = require('./firebase-push-id')
 
 const FIELD_TIMESTAMPED = 'timestamped'
 const FIELD_TIMESTAMP = 'timestamp'
@@ -11,10 +11,15 @@ const FIELD_LATEST_PRICE_TIMESTAMP = 'latestPriceTimestamp'
 const FIELD_BUY_SELL_INFO_CACHE = '_buySellInfoCache'
 
 module.exports = {
+  FIELD_BUY_SELL_INFO_CACHE,
   addLocationPrice,
   getBuySellInfoCache,
   updateBuySellInfo,
-  lastStep
+  lastStep,
+  getPathBuySellInfoCache,
+  diff,
+  transactionSetPath,
+  transactionSetRef
 }
 
 function addLocationPrice(userId, data) {
@@ -216,16 +221,19 @@ function updateBuySellInfo(firestore, transaction, timestamp, deploymentId, loca
 
   const pathBuySellInfo = getPathBuySellInfoCache(deploymentId)
 
+  // console.log('updateBuySellInfo buySellInfoCache', buySellInfoCache)
   if (!buySellInfoCache) {
     throw new functions.https.HttpsError('invalid-argument', 'Invalid argument(s)')
   }
-
-  // console.log('updateBuySellInfo buySellInfoCache', buySellInfoCache)
   const { locations, items, buySellPrices, buySellRatios:buySellRatiosPrevious } = buySellInfoCache
   // console.log('updateBuySellInfo locations', locations)
   // console.log('updateBuySellInfo items', items)
   // console.log('updateBuySellInfo buySellPrices', buySellPrices)
   // console.log('updateBuySellInfo buySellRatiosPrevious', buySellRatiosPrevious)
+
+  //
+  //
+  //
 
   // console.log('updateBuySellInfo locationId', locationId, 'newPrices', newPrices)
   if (timestamp && locationId && priceId) {
@@ -245,6 +253,10 @@ function updateBuySellInfo(firestore, transaction, timestamp, deploymentId, loca
     }
   } else {
   }
+
+  //
+  //
+  //
 
   const buySellRatiosNew = {}
 
@@ -550,7 +562,7 @@ function transactionSetPath(firestore, transaction, docPath, docData, overwrite)
 }
 
 function transactionSetRef(transaction, docRef, docData, overwrite) {
-  // console.log('transactionSetRef docRef.path', docRef.path, 'docData', docData)
+  // console.log('transactionSetRef docRef.path', docRef.path, 'docData', JSON.stringify(docData))
   return transaction.set(docRef, docData, (overwrite === true) ? undefined : { merge: true })
 }
 

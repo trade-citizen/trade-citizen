@@ -101,7 +101,7 @@ const SEED = {
  */
 function removeBuySellInfo(deploymentId) {
 
-  deploymentId = 'test' // <- We should probably never run this against 'production'
+  // deploymentId = 'test' // <- We should probably never run this against 'production'
 
   const firestore = admin.firestore()
   
@@ -133,7 +133,7 @@ function removeBuySellInfo(deploymentId) {
  */
 function removeAllPrices(deploymentId) {
 
-  deploymentId = 'test' // <- We should probably never run this against 'production'
+  // deploymentId = 'test' // <- We should probably never run this against 'production'
 
   const firestore = admin.firestore()
 
@@ -154,12 +154,9 @@ function removeAllPrices(deploymentId) {
 }
 
 
-/**
- * Before calling this, delete buySellRatios and _buySellInfoCache via the web admin
- * 
- * @param {*} deploymentId 
- */
-function createBuySellInfo(deploymentId) {
+function updateBuySellInfo(deploymentId) {
+
+  // deploymentId = 'test' // <- We should probably never run this against 'production'
 
   const timestampNew = undefined
   const locationId = undefined
@@ -168,23 +165,165 @@ function createBuySellInfo(deploymentId) {
 
   const firestore = admin.firestore()
 
-  console.log('createBuySellInfo runTransaction(...)')
+  console.log('updateBuySellInfo runTransaction(...)')
   return firestore.runTransaction(transaction => {
     try {
-      console.log('createBuySellInfo +runTransaction')
+      console.log('updateBuySellInfo +runTransaction')
       //
       // Must call getBuySellInfoCache first to prevent:
       //  "Error: Firestore transactions require all reads to be executed before all writes."
       //
       return TradeCitizen.getBuySellInfoCache(firestore, transaction, deploymentId)
         .then(buySellInfoCache => {
-          return TradeCitizen.updateBuySellInfo(firestore, transaction, timestampNew, deploymentId, locationId, priceId, pricesNew, buySellInfoCache)
-            .then(result => {
-              return TradeCitizen.lastStep()
+          const pathBuySellInfo = TradeCitizen.getPathBuySellInfoCache(deploymentId)
+
+          //
+          //
+          //
+          // console.log('updateBuySellInfo buySellInfoCache', buySellInfoCache)
+          if (!buySellInfoCache) {
+            throw new functions.https.HttpsError('invalid-argument', 'Invalid argument(s)')
+          }
+          const { locations, items, buySellPrices, buySellRatios:buySellRatiosPrevious } = buySellInfoCache
+          // console.log('updateBuySellInfo locations', locations)
+          // console.log('updateBuySellInfo items', items)
+          // console.log('updateBuySellInfo buySellPrices', JSON.stringify(buySellPrices))
+          // console.log('updateBuySellInfo buySellRatiosPrevious', JSON.stringify(buySellRatiosPrevious))
+
+          //
+          //
+          //
+
+          const buySellRatiosNew = {}
+
+          Object.keys(locations).forEach(locationIdBuy => {
+            // console.log('updateBuySellInfo locationIdBuy', locationIdBuy)
+            const itemPricesBuy = buySellPrices[locationIdBuy]
+            // console.log('updateBuySellInfo itemPricesBuy', itemPricesBuy)
+            if (!itemPricesBuy) {
+              // console.warn(`No prices @ ${locationIdBuy}`)
+              return
+            }
+        
+            Object.keys(locations).forEach(locationIdSell => {
+              // console.log('updateBuySellInfo locationIdSell', locationIdSell)
+              if (locationIdSell === locationIdBuy) {
+                return
+              }
+              const itemPricesSell = buySellPrices[locationIdSell]
+              // console.log('updateBuySellInfo itemPricesSell', itemPricesSell)
+              if (!itemPricesSell) {
+                // console.warn(`No prices @ ${locationIdSell}`)
+                return
+              }
+          
+              Object.keys(items).forEach(itemId => {
+                // console.log('updateBuySellInfo itemId', itemId)
+                const itemBuy = itemPricesBuy && itemPricesBuy[itemId]
+                const priceBuy = itemBuy && itemBuy.priceBuy
+                const timestampBuy = itemPricesBuy.timestamp
+                if (!priceBuy) {
+                  return
+                }
+        
+                const itemSell = itemPricesSell && itemPricesSell[itemId]
+                const priceSell = itemSell && itemSell.priceSell
+                const timestampSell = itemPricesSell.timestamp
+                if (!priceSell) {
+                  return
+                }
+        
+                const ratio = priceSell / priceBuy
+        
+                const docId = `${itemId}:${locationIdBuy}:${locationIdSell}`
+        
+                const itemName = items[itemId]
+                const buyLocationName = locations[locationIdBuy]
+                const sellLocationName = locations[locationIdSell]
+        
+                const buySellRatio = {
+                  itemId,
+                  itemName,
+                  buyLocationId: locationIdBuy,
+                  buyLocationName,
+                  buyPrice: priceBuy,
+                  buyTimestamp: timestampBuy,
+                  ratio,
+                  sellPrice: priceSell,
+                  sellTimestamp: timestampSell,
+                  sellLocationId: locationIdSell,
+                  sellLocationName
+                }
+                // console.log('updateBuySellInfo buySellRatio', buySellRatio)
+        
+                buySellRatiosNew[docId] = buySellRatio
+              })
             })
+          })
+          // console.log('updateBuySellInfo buySellRatiosNew', buySellRatiosNew)
+        
+          buySellInfoCache.buySellRatios = buySellRatiosNew
+        
+          //
+          //
+          //
+
+          let changes = TradeCitizen.diff(buySellRatiosPrevious, buySellRatiosNew)
+          console.log('updateBuySellInfo changes', changes)
+          if (changes) {
+            if (changes.current && !changes.previous) {
+              changes = changes.current
+            }
+            Object.keys(changes).forEach(key => {
+              const change = changes[key]
+              // console.log('updateBuySellInfo key', key, 'change', change)
+              const docId = `/deployments/${deploymentId}/buySellRatios/${key}`
+              // console.log('updateBuySellInfo docId', docId)
+              const docRef = firestore.doc(docId)
+              if (change && change.previous && !change.current) {
+                console.log('updateBuySellInfo delete', docId)
+                transaction.delete(docRef)
+              } else {
+                const docData = buySellRatiosNew[key]
+                console.log('updateBuySellInfo set', docId, docData)
+                TradeCitizen.transactionSetRef(transaction, docRef, docData)
+              }
+            })
+          }
+
+          //
+          //
+          //
+
+          //
+          // PROBLEM: Firestore documents are limited to 1MiB in size!
+          // https://firebase.google.com/docs/firestore/quotas#limits
+          // https://firebase.google.com/docs/firestore/storage-size
+          //
+          // TODO:(pv) Compute the size of buySellInfoCache
+          // TODO:(pv) If the size of buySellInfoCache gets near 1MiB then design shard-like solution
+          //  https://firebase.google.com/docs/firestore/solutions/counters
+          // 
+
+          TradeCitizen.transactionSetPath(firestore, transaction, pathBuySellInfo, {
+            [TradeCitizen.FIELD_BUY_SELL_INFO_CACHE]: buySellInfoCache
+          })
+      
+          //
+          //
+          //
+        
+          const buySellRatiosCount = Object.keys(buySellRatiosNew).length
+        
+          const pathBuySellRatiosCount = `/deployments/${deploymentId}`
+          TradeCitizen.transactionSetPath(firestore, transaction, pathBuySellRatiosCount, {
+            buySellRatiosCount
+          }, { merge: true })
+
+          return Promise.resolve()
         })
     } finally {
-      console.log('createBuySellInfo -runTransaction')
+      console.log('updateBuySellInfo -runTransaction')
     }
   })
 }
@@ -194,11 +333,18 @@ function createBuySellInfo(deploymentId) {
 //
 
 const deploymentId = 'test'
+
 if (false) {
   return removeBuySellInfo(deploymentId)
+  /*
     .then(result => {
       return removeAllPrices(deploymentId)
     })
+    */
+}
+
+if (false) {
+  updateBuySellInfo(deploymentId)
 }
 
 
