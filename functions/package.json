@@ -1,5 +1,6 @@
 {
   "name": "functions",
+  "version": "0.0.10",
   "description": "Cloud Functions for Firebase",
   "scripts": {
     "ci-test": "npm install && npm run test",

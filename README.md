@@ -15,11 +15,13 @@ anchor: reference to deployments/production/anchors/?
 type: reference to deployments/production/locationTypes/?
 name: as appropriate
 ```
+1. Clear/Update _buySellInfoCache
 
 ### Add Item
 
 1. `node utils/generate-push-id.js`
 1. ...
+1. Clear/Update _buySellInfoCache
 
 ### Add "Anchor"
 
@@ -27,6 +29,7 @@ name: as appropriate
 
 1. `node utils/generate-push-id.js`
 1. ...
+1. Clear/Update _buySellInfoCache
 
 ## Workflow
 

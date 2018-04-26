@@ -110,18 +110,18 @@ function removeBuySellInfo(deploymentId) {
     .get()
     .then(snapshotRoot => {
       const refSnapshotRoot = snapshotRoot.ref
-      console.log('removeBuySellInfo Remove field _buySellInfoCache')
+      console.log(`removeBuySellInfo Remove ${pathRoot} field _buySellInfoCache`)
       refSnapshotRoot.set({
         _buySellInfoCache: admin.firestore.FieldValue.delete()
       }, { merge: true })
 
-      console.log('removeBuySellInfo Remove field buySellRatiosCount')
+      console.log(`removeBuySellInfo Remove ${pathRoot} field buySellRatiosCount`)
       refSnapshotRoot.set({
         buySellRatiosCount: admin.firestore.FieldValue.delete()
       }, { merge: true })
 
-      console.log('removeBuySellInfo Remove collection buySellRatios')              
       const pathBuySellRatios = `${pathRoot}/buySellRatios`
+      console.log(`removeBuySellInfo Remove collection ${pathBuySellRatios}`)
       const refBuySellRatios = firestore.collection(pathBuySellRatios)
       return deleteCollection(refBuySellRatios)
     })
@@ -145,10 +145,9 @@ function removeAllPrices(deploymentId) {
       snapshotLocations.forEach(docLocation => {
         const docLocationId = docLocation.id
         const pathPrices = `${pathLocations}/${docLocationId}/prices`
-        console.log('removeAllPrices pathPrices', pathPrices)
+        console.log(`removeAllPrices Remove collection ${pathPrices}`)
         const refPrices = firestore.collection(pathPrices)
-        const promise = deleteCollection(refPrices)
-        promises.push(promise)
+        promises.push(deleteCollection(refPrices))
       })
       return Promise.all(promises)
     })
@@ -185,7 +184,7 @@ function createBuySellInfo(deploymentId) {
             })
         })
     } finally {
-      console.log('createBuySellInfo -runTransaction')    
+      console.log('createBuySellInfo -runTransaction')
     }
   })
 }
@@ -195,8 +194,12 @@ function createBuySellInfo(deploymentId) {
 //
 
 const deploymentId = 'test'
-removeBuySellInfo(deploymentId)
-removeAllPrices(deploymentId)
+if (false) {
+  return removeBuySellInfo(deploymentId)
+    .then(result => {
+      return removeAllPrices(deploymentId)
+    })
+}
 
 
 //

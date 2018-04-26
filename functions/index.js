@@ -2,16 +2,16 @@
 // To Test:
 //  https://firebase.google.com/docs/functions/local-emulator
 //  https://firebase.google.com/docs/functions/local-emulator#invoke_firestore_functions
-//  $ firebase experimental:functions:shell
+//  $ firebase functions:shell
 //  firebase > 
 //
 
 'use strict'
-const functions = require('firebase-functions')
+const functions = require('@firebase/functions')
 const admin = require('firebase-admin')
-admin.initializeApp(functions.config().firebase)
+admin.initializeApp()
 
-const addLocationPrice = require('./TradeCitizen').addLocationPrice
+const TradeCitizen = require('./TradeCitizen')
 
 //
 // https://firebase.google.com/docs/functions/write-firebase-functions
@@ -60,7 +60,7 @@ exports.helloCall = functions.https.onCall((data, context) => {
 //
 exports.addLocationPrice = functions.https.onCall((data, context) => {
   const userId = context.auth.uid
-  return addLocationPrice(userId, data)
+  return TradeCitizen.addLocationPrice(userId, data)
     .then(result => {
       console.log('addLocationPrice success!')
       return {}//{ path: docPath, data: docData }
