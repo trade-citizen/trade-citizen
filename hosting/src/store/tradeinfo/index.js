@@ -821,7 +821,7 @@ export default {
   },
   getters: {
     saveable (state, getters, rootState) {
-      return getters.userIsAuthenticated && (MOCK_SAVING || !getters.offline)
+      return getters.userIsAuthenticated && (MOCK_SAVING || !getters.offline) && !state.saving
     },
     itemCategory (state) {
       return itemCategoryId => {

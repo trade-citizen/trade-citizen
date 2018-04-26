@@ -89,7 +89,7 @@
           auto
           autocomplete
           clearable
-          :disabled="this.initializing"
+          :disabled="this.showProgress"
           :dense="$vuetify.breakpoint.xsOnly"
           :items="locations"
           item-text="name"
@@ -123,6 +123,7 @@
                   <v-btn
                     icon
                     class="ml-0 mr-2"
+                    :disabled="!saveable"
                     @click="editLocation(true)"
                     >
                     <v-icon class="mx-1">edit</v-icon>
