@@ -237,3 +237,18 @@ if (false) {
   return promise
 }
 
+
+function testClearingAllLocationItemPrices(deploymentId) {
+  const userId = 'pZ9Zc7zHzzQsQbe3ZqZxYOaqt6G2'
+  let data = {
+    deploymentId,
+    locationId: 'PHtX8Hcf933fm4ZQBtt8'
+  }
+  console.log()
+  console.log('addLocationPrice', data)
+  return TradeCitizen.addLocationPrice(userId, data)
+    .then(result => {
+      console.log('added')
+      return Promise.resolve()
+    })
+}

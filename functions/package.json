@@ -1,6 +1,6 @@
 {
   "name": "trade-citizen-functions",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Cloud Functions for Firebase",
   "scripts": {
     "ci-test": "npm install && npm run test",

@@ -81,8 +81,12 @@ function addLocationPrice(userId, data) {
     }
   })
   .then(result => {
-    console.info('addLocationPrice END')
+    console.info('addLocationPrice END success')
     return Promise.resolve(result)
+  })
+  .catch(reason => {
+    console.info('addLocationPrice END error', reason)
+    return Promise.reject(reason)
   })
 }
 
@@ -117,10 +121,12 @@ function _addLocationPrice(firestore, transaction, userId, timestamp, deployment
       let docPath = `/deployments/${deploymentId}/locations/${locationId}/prices/${priceIdNew}`
       let docData = {
         userId,
-        prices: pricesNew,
         [FIELD_TIMESTAMPED]: true,
         [FIELD_TIMESTAMP]: timestamp
         // TODO:(pv) Anything else useful/nice to set?
+      }
+      if (pricesNew) {
+        docData.prices = pricesNew
       }
       // console.log('_addLocationPrice docData', docData)
 
@@ -342,8 +348,8 @@ function updateBuySellInfo(firestore, transaction, timestamp, deploymentId, loca
   let changes = diff(buySellRatiosPrevious, buySellRatiosNew)
   console.log('updateBuySellInfo changes', changes)
   if (changes) {
-    if (changes.current && !changes.previous) {
-      changes = changes.current
+    if (changes.latest && !changes.previous) {
+      changes = changes.latest
     }
     Object.keys(changes).forEach(key => {
       const change = changes[key]
@@ -351,7 +357,7 @@ function updateBuySellInfo(firestore, transaction, timestamp, deploymentId, loca
       const docId = `/deployments/${deploymentId}/buySellRatios/${key}`
       // console.log('updateBuySellInfo docId', docId)
       const docRef = firestore.doc(docId)
-      if (change && change.previous && !change.current) {
+      if (change && change.previous && !change.latest) {
         console.log('updateBuySellInfo delete', docId)
         transaction.delete(docRef)
       } else {
@@ -530,18 +536,18 @@ function addBuySellPrice(buySellPrices,
   }
 }
 
-function diff(previous, current) {
-  // console.log('diff previous', previous, 'current', current)
+function diff(previous, latest) {
+  // console.log('diff previous', previous, 'latest', latest)
   let changes = {}
-  if (previous !== current) {
-    // console.log('previous !== current')
-    if (typeof previous == 'object' && typeof current == 'object') {
+  if (previous !== latest) {
+    // console.log('previous !== latest')
+    if (typeof previous == 'object' && typeof latest == 'object') {
       // console.log('object')
-      let keys = new Set(Object.keys(previous).concat(Object.keys(current)))
+      let keys = new Set(Object.keys(previous).concat(Object.keys(latest)))
       // console.log('diff keys', keys)
       for (const key of keys) {
         const valueLeft = previous[key]
-        const valueRight = current[key]
+        const valueRight = latest[key]
         // console.log('diff key', key, 'valueLeft', valueLeft, 'valueRight', valueRight)
         const temp = diff(valueLeft, valueRight)
         // console.log('diff temp', temp)
@@ -553,7 +559,7 @@ function diff(previous, current) {
       // console.log('not object')
       changes = {
         previous,
-        current
+        latest
       }
     }
   }
@@ -569,7 +575,13 @@ function transactionSetPath(firestore, transaction, docPath, docData, overwrite)
 }
 
 function transactionSetRef(transaction, docRef, docData, overwrite) {
-  // console.log('transactionSetRef docRef.path', docRef.path, 'docData', JSON.stringify(docData))
+  // NOTE:(pv) Some docData objects don't toString() well; some don't stringify well.
+  //  Example:
+  //    * toString has some nested objects only show up as "[Object]" 
+  //    * JSON.stringify skips keys with values === undefined
+  //  Pick and choose here which one outputs the appropriate result(s)
+  // console.log('transactionSetRef docRef.path', docRef.path, 'docData', docData, 'overwrite', overwrite)
+  // console.log('transactionSetRef docRef.path', docRef.path, 'docData', JSON.stringify(docData), 'overwrite', overwrite)
   return transaction.set(docRef, docData, (overwrite === true) ? undefined : { merge: true })
 }
 
