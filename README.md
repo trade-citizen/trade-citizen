@@ -2,7 +2,7 @@
 
 ## Introduction
 
-TradeCitizen is a [planned to be Crowd Sourced Reptuation Based] Commodity Prices Tracker for Star Citizen.
+TradeCitizen is a `[planned to be Crowd Sourced Reptuation Based]` Commodity Prices Tracker for Star Citizen.
 
 ### Add Location
 
@@ -25,7 +25,9 @@ name: as appropriate
 
 ### Add "Anchor"
 
-"Anchor" is what I am calling whatever holds a Location. The Anchor is the closest capturing planet (ex: Crusader), moon (ex: Yela). It is possible some locations may be free-floating and have no Anchor.
+"Anchor" is what I am calling whatever holds a Location.  
+The Anchor is the closest capturing planet (ex: Crusader), moon (ex: Yela).  
+It is possible some locations may be free-floating and have no Anchor.
 
 1. `node utils/generate-push-id.js`
 1. ...
@@ -34,6 +36,7 @@ name: as appropriate
 ## Workflow
 
 Hosting:
+
 1. `cd hosting`
 1. `yarn dev`
 1. Dev your heart out
@@ -43,6 +46,7 @@ Hosting:
 1. `firebase deploy --only hosting`
 
 Functions:
+
 1. `cd functions`
 1. Dev your heart out
 1. **DON'T FORGET TO TEST!**
