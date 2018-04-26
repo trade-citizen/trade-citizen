@@ -55,6 +55,15 @@ exports.helloCall = functions.https.onCall((data, context) => {
 })
 
 //
+// TODO:(pv) Auth trigger to create user folder:
+//  https://firebase.google.com/docs/functions/auth-events
+//  https://firebase.google.com/docs/auth/extend-with-functions
+//
+exports.userCreated = functions.auth.user().onCreate(user => {
+  console.log('userCreated user', JSON.stringify(user))
+})
+
+//
 // To Test:
 //  firebase > addLocationPrice(?!?!?!!?)
 //

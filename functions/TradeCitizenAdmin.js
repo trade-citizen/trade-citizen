@@ -336,15 +336,16 @@ const deploymentId = 'test'
 
 if (false) {
   return removeBuySellInfo(deploymentId)
-  /*
     .then(result => {
       return removeAllPrices(deploymentId)
+        .then(result => {
+          return updateBuySellInfo(deploymentId)
+        })
     })
-    */
 }
 
 if (false) {
-  updateBuySellInfo(deploymentId)
+  return updateBuySellInfo(deploymentId)
 }
 
 

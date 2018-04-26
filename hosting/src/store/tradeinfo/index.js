@@ -794,14 +794,16 @@ export default {
       if (Object.keys(prices).length) {
         data.prices = prices
       }
-      // console.log('saveLocationItemPrices data', data)
+      if (false || MOCK_SAVING) {
+        console.log('saveLocationItemPrices data', data)
+      }
       context.commit('_setSaving', true)
       if (MOCK_SAVING) {
         return new Promise((resolve, reject) => {
           setTimeout(() => {
             context.commit('_setSaving', false)
             resolve({ mocked: true })
-          }, 1500)
+          }, 5000)
         })
       } else {
         return firebase.functions().httpsCallable('addLocationPrice')(data)
