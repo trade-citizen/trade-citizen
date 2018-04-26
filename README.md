@@ -39,8 +39,10 @@ Hosting:
 
 1. `cd hosting`
 1. `yarn dev`
-1. Dev your heart out
+1. Code like the wind, grandma!
 1. **DON'T FORGET TO TEST!**
+1. `git commit`
+1. **DON'T FORGET TO STASH!**
 1. `yarn build`
 1. `cd ..`
 1. `firebase deploy --only hosting`
@@ -48,8 +50,10 @@ Hosting:
 Functions:
 
 1. `cd functions`
-1. Dev your heart out
+1. Code like the wind, grandma!
 1. **DON'T FORGET TO TEST!**
+1. `git commit`
+1. **DON'T FORGET TO STASH!**
 1. `cd ..`
 1. `firebase deploy --only functions`
  
