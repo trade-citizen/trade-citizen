@@ -31,13 +31,16 @@ export default {
     itemsMap: {},
     itemsList: [],
     anchorsMap: {},
+    anchorsList: [],
     locationsMap: {},
     locationsList: [],
     locationsItemsPricesMap: {},
     locationsItemsPricesMetadataMap: {},
     buySellRatiosFilter: {
       items: [],
+      anchorsBuy: [],
       locationsBuy: [],
+      anchorsSell: [],
       locationsSell: []
     },
     buySellRatiosPagination: {
@@ -113,6 +116,18 @@ export default {
     },
     _addAnchor (state, payload) {
       Vue.set(state.anchorsMap, payload.id, payload)
+      state.anchorsList = Object.values(state.anchorsMap)
+        .sort((a, b) => {
+          const aName = a.name.toLowerCase()
+          const bName = b.name.toLowerCase()
+          if (aName < bName) {
+            return -1
+          }
+          if (aName > bName) {
+            return 1
+          }
+          return 0
+        })
     },
     _addLocation (state, payload) {
       Vue.set(state.locationsMap, payload.id, payload)
@@ -592,10 +607,26 @@ export default {
         }
         queries.push(query)
       })
+      buySellRatiosFilter.anchorsBuy.forEach(filterAnchor => {
+        let query = firestore.collection(path)
+          .where('anchorsBuyName', '==', filterAnchor.name)
+        if (sortBy !== 'anchorsBuyName') {
+          query = query.orderBy(sortBy, direction)
+        }
+        queries.push(query)
+      })
       buySellRatiosFilter.locationsBuy.forEach(filterLocationBuy => {
         let query = firestore.collection(path)
           .where('buyLocationName', '==', filterLocationBuy.name)
         if (sortBy !== 'buyLocationName') {
+          query = query.orderBy(sortBy, direction)
+        }
+        queries.push(query)
+      })
+      buySellRatiosFilter.anchorsSell.forEach(filterAnchor => {
+        let query = firestore.collection(path)
+          .where('anchorsSellName', '==', filterAnchor.name)
+        if (sortBy !== 'anchorsSellName') {
           query = query.orderBy(sortBy, direction)
         }
         queries.push(query)
@@ -830,6 +861,9 @@ export default {
     },
     items (state) {
       return state.itemsList
+    },
+    anchors (state) {
+      return state.anchorsList
     },
     locations (state) {
       return state.locationsList

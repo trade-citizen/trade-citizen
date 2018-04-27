@@ -27,17 +27,22 @@
         >
       </v-select>
       <!-- TODO:(pv) Filter Category... -->
-      <!--
       <v-select
-        label="Anchors"
+        v-if="FEATURE_FILTER_ANCHOR"
+        label="Buy Anchor"
         clearable
         multiple
+        single-line
         hide-details
+        hide-selected
+        dense
         :items="anchors"
-        v-model="buySellRatiosFilter.anchors"
+        v-model="buySellRatiosFilter.anchorsBuy"
+        item-value="id"
+        item-text="name"
+        return-object
         >
       </v-select>
-      -->
       <v-select
         label="Buy Location"
         clearable
@@ -48,6 +53,22 @@
         dense
         :items="locations"
         v-model="buySellRatiosFilter.locationsBuy"
+        item-value="id"
+        item-text="name"
+        return-object
+        >
+      </v-select>
+      <v-select
+        v-if="FEATURE_FILTER_ANCHOR"
+        label="Sell Anchor"
+        clearable
+        multiple
+        single-line
+        hide-details
+        hide-selected
+        dense
+        :items="anchors"
+        v-model="buySellRatiosFilter.anchorsSell"
         item-value="id"
         item-text="name"
         return-object
@@ -68,15 +89,6 @@
         return-object
         >
       </v-select>
-      <!--
-      <v-checkbox
-        label="Illegal"
-        v-model="buySellRatiosFilter.illegal"
-        @change="refresh()"
-        hide-details
-        >
-      </v-checkbox>
-      -->
     </v-layout>
     <v-layout row d-flex>
       <!--
@@ -96,6 +108,11 @@
         >
         <template slot="items" slot-scope="props">
           <td class="text-xs-right">{{ props.item.itemName }}</td>
+          <td class="text-xs-right"
+            v-if="FEATURE_FILTER_ANCHOR"
+            >
+            {{ props.item.buyAnchorName }}
+          </td>
           <td class="text-xs-right">
             <router-link :to="getLocationRoute(props.item.buyLocationId)">
               {{ props.item.buyLocationName }}
@@ -117,6 +134,11 @@
                 <span>{{ formatDateYMDHMS(props.item.sellTimestamp) }}</span>
               </v-tooltip>
             </router-link>
+          </td>
+          <td class="text-xs-left"
+            v-if="FEATURE_FILTER_ANCHOR"
+            >
+            {{ props.item.sellAnchorName }}
           </td>
           <td class="text-xs-left">
             <router-link :to="getLocationRoute(props.item.sellLocationId)">
@@ -181,8 +203,8 @@
                   class="input-group--focused inputPrice"
                   :autofocus="index === 0"
                   :color="saveable ? 'cyan lighten-2' : ''"
-                  :disabled="!saveable || saving"
-                  :clearable="saveable && !saving"
+                  :disabled="!saveable"
+                  :clearable="saveable"
                   :clearValue="locationItemPrice.priceBuy === 0 ? null : 0"
                   v-model.number="locationItemPrice.priceBuy"
                   :hide-details="!locationItemPrice.invalidPriceBuy"
@@ -197,8 +219,8 @@
                   label="Sell Price"
                   class="input-group--focused inputPrice"
                   :color="saveable ? 'cyan lighten-2' : ''"
-                  :disabled="!saveable || saving"
-                  :clearable="saveable && !saving"
+                  :disabled="!saveable"
+                  :clearable="saveable"
                   :clearValue="locationItemPrice.priceSell === 0 ? null : 0"
                   v-model.number="locationItemPrice.priceSell"
                   :hide-details="!locationItemPrice.invalidPriceSell"
@@ -227,17 +249,27 @@
 import { mapGetters, mapState } from 'vuex'
 import * as utils from '../utils'
 
+// TODO:(pv) When ready for production, remove FEATURE_FILTER_ANCHOR and consolidate HEADERS direcly in to data
+const FEATURE_FILTER_ANCHOR = false
+const HEADERS = []
+HEADERS.push({ sortable: true, align: 'right', text: 'Item', value: 'itemName' })
+if (FEATURE_FILTER_ANCHOR) {
+  HEADERS.push({ sortable: true, align: 'right', text: 'Buy Anchor', value: 'buyAnchorName' })
+}
+HEADERS.push({ sortable: true, align: 'right', text: 'Buy Location', value: 'buyLocationName' })
+HEADERS.push({ sortable: true, align: 'right', text: 'Buy Price', value: 'buyPrice' })
+HEADERS.push({ sortable: true, align: 'center', text: 'Ratio', value: 'ratio' })
+HEADERS.push({ sortable: true, align: 'left', text: 'Sell Price', value: 'sellPrice' })
+if (FEATURE_FILTER_ANCHOR) {
+  HEADERS.push({ sortable: true, align: 'left', text: 'Sell Anchor', value: 'sellAnchorName' })
+}
+HEADERS.push({ sortable: true, align: 'left', text: 'Sell Location', value: 'sellLocationName' })
+
 export default {
   data () {
     return {
-      headers: [
-        { sortable: true, align: 'right', text: 'Item', value: 'itemName' },
-        { sortable: true, align: 'right', text: 'Buy Location', value: 'buyLocationName' },
-        { sortable: true, align: 'right', text: 'Buy Price', value: 'buyPrice' },
-        { sortable: true, align: 'center', text: 'Ratio', value: 'ratio' },
-        { sortable: true, align: 'left', text: 'Sell Price', value: 'sellPrice' },
-        { sortable: true, align: 'left', text: 'Sell Location', value: 'sellLocationName' }
-      ],
+      FEATURE_FILTER_ANCHOR: FEATURE_FILTER_ANCHOR,
+      headers: HEADERS,
       buySellRatiosFilter: Object.assign({}, this.$store.getters.buySellRatiosFilter),
       buySellRatiosPagination: Object.assign({}, this.$store.getters.buySellRatiosPagination),
       locationItemPriceListCopy: [],
@@ -311,6 +343,9 @@ export default {
           }
           return 0
         })
+    },
+    anchors () {
+      return this.$store.getters.anchors
     },
     locations () {
       return this.$store.getters.locations
