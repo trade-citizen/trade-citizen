@@ -17,8 +17,6 @@ const FIELD_TIMESTAMPED = 'timestamped'
 const FIELD_TIMESTAMP = 'timestamp'
 const MOCK_SAVING = false
 
-let firestore = null
-
 export default {
   state: {
     offline: false,
@@ -62,15 +60,6 @@ export default {
       const offline = payload
       // console.log('setOffline offline', offline)
       state.offline = offline
-      if (firestore) {
-        if (offline) {
-          // console.log('setOffline firestore.disableNetwork()')
-          firestore.disableNetwork()
-        } else {
-          // console.log('setOffline firestore.enableNetwork()')
-          firestore.enableNetwork()
-        }
-      }
     },
     _setPersistenceError (state, payload) {
       state.persistenceError = payload
@@ -252,38 +241,14 @@ export default {
     initialize (context) {
       // console.log('initialize')
 
-      firebase.initializeApp({
-        apiKey: 'AIzaSyDfKA77M6vyodG8_BprKviSgNtB0zLoVDU',
-        authDomain: 'trade-citizen.firebaseapp.com',
-        projectId: 'trade-citizen'
-      })
-      firestore = firebase.firestore()
-      firestore.settings({
-        timestampsInSnapshots: true
-      })
-      firestore.enablePersistence()
-        .then(result => {
-          // console.log('enablePersistence resolve')
-        }, error => {
-          // console.warn('enablePersistence error', error)
-          context.commit('_setPersistenceError', error)
-        })
-        .then(result => {
-          firebase.auth().onAuthStateChanged(user => {
-            // console.log('onAuthStateChanged user', user)
-            if (user) {
-              context.dispatch('autoSignIn', user)
-            }
-            context.dispatch('_queryItemCategories')
-          })
-        })
+      context.dispatch('_queryItemCategories')
     },
 
     _queryItemCategories (context) {
       // console.log('_queryItemCategories')
       const path = `${ROOT}/itemCategories`
       // console.log('_queryItemCategories path', path)
-      firestore.collection(path)
+      firebase.firestore().collection(path)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ querySnapshot => {
           context.dispatch('_onQueriedItemCategories', querySnapshot)
         }, error => {
@@ -329,7 +294,7 @@ export default {
       // console.log('_queryItems')
       const path = `${ROOT}/itemTypes`
       // console.log('_queryItems path', path)
-      firestore.collection(path)
+      firebase.firestore().collection(path)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ querySnapshot => {
           context.dispatch('_onQueriedItems', querySnapshot)
         }, error => {
@@ -380,7 +345,7 @@ export default {
       // console.log('_queryAnchors')
       const path = `${ROOT}/anchors`
       // console.log('_queryAnchors path', path)
-      firestore.collection(path)
+      firebase.firestore().collection(path)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ querySnapshot => {
           context.dispatch('_onQueriedAnchors', querySnapshot)
         }, error => {
@@ -426,7 +391,7 @@ export default {
       // console.log('_queryLocations')
       const path = `${ROOT}/locations`
       // console.log('_queryLocations path', path)
-      firestore.collection(path)
+      firebase.firestore().collection(path)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ querySnapshot => {
           context.dispatch('_onQueriedLocations', querySnapshot)
         }, error => {
@@ -472,7 +437,7 @@ export default {
       // console.log('_queryLocationItemPrices locationId', locationId)
       const path = `${ROOT}/locations/${locationId}/prices`
       // console.log('_queryLocationItemPrices path', path)
-      firestore.collection(path)
+      firebase.firestore().collection(path)
         .where(FIELD_TIMESTAMPED, '==', true)
         .orderBy(FIELD_TIMESTAMP, 'desc')
         .limit(1)
@@ -594,6 +559,8 @@ export default {
       const { sortBy, descending, rowsPerPage } = buySellRatiosPagination
       const direction = descending ? 'desc' : 'asc'
       const path = `${ROOT}/buySellRatios`
+
+      const firestore = firebase.firestore()
 
       const queries = []
 

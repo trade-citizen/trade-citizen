@@ -220,7 +220,6 @@ export default {
 
   created () {
     // console.log('App created')
-    this.$store.dispatch('initialize')
   },
 
   mounted () {
