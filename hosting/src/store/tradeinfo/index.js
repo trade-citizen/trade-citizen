@@ -3,6 +3,7 @@ import firebase from '@firebase/app'
 import '@firebase/firestore'
 import '@firebase/functions'
 import * as utils from '../../utils'
+import { firebaseAction } from 'vuexfire'
 
 class ErrorPricesInvalid extends Error {
   constructor (message, invalidPrices) {
@@ -16,8 +17,6 @@ const ROOT = `/deployments/${DEPLOYMENT_ID}`
 const FIELD_TIMESTAMPED = 'timestamped'
 const FIELD_TIMESTAMP = 'timestamp'
 const MOCK_SAVING = false
-
-let firestore = null
 
 export default {
   state: {
@@ -62,15 +61,6 @@ export default {
       const offline = payload
       // console.log('setOffline offline', offline)
       state.offline = offline
-      if (firestore) {
-        if (offline) {
-          // console.log('setOffline firestore.disableNetwork()')
-          firestore.disableNetwork()
-        } else {
-          // console.log('setOffline firestore.enableNetwork()')
-          firestore.enableNetwork()
-        }
-      }
     },
     _setPersistenceError (state, payload) {
       state.persistenceError = payload
@@ -249,41 +239,57 @@ export default {
     }
   },
   actions: {
-    initialize (context) {
-      // console.log('initialize')
+    initialize: firebaseAction(context => {
+      console.log('tradeinfo initialize')
 
-      firebase.initializeApp({
-        apiKey: 'AIzaSyDfKA77M6vyodG8_BprKviSgNtB0zLoVDU',
-        authDomain: 'trade-citizen.firebaseapp.com',
-        projectId: 'trade-citizen'
-      })
-      firestore = firebase.firestore()
-      firestore.settings({
-        timestampsInSnapshots: true
-      })
-      firestore.enablePersistence()
+      const firestore = firebase.firestore()
+
+      const bindFirebaseRef = context.bindFirebaseRef
+
+      const ref = firestore.collection(`${ROOT}/itemCategories`)
+      console.log('initialize itemCategoriesList ref', ref)
+      return bindFirebaseRef('itemCategoriesList', ref)
         .then(result => {
-          // console.log('enablePersistence resolve')
-        }, error => {
-          // console.warn('enablePersistence error', error)
-          context.commit('_setPersistenceError', error)
+          console.log('itemCategoriesList loaded', result)
+          const ref = firestore.collection(`${ROOT}/itemTypes`)
+          console.log('initialize itemsList ref', ref)
+          return bindFirebaseRef('itemsList', ref)
+            .then(result => {
+              console.log('itemsList loaded', result)
+              const ref = firestore.collection(`${ROOT}/anchors`)
+              console.log('initialize anchorsList ref', ref)
+              return bindFirebaseRef('anchorsList', ref)
+                .then(result => {
+                  console.log('anchorsList loaded', result)
+                  const ref = firestore.collection(`${ROOT}/locations`)
+                  console.log('initialize locationsList ref', ref)
+                  return bindFirebaseRef('locationsList', ref)
+                    .then(result => {
+                      console.log('locationsList loaded', result)
+                      context.commit('_setInitialized')
+                    })
+                    .catch(error => {
+                      console.log('error loading locationsList', error)
+                    })
+                })
+                .catch(error => {
+                  console.log('error loading anchorsList', error)
+                })
+            })
+            .catch(error => {
+              console.log('error loading itemsList', error)
+            })
         })
-        .then(result => {
-          firebase.auth().onAuthStateChanged(user => {
-            // console.log('onAuthStateChanged user', user)
-            if (user) {
-              context.dispatch('autoSignIn', user)
-            }
-            context.dispatch('_queryItemCategories')
-          })
+        .catch(error => {
+          console.log('error loading itemCategoriesList', error)
         })
-    },
+    }),
 
     _queryItemCategories (context) {
       // console.log('_queryItemCategories')
       const path = `${ROOT}/itemCategories`
       // console.log('_queryItemCategories path', path)
-      firestore.collection(path)
+      firebase.firestore().collection(path)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ querySnapshot => {
           context.dispatch('_onQueriedItemCategories', querySnapshot)
         }, error => {
@@ -329,7 +335,7 @@ export default {
       // console.log('_queryItems')
       const path = `${ROOT}/itemTypes`
       // console.log('_queryItems path', path)
-      firestore.collection(path)
+      firebase.firestore().collection(path)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ querySnapshot => {
           context.dispatch('_onQueriedItems', querySnapshot)
         }, error => {
@@ -380,7 +386,7 @@ export default {
       // console.log('_queryAnchors')
       const path = `${ROOT}/anchors`
       // console.log('_queryAnchors path', path)
-      firestore.collection(path)
+      firebase.firestore().collection(path)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ querySnapshot => {
           context.dispatch('_onQueriedAnchors', querySnapshot)
         }, error => {
@@ -426,7 +432,7 @@ export default {
       // console.log('_queryLocations')
       const path = `${ROOT}/locations`
       // console.log('_queryLocations path', path)
-      firestore.collection(path)
+      firebase.firestore().collection(path)
         .onSnapshot(/* { includeQueryMetadataChanges: true }, */ querySnapshot => {
           context.dispatch('_onQueriedLocations', querySnapshot)
         }, error => {
@@ -472,7 +478,7 @@ export default {
       // console.log('_queryLocationItemPrices locationId', locationId)
       const path = `${ROOT}/locations/${locationId}/prices`
       // console.log('_queryLocationItemPrices path', path)
-      firestore.collection(path)
+      firebase.firestore().collection(path)
         .where(FIELD_TIMESTAMPED, '==', true)
         .orderBy(FIELD_TIMESTAMP, 'desc')
         .limit(1)
@@ -596,6 +602,8 @@ export default {
       const path = `${ROOT}/buySellRatios`
 
       const queries = []
+
+      const firestore = firebase.firestore()
 
       const buySellRatiosFilter = context.state.buySellRatiosFilter
       // console.log('queryBuySellRatios buySellRatiosFilter', buySellRatiosFilter)

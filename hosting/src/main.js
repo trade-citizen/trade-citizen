@@ -13,6 +13,9 @@ import 'material-design-icons-iconfont/dist/material-design-icons.css'
 // TODO:(pv) Include http://fontawesome.io/icons/ and https://materialdesignicons.com/
 //  https://next.vuetifyjs.com/components/icons#examples
 
+import firebase from '@firebase/app'
+// import * as utils from './utils'
+
 // Used in App.vue to show app version in footer
 Vue.prototype.$PACKAGE_VERSION = PACKAGE_VERSION
 
@@ -33,11 +36,79 @@ Vue.use(Vuetify, {
 
 Vue.config.productionTip = false
 
+// const isProduction = utils.isProduction()
+// const databaseURL = 'https://trade-citizen' + (isProduction ? '' : `-${process.env.NODE_ENV}`) + '.firebaseio.com'
+firebase.initializeApp({
+  apiKey: 'AIzaSyDfKA77M6vyodG8_BprKviSgNtB0zLoVDU',
+  authDomain: 'trade-citizen.firebaseapp.com',
+  // databaseURL: databaseURL,
+  projectId: 'trade-citizen'
+  // storageBucket: 'trade-citizen.appspot.com',
+  // messagingSenderId: '676462601414'
+})
+const firestore = firebase.firestore()
+firestore.settings({
+  timestampsInSnapshots: true
+})
+/*
+if (false && utils.isDevelopment()) {
+  console.warn('firestore.setLogLevel(\'debug\')')
+  firestore.setLogLevel('debug')
+}
+*/
+
 // eslint-disable-next-line no-new
 new Vue({
   el: '#app',
   router,
   store,
   template: '<App/>',
-  components: { App }
+  components: { App },
+  created () {
+    console.log('Vue created')
+    firestore.enablePersistence()
+      .then(result => {
+        console.log('Vue enablePersistence resolve')
+      }, reason => {
+        console.warn('Vue enablePersistence reject', reason)
+        this.$store.commit('_setPersistenceError', reason)
+      })
+      .then(result => {
+        this.$store.dispatch('initialize')
+      })
+    firebase.auth().onAuthStateChanged(user => {
+      console.log('Vue onAuthStateChanged user', user)
+      if (user) {
+        this.$store.dispatch('autoSignIn', user)
+      }
+    })
+  },
+  mounted () {
+    // console.log('Vue mounted')
+    const vm = this
+    window.addEventListener('load', function () {
+      vm.updateNetworkStatus()
+      window.addEventListener('online', vm.updateNetworkStatus)
+      window.addEventListener('offline', vm.updateNetworkStatus)
+    })
+  },
+  beforeDestroy () {
+    // console.log('Vue beforeDestroy')
+    window.removeEventListener('online', this.updateNetworkStatus)
+    window.removeEventListener('offline', this.updateNetworkStatus)
+  },
+  methods: {
+    updateNetworkStatus () {
+      const offline = !navigator.onLine
+      // console.log('Vue updateNetworkStatus offline', offline)
+      if (offline) {
+        // console.log('Vue updateNetworkStatus firestore.disableNetwork()')
+        firestore.disableNetwork()
+      } else {
+        // console.log('Vue updateNetworkStatus firestore.enableNetwork()')
+        firestore.enableNetwork()
+      }
+      this.$store.commit('setOffline', offline)
+    }
+  }
 })
