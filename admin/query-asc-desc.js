@@ -19,7 +19,7 @@ function foo(path, orderBy, descending, limit, pageNumber) {
         .onSnapshot(querySnapshot => {
             console.log()
             console.log('onSnapshot direction', direction, 'querySnapshot', querySnapshot)
-            let docChanges = querySnapshot.docChanges
+            let docChanges = querySnapshot.docChanges()
             console.log('onSnapshot direction', direction, 'docChanges', docChanges)
             console.log()
         }, (error) => {

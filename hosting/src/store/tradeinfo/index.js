@@ -249,14 +249,14 @@ export default {
       const path = `${ROOT}/itemCategories`
       // console.log('_queryItemCategories path', path)
       firebase.firestore().collection(path)
-        .onSnapshot(/* { includeQueryMetadataChanges: true }, */ querySnapshot => {
+        .onSnapshot(/* { includeMetadataChanges: true }, */ querySnapshot => {
           context.dispatch('_onQueriedItemCategories', querySnapshot)
         }, error => {
           console.error('_queryItemCategories', error)
         })
     },
     _onQueriedItemCategories (context, querySnapshot) {
-      const docChanges = querySnapshot.docChanges
+      const docChanges = querySnapshot.docChanges()
       // console.log('_onQueriedItemCategories docChanges', docChanges)
       if (docChanges.length === 0) {
         // console.warn('_onQueriedItemCategories docChanges.length === 0 ignoring')
@@ -295,14 +295,14 @@ export default {
       const path = `${ROOT}/itemTypes`
       // console.log('_queryItems path', path)
       firebase.firestore().collection(path)
-        .onSnapshot(/* { includeQueryMetadataChanges: true }, */ querySnapshot => {
+        .onSnapshot(/* { includeMetadataChanges: true }, */ querySnapshot => {
           context.dispatch('_onQueriedItems', querySnapshot)
         }, error => {
           console.error('_queryItems', error)
         })
     },
     _onQueriedItems (context, querySnapshot) {
-      const docChanges = querySnapshot.docChanges
+      const docChanges = querySnapshot.docChanges()
       // console.log('_onQueriedItems docChanges', docChanges)
       if (docChanges.length === 0) {
         // console.warn('_onQueriedItems docChanges.length === 0 ignoring')
@@ -346,14 +346,14 @@ export default {
       const path = `${ROOT}/anchors`
       // console.log('_queryAnchors path', path)
       firebase.firestore().collection(path)
-        .onSnapshot(/* { includeQueryMetadataChanges: true }, */ querySnapshot => {
+        .onSnapshot(/* { includeMetadataChanges: true }, */ querySnapshot => {
           context.dispatch('_onQueriedAnchors', querySnapshot)
         }, error => {
           console.error('_queryAnchors', error)
         })
     },
     _onQueriedAnchors (context, querySnapshot) {
-      const docChanges = querySnapshot.docChanges
+      const docChanges = querySnapshot.docChanges()
       // console.log('_onQueriedAnchors docChanges', docChanges)
       if (docChanges.length === 0) {
         // console.warn('_onQueriedAnchors docChanges.length === 0 ignoring')
@@ -392,14 +392,14 @@ export default {
       const path = `${ROOT}/locations`
       // console.log('_queryLocations path', path)
       firebase.firestore().collection(path)
-        .onSnapshot(/* { includeQueryMetadataChanges: true }, */ querySnapshot => {
+        .onSnapshot(/* { includeMetadataChanges: true }, */ querySnapshot => {
           context.dispatch('_onQueriedLocations', querySnapshot)
         }, error => {
           console.error('_queryLocations', error)
         })
     },
     _onQueriedLocations (context, querySnapshot) {
-      const docChanges = querySnapshot.docChanges
+      const docChanges = querySnapshot.docChanges()
       // console.log('_onQueriedLocations docChanges', docChanges)
       if (docChanges.length === 0) {
         // console.warn('_onQueriedLocations docChanges.length === 0 ignoring')
@@ -441,7 +441,7 @@ export default {
         .where(FIELD_TIMESTAMPED, '==', true)
         .orderBy(FIELD_TIMESTAMP, 'desc')
         .limit(1)
-        .onSnapshot(/* { includeQueryMetadataChanges: true }, */ querySnapshot => {
+        .onSnapshot(/* { includeMetadataChanges: true }, */ querySnapshot => {
           context.dispatch('_onQueriedLocationItemPrices', { locationId, querySnapshot })
         }, error => {
           console.error('_queryLocationItemPrices', error)
@@ -452,7 +452,7 @@ export default {
     _onQueriedLocationItemPrices (context, { locationId, querySnapshot }) {
       // const path = `${ROOT}/locations/${locationId}/prices`
       // console.log('_onQueriedLocationItemPrices path', path)
-      const docChanges = querySnapshot.docChanges
+      const docChanges = querySnapshot.docChanges()
       // console.log('_onQueriedLocationItemPrices docChanges', docChanges)
       if (docChanges.length === 0 && context.state.locationsItemsPricesMap[locationId] !== undefined) {
         // console.warn('_onQueriedLocationItemPrices ' + path + ' docChanges.length === 0 ignoring')
@@ -618,7 +618,7 @@ export default {
           .limit(rowsPerPage)
         // console.log('queryBuySellRatios query', getQueryString(query))
         const buySellRatiosUnsubscribe = query
-          .onSnapshot({ includeQueryMetadataChanges: true }, querySnapshot => {
+          .onSnapshot({ includeMetadataChanges: true }, querySnapshot => {
             context.dispatch('_onQueriedBuySellRatios', querySnapshot)
           }, error => {
             console.error('queryBuySellRatios', error)
@@ -628,7 +628,7 @@ export default {
     },
     _onQueriedBuySellRatios (context, querySnapshot) {
       // console.log('_onQueriedBuySellRatios querySnapshot', querySnapshot)
-      const docChanges = querySnapshot.docChanges
+      const docChanges = querySnapshot.docChanges()
       // console.log('_onQueriedBuySellRatios docChanges', docChanges)
       if (docChanges.length === 0) {
         // console.warn('_onQueriedBuySellRatios docChanges.length === 0 ignoring')
