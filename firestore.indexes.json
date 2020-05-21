@@ -1,0 +1,439 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "buyLocationName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "buyPrice",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "buyLocationName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "buyPrice",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "buyLocationName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "itemName",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "buyLocationName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "itemName",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "buyLocationName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "ratio",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "buyLocationName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "ratio",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "buyLocationName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sellLocationName",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "buyLocationName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sellLocationName",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "buyLocationName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sellPrice",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "buyLocationName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sellPrice",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "itemName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "buyLocationName",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "itemName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "buyLocationName",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "itemName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "buyPrice",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "itemName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "buyPrice",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "itemName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "ratio",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "itemName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "ratio",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "itemName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sellLocationName",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "itemName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sellLocationName",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "itemName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sellPrice",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "itemName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sellPrice",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "sellLocationName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "buyLocationName",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "sellLocationName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "buyLocationName",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "sellLocationName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "buyPrice",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "sellLocationName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "buyPrice",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "sellLocationName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "itemName",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "sellLocationName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "itemName",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "sellLocationName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "ratio",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "sellLocationName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "ratio",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "sellLocationName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sellPrice",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "buySellRatios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "sellLocationName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sellPrice",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "prices",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "timestamped",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timestamp",
+          "order": "DESCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
