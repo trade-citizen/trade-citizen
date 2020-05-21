@@ -14,6 +14,89 @@ const readdir = promisify(fs.readdir);
 const vision = require('@google-cloud/vision');
 const client = new vision.ImageAnnotatorClient();
 
+const STRUCTURE = {
+  Left: [
+    'Total Cargo Space',
+    'Empty Cargo Space',
+  ],
+  Center: [
+    'Available Items',
+    'Filters', 'Sort',
+    'Price / Unit',
+    'aUEC'
+  ],
+  Right: [
+    'Storage Inventory Levels',
+    'Demand',
+    'AMOUNT TO PURCHASE',
+    'UNITS', 'FOR', 'aUEC',
+    'Filling', 'SCU', 'Max Available Stock',
+    'Min', 'Max',
+    'Purchase'
+  ]
+};
+const Commodities = {
+  'Metal':[
+    'Agricium',
+    'Aluminum',
+    'Gold',
+    'Titanium',
+    'Tungsten',
+  ],
+  'Agricultural Supply':[
+    'Agricultural Supplies',
+  ],
+  'Vice':[
+    'Altruciatoxin',
+    'Distilled Spirits',
+    'E\'tam',
+    'Maze',
+    'Neon',
+    'Revenant Tree Pollen',
+    'SLAM',
+    'Stims',
+    'WiDow',
+  ],
+  'Harvestable':[
+    'Amioshi Plague',
+    'Aphorite',
+    'Compboard',
+    'Dolivine',
+    'Golden Medmons',
+    'Hadanite',
+    'Pitambu',
+    'Prota',
+    'Ranta Dung',
+    'Revenant Pods',
+  ],  
+  'Gas':[
+    'Astatine',
+    'Chlorine',
+    'Fluorine',
+    'Hydrogen',
+    'Iodine',
+  ],
+  'Mineral':[
+    'Beryl',
+    'Corundum',
+    'Diamond',
+    'Laranite',
+    'Quartz',
+  ],
+  'Medical Supply':[
+    'Medical Supplies',
+  ],  
+  'Food':[
+    'Processed Food',
+  ],
+  'Scrap':[
+    'Scrap',
+  ],
+  'Waste':[
+    'Waste',
+  ],
+}
+
 async function processResponse(filepath, response) {
   console.log('filepath', filepath);
   //console.log('response', response);
@@ -21,40 +104,48 @@ async function processResponse(filepath, response) {
   const fullTextAnnotation = response.fullTextAnnotation;
   //console.log('fullTextAnnotation', fullTextAnnotation);
 
-  const outputFilepath = filepath.split('.').slice(0, -1).join('.') + '.txt';
+  const outputFilepath = filepath.split('.').slice(0, -1).join('.') + '.json';
   console.log('outputFilepath', outputFilepath);
-  const ws = fs.createWriteStream(outputFilepath);
+
+  const pages = [];
   fullTextAnnotation.pages.forEach(page => {
+    const blocks = [];
     page.blocks.forEach(block => {
+      const paragraphs = [];
       //console.log('block', block);
       block.paragraphs.forEach(paragraph => {
+        const words = [];
         //console.log('paragraph', paragraph);
         paragraph.words.forEach(word => {
           const wordText = word.symbols.map(s => s.text).join('');
-          console.log('wordText', wordText);
-          ws.write(wordText + '\r\n');
+          //console.log('wordText', wordText);
+          words.push(wordText);
         });
+        paragraphs.push(words);
       });
+      blocks.push(paragraphs);
     });
+    pages.push(blocks);
   });
-  ws.end();
+
+  fs.writeFileSync(outputFilepath, JSON.stringify({ pages: pages }, null, 2));
 }
 
-async function main() {
-  const inputDir = './samples/';
-
+async function main(inputDir) {
   const files = await readdir(inputDir);
 
-  // Get a list of all files in the directory (filter out other directories)
-  // TODO:(pv) Filter out non-supported [image] files
   const imageFilesToProcess = (
     await Promise.all(
       files.map(async file => {
         const filename = path.join(inputDir, file);
         const stats = await stat(filename);
-        if (!stats.isDirectory()) {
-          return filename;
+        if (stats.isDirectory()) {
+          return;
         }
+        if (path.extname(filename) != '.jpg') {
+          return;
+        }
+        return filename;
       })
     )
   ).filter(f => !!f);
@@ -97,4 +188,4 @@ async function main() {
   );
 }
 
-main();
+main('./samples/');
