@@ -63,3 +63,5 @@ node_modules/
 
 # dotenv environment variables file
 .env
+
+trade-citizen-firebase-adminsdk.json
