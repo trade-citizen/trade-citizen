@@ -1,5 +1,16 @@
 # Add any directories, files, or patterns you don't want to be tracked by version control
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+firebase-debug.log*
+firebase-debug.*.log*
+
+# Firebase cache
+.firebase/
+
 .DS_Store
-firebase-debug.log
 trade-citizen-firebase-adminsdk*.json
-yarn-error\.log
